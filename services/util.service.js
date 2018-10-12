@@ -39,4 +39,8 @@ module.exports.TE = TE = function(err_message, log){ // TE stands for Throw Erro
     throw new Error(err_message);
 };
 
+module.exports.isEmptyObject  = function (obj) { //check if an object is empty, returns true if object is empty
+
+    return Object.keys(obj).length === 0 && obj.constructor === Object
+}
 

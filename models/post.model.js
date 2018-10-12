@@ -11,8 +11,6 @@ module.exports = (sequelize, DataTypes) => {
         content  : DataTypes.STRING,
         tags     : {type: DataTypes.TEXT, allowNull: true},
         imgs     : {type: DataTypes.TEXT, allowNull: true},
-        adOptions  : DataTypes.STRING,
-        question  : DataTypes.STRING,
         video  : DataTypes.STRING,
         show  : DataTypes.STRING,
         likes  : DataTypes.STRING,
@@ -22,7 +20,11 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     Model.associate = function(models){
-        this.User = this.belongsTo(models.User, {through: 'UserPosts', as: 'user'});
+        this.User = this.belongsTo(models.User, {onDelete: 'CASCADE'});
+        this.Comments = this.belongsToMany(models.Comments, {through: 'PostComments', onDelete: 'CASCADE'});
+        this.Question = this.belongsTo(models.Questions, {onDelete: 'CASCADE'});
+        this.AdOption = this.belongsTo(models.AdOptions, {onDelete: 'CASCADE'})
+
     };
    
 

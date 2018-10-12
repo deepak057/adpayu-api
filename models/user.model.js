@@ -15,7 +15,11 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     Model.associate = function(models){
-        this.Posts = this.belongsToMany(models.Posts, {foreignKey: 'uid', through: 'UserPosts', as: 'posts'});
+        this.Posts = this.belongsToMany(models.Posts, {through: 'UserPosts', onDelete: 'CASCADE'});
+        this.Comments = this.belongsToMany(models.Comments, {through: 'UserComments', onDelete: 'CASCADE'});
+        this.Questions = this.belongsToMany(models.Questions, {through: 'UserQuestions', onDelete: 'CASCADE'});
+        this.AdOptions = this.belongsToMany(models.AdOptions, {through: 'UserAdOptions', onDelete: 'CASCADE'})
+
     };
 
     Model.beforeSave(async (user, options) => {
