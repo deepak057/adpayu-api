@@ -1,8 +1,8 @@
-const { Posts, Comments, User, Questions, AdOptions } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, Imgs } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
 
 const create = async function(req, res){
-    let err, post, comments, question, adOptions;
+    let err, post, comments, question, adOptions, imgs;
     let user = req.user;
 
     let post_info = req.body;
@@ -10,8 +10,6 @@ const create = async function(req, res){
     /*
     Temporary workarounds
     */
-    post_info.imgs = '';
-    post_info.comments = {'comment': 'd'};
     post_info.likes = '';
     post_info.tags = '';
 
@@ -19,9 +17,6 @@ const create = async function(req, res){
     Workarounds end
     **/
 
-    
-    [err, comments] = await to(Comments.create(post_info.comments));
-    if(err) return ReE(res, err, 422);
 
     [err, post] = await to(Posts.create(post_info));
     if(err) return ReE(res, err, 422);
@@ -29,10 +24,18 @@ const create = async function(req, res){
     // Saving relations
     user.addPosts(post);
     post.setUser(user);
-    post.addComments(comments);
-    comments.setPost(post);
-    user.addComments(comments);
-    comments.setUser(user);
+
+    if(!isEmptyObject(post_info.comments)){
+        [err, comments] = await to(Comments.create(post_info.comments));
+        if(err) return ReE(res, err, 422);
+
+        post.addComments(comments);
+        comments.setPost(post);
+        user.addComments(comments);
+        comments.setUser(user);
+
+    }
+
 
      if(!isEmptyObject(post_info.question)){
 
@@ -52,6 +55,19 @@ const create = async function(req, res){
         post.setAdOption(adOptions);
         adOptions.setUser(user);
         user.addAdOptions(adOptions);
+    }
+
+    if(post_info.imgs.length > 0) {
+
+
+        [err, imgs] = await to(Imgs.bulkCreate(post_info.imgs));
+         if(err) return ReE(res, err, 422);
+
+        for(var i in imgs){
+            imgs[i].setPost(post);
+            imgs[i].setUser(user);
+            post.addImgs(imgs[i]);
+        }
     }
 
 

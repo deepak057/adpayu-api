@@ -10,7 +10,6 @@ module.exports = (sequelize, DataTypes) => {
         type     : DataTypes.STRING,
         content  : DataTypes.STRING,
         tags     : {type: DataTypes.TEXT, allowNull: true},
-        imgs     : {type: DataTypes.TEXT, allowNull: true},
         video  : DataTypes.STRING,
         show  : DataTypes.STRING,
         likes  : DataTypes.STRING,
@@ -23,7 +22,8 @@ module.exports = (sequelize, DataTypes) => {
         this.User = this.belongsTo(models.User, {onDelete: 'CASCADE'});
         this.Comments = this.belongsToMany(models.Comments, {through: 'PostComments', onDelete: 'CASCADE'});
         this.Question = this.belongsTo(models.Questions, {onDelete: 'CASCADE'});
-        this.AdOption = this.belongsTo(models.AdOptions, {onDelete: 'CASCADE'})
+        this.AdOption = this.belongsTo(models.AdOptions, {onDelete: 'CASCADE'});
+        this.Imgs= this.belongsToMany(models.Imgs, {through: 'PostImgs', onDelete: 'CASCADE'})
 
     };
    
