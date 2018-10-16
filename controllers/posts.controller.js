@@ -25,7 +25,7 @@ const create = async function(req, res){
     user.addPosts(post);
     post.setUser(user);
 
-    if(!isEmptyObject(post_info.comments)){
+   /* if(!isEmptyObject(post_info.comments)){
         [err, comments] = await to(Comments.create(post_info.comments));
         if(err) return ReE(res, err, 422);
 
@@ -34,7 +34,7 @@ const create = async function(req, res){
         user.addComments(comments);
         comments.setUser(user);
 
-    }
+    }*/
 
 
      if(!isEmptyObject(post_info.question)){
@@ -108,9 +108,31 @@ const getAll = async function(req, res){
 module.exports.getAll = getAll;
 
 const get = function(req, res){
-    let company = req.company;
+    let user = req.user;
 
-    return ReS(res, {company:company.toWeb()});
+    Posts.findAll({include: [
+          {
+            model: Comments,
+          },
+          {
+            model: AdOptions,
+          },
+          {
+            model: Imgs,
+          },
+          {
+            model: Questions,
+          },
+
+        ],
+    where : {UserId: user.id}} )
+      .then(posts => {
+
+            return ReS(res, {posts: posts});
+
+
+      })
+
 }
 module.exports.get = get;
 
