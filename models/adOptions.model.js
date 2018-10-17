@@ -7,6 +7,7 @@ const CONFIG            = require('../config/config');
 
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('AdOptions', {
+        postIsAd: { type: DataTypes.BOOLEAN, defaultValue: true},
         cpc     : DataTypes.FLOAT,
         cpv     : DataTypes. FLOAT,
         clickURL: DataTypes.STRING

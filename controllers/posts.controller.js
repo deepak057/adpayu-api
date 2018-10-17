@@ -115,6 +115,9 @@ const get = function(req, res){
             model: Comments,
           },
           {
+            model: User
+          },
+          {
             model: AdOptions,
           },
           {
@@ -125,11 +128,10 @@ const get = function(req, res){
           },
 
         ],
-    where : {UserId: user.id}} )
+    where : {UserId: user.id}, order: [['updatedAt', 'DESC']]})
       .then(posts => {
 
             return ReS(res, {posts: posts});
-
 
       })
 
