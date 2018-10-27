@@ -23,7 +23,8 @@ module.exports = (sequelize, DataTypes) => {
         this.Comments = this.belongsToMany(models.Comments, {through: 'PostComments', onDelete: 'CASCADE'});
         this.Question = this.belongsTo(models.Questions, {onDelete: 'CASCADE'});
         this.AdOption = this.belongsTo(models.AdOptions, {onDelete: 'CASCADE'});
-        this.Imgs= this.belongsToMany(models.Imgs, {through: 'PostImgs', onDelete: 'CASCADE'})
+        this.Imgs= this.belongsToMany(models.Imgs, {through: 'PostImgs', onDelete: 'CASCADE'});
+        this.Tages = this.belongsToMany(models.Tags, {through: 'PostsTags', onDelete: 'CASCADE'})
 
     };
    

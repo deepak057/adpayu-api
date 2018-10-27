@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
         this.Comments = this.belongsToMany(models.Comments, {through: 'UserComments', onDelete: 'CASCADE'});
         this.Questions = this.belongsToMany(models.Questions, {through: 'UserQuestions', onDelete: 'CASCADE'});
         this.AdOptions = this.belongsToMany(models.AdOptions, {through: 'UserAdOptions', onDelete: 'CASCADE'})
-
+        this.Tags = this.belongsToMany(models.Tags, {through: 'UserTags', onDelete: 'CASCADE'})
     };
 
     Model.beforeSave(async (user, options) => {

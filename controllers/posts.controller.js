@@ -77,7 +77,30 @@ const create = async function(req, res){
     let post_json = post.toWeb();
     post_json.user = [{user:user}];
 
-    return ReS(res, {post:post_json}, 201);
+    Posts.findOne({include: [
+          {
+            model: Comments,
+          },
+          {
+            model: User
+          },
+          {
+            model: AdOptions,
+          },
+          {
+            model: Imgs,
+          },
+          {
+            model: Questions,
+          },
+
+
+        ], where: {id: post.id}})
+      .then((post) => {
+            return ReS(res, post, 201);
+
+      })
+
 }
 module.exports.create = create;
 
