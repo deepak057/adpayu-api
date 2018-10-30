@@ -1,8 +1,8 @@
-const { Posts, Comments, User, Questions, AdOptions, Imgs } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, Imgs, Tags } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
 
 const create = async function(req, res){
-    let err, post, comments, question, adOptions, imgs;
+    let err, post, comments, question, adOptions, imgs, tags;
     let user = req.user;
 
     let post_info = req.body;
@@ -11,7 +11,6 @@ const create = async function(req, res){
     Temporary workarounds
     */
     post_info.likes = '';
-    post_info.tags = '';
 
     /***
     Workarounds end
@@ -68,6 +67,45 @@ const create = async function(req, res){
             imgs[i].setUser(user);
             post.addImgs(imgs[i]);
         }
+    }
+
+    /*
+    ** Loop through given Tags and cretae new tags if they don't already exist in database
+    ** also associate tags with current post 
+    */
+
+    if(post_info.tags.length > 0) {
+
+      for(var i in post_info.tags){
+        
+        Tags.findOrCreate(
+        {
+          where: {name: post_info.tags[i].text},
+          defaults: {
+            name: post_info.tags[i].text,
+            UserId: user.id
+          }
+        },
+        ). then ((tag) => {
+          post.addTags(tag)
+        })
+
+        /*Tags.findOne({where: {name: post_info.tags[i].text }})
+          .then((tag)=>{
+            if(!tag) {
+              Tags.create({name: post_info.tags[i].text })
+                .then((newTag) => {
+                  newTag.addUser(user)
+                  post.addTags(newTag)
+                })
+            } else {
+                post.addTags(tag)
+            }
+
+          })*/
+
+      }
+
     }
 
 

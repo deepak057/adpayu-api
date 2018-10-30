@@ -3,6 +3,7 @@ const router 			= express.Router();
 
 const UserController 	= require('../controllers/user.controller');
 const PostsController 	= require('../controllers/posts.controller');
+const TagsController 	= require('../controllers/tags.controller');
 
 const CompanyController = require('../controllers/company.controller');
 const HomeController 	= require('../controllers/home.controller');
@@ -31,6 +32,9 @@ router.post('/posts',           passport.authenticate('jwt', {session:false}), P
 router.get('/posts',           passport.authenticate('jwt', {session:false}), PostsController.get);        	   // R
 router.put('/posts',           passport.authenticate('jwt', {session:false}), PostsController.update);         // U
 router.delete('/posts',           passport.authenticate('jwt', {session:false}), PostsController.remove);        // D
+
+/** Posts Tags **/
+router.get('/tags',           passport.authenticate('jwt', {session:false}), TagsController.get);        // R
 
 
 router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C

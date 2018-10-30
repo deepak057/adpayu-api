@@ -9,7 +9,6 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Posts', {
         type     : DataTypes.STRING,
         content  : DataTypes.STRING,
-        tags     : {type: DataTypes.TEXT, allowNull: true},
         video  : DataTypes.STRING,
         show  : DataTypes.STRING,
         likes  : DataTypes.STRING,
