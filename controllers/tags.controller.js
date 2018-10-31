@@ -6,7 +6,7 @@ const Op = Sequelize.Op;
 
 const get = function(req, res){
 
-    Tags.findAll({where: {name: {[Op.like] :  '%' +req.query.tag+'%'}}})
+    Tags.findAll({limit:7, where: {name: {[Op.like] :  '%' +req.query.tag+'%'}}})
       .then((tags)=>{
         return ReS(res, {tags: tags});
       })
@@ -17,3 +17,19 @@ const get = function(req, res){
 
 }
 module.exports.get = get;
+
+const getUserTags = function(req, res){
+
+	let user = req.user;
+
+    Tags.findAll({where: {UserId: user.id }})
+      .then((tags)=>{
+        return ReS(res, {tags: tags});
+      })
+      .catch((error) => {
+        return ReE(res, error);
+      })
+
+
+}
+module.exports.getUserTags = getUserTags;

@@ -33,8 +33,9 @@ router.get('/posts',           passport.authenticate('jwt', {session:false}), Po
 router.put('/posts',           passport.authenticate('jwt', {session:false}), PostsController.update);         // U
 router.delete('/posts',           passport.authenticate('jwt', {session:false}), PostsController.remove);        // D
 
-/** Posts Tags **/
+/** Tags routes**/
 router.get('/tags',           passport.authenticate('jwt', {session:false}), TagsController.get);        // R
+router.get('/tags/user',           passport.authenticate('jwt', {session:false}), TagsController.getUserTags);        // R
 
 
 router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C

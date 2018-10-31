@@ -86,23 +86,9 @@ const create = async function(req, res){
             UserId: user.id
           }
         },
-        ). then ((tag) => {
+        ). spread ((tag, created) => {
           post.addTags(tag)
         })
-
-        /*Tags.findOne({where: {name: post_info.tags[i].text }})
-          .then((tag)=>{
-            if(!tag) {
-              Tags.create({name: post_info.tags[i].text })
-                .then((newTag) => {
-                  newTag.addUser(user)
-                  post.addTags(newTag)
-                })
-            } else {
-                post.addTags(tag)
-            }
-
-          })*/
 
       }
 
@@ -131,6 +117,9 @@ const create = async function(req, res){
           {
             model: Questions,
           },
+          {
+            model: Tags
+          }
 
 
         ], where: {id: post.id}})
@@ -187,9 +176,12 @@ const get = function(req, res){
           {
             model: Questions,
           },
+          {
+            model: Tags,
+          }
 
         ],
-    where : {UserId: user.id}, order: [['updatedAt', 'DESC']]})
+    where : {UserId: user.id}, order: [['updatedAt', 'DESC']], limit: 10})
       .then(posts => {
 
             return ReS(res, {posts: posts});
