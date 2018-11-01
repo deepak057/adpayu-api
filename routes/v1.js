@@ -29,7 +29,7 @@ router.post(    '/users/login',     UserController.login);
 
 /** Posts routes **/
 router.post('/posts',           passport.authenticate('jwt', {session:false}), PostsController.create);        // C
-router.get('/posts',           passport.authenticate('jwt', {session:false}), PostsController.get);        	   // R
+router.get('/posts/:tag',           passport.authenticate('jwt', {session:false}), PostsController.get);        	   // R
 router.put('/posts',           passport.authenticate('jwt', {session:false}), PostsController.update);         // U
 router.delete('/posts',           passport.authenticate('jwt', {session:false}), PostsController.remove);        // D
 

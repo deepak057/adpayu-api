@@ -160,12 +160,16 @@ module.exports.getAll = getAll;
 const get = function(req, res){
     let user = req.user;
 
-    Posts.findAll({include: [
+    let tag = req.params.tag || 'all';
+
+    let dbIncludes = [
+
           {
             model: Comments,
           },
           {
-            model: User
+            model: User,
+            where: {id: 1}
           },
           {
             model: AdOptions,
@@ -176,17 +180,55 @@ const get = function(req, res){
           {
             model: Questions,
           },
-          {
-            model: Tags,
-          }
+        ];
 
-        ],
-    where : {UserId: user.id}, order: [['updatedAt', 'DESC']], limit: 10})
-      .then(posts => {
+    let criteria = {
+      include: dbIncludes ,
+      order: [['updatedAt', 'DESC']], limit: 10
+    };
+
+    if(tag === 'all')  {
+
+      criteria.include.push({
+          model: Tags,
+        })
+
+      Posts.findAll(criteria)
+         .then(posts => {
 
             return ReS(res, {posts: posts});
 
       })
+
+    }  
+
+    else {
+
+      Tags.findOne({where: {name: tag}})
+      .then ((Dbtag) => {
+
+       criteria.include.push({
+          model: Tags,
+          where: {id: Dbtag.id}
+        })
+
+        Posts.findAll(criteria)
+         .then(posts => {
+
+            return ReS(res, {posts: posts});
+
+      })
+
+      }).catch ((error) => {
+        return ReS(res, post, 201);
+
+      })
+
+    }
+
+    
+
+    
 
 }
 module.exports.get = get;
