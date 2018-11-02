@@ -220,7 +220,7 @@ const get = function(req, res){
       })
 
       }).catch ((error) => {
-        return ReS(res, post, 201);
+        return ReS(res, error);
 
       })
 

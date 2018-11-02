@@ -8,6 +8,7 @@ const CONFIG            = require('../config/config');
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Tags', {
         name     : DataTypes.STRING,
+        icon     : {type: DataTypes.STRING, defaultValue: 'mdi mdi-gauge'}
     });
 
     Model.associate = function(models){

@@ -4,6 +4,7 @@ const router 			= express.Router();
 const UserController 	= require('../controllers/user.controller');
 const PostsController 	= require('../controllers/posts.controller');
 const TagsController 	= require('../controllers/tags.controller');
+const CommentsController 	= require('../controllers/comments.controller');
 
 const CompanyController = require('../controllers/company.controller');
 const HomeController 	= require('../controllers/home.controller');
@@ -37,6 +38,8 @@ router.delete('/posts',           passport.authenticate('jwt', {session:false}),
 router.get('/tags',           passport.authenticate('jwt', {session:false}), TagsController.get);        // R
 router.get('/tags/user',           passport.authenticate('jwt', {session:false}), TagsController.getUserTags);        // R
 
+/** Comments routes**/
+router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C
 
 router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C
 router.get(     '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.getAll);                  // R
