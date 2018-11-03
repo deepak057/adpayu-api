@@ -14,7 +14,6 @@ const create =  function(req, res){
 
      Posts.findOne({where: {id: postId}})
       .then((post) => {
-        let comment = Comments.create
          
         Comments.create(req.body)
           .then((comment) => {
@@ -22,6 +21,12 @@ const create =  function(req, res){
              comment.setUser(user);
              post.addComments(comment);
              user.addComments(comment);
+
+             comment = comment.toWeb();
+
+             //add User model
+             comment.User = req.user;
+
              return ReS(res, {comment: comment});
           })
           .catch((error) => {

@@ -41,7 +41,7 @@ const create = async function(req, res){
         [err, question] = await to(Questions.create(post_info.question));
          if(err) return ReE(res, err, 422);
 
-          post.setQuestion(question);
+         post.setQuestion(question);
          user.addQuestions(question);
          question.setUser(user);
 
@@ -184,7 +184,7 @@ const get = function(req, res){
 
     let criteria = {
       include: dbIncludes ,
-      order: [['updatedAt', 'DESC']], limit: 10
+      order: [['updatedAt', 'DESC']], limit: 10,
     };
 
     if(tag === 'all')  {
