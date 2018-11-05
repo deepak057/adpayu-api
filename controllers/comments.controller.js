@@ -39,3 +39,13 @@ const create =  function(req, res){
 
 }
 module.exports.create = create;
+
+const remove = async function(req, res){
+    let comment, err;
+
+    [err, comment] = await to(Comments.destroy({where: {id: req.query.commentId}}));
+    if(err) return ReE(res, 'error occured trying to delete the comment');
+
+    return ReS(res, {message:'Comment deleted'}, 204);
+}
+module.exports.remove = remove;

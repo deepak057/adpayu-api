@@ -40,6 +40,7 @@ router.get('/tags/user',           passport.authenticate('jwt', {session:false})
 
 /** Comments routes**/
 router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C
+router.delete('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // C
 
 router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C
 router.get(     '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.getAll);                  // R

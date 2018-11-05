@@ -166,6 +166,7 @@ const get = function(req, res){
 
           {
             model: Comments,
+            include: [{model: User}]
           },
           {
             model: User,

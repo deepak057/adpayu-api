@@ -71,12 +71,11 @@ const update = async function(req, res){
 module.exports.update = update;
 
 const remove = async function(req, res){
-    let company, err;
-    company = req.company;
+    let comment, err;
 
-    [err, company] = await to(company.destroy());
-    if(err) return ReE(res, 'error occured trying to delete the company');
+    [err, comment] = await to(Comments.destroy({where: {id: req.body.id}}));
+    if(err) return ReE(res, 'error occured trying to delete the comment');
 
-    return ReS(res, {message:'Deleted Company'}, 204);
+    return ReS(res, {message:'Comment deleted'}, 204);
 }
 module.exports.remove = remove;
