@@ -6,16 +6,13 @@ const {TE, to}          = require('../services/util.service');
 const CONFIG            = require('../config/config');
 
 module.exports = (sequelize, DataTypes) => {
-    var Model = sequelize.define('Comments', {
-        type     : DataTypes.STRING,
-        comment: DataTypes.TEXT,
-
+    var Model = sequelize.define('Likes', {
     });
 
     Model.associate = function(models){
-        this.Post = this.belongsTo(models.Posts, {onDelete: 'CASCADE'});
         this.User = this.belongsTo(models.User, {onDelete: 'CASCADE'});
-        this.Likes = this.belongsToMany(models.Likes, {through: 'CommentLikes', onDelete: 'CASCADE'});
+        this.Post = this.belongsTo(models.Posts, {onDelete: 'CASCADE'});
+        this.Comment = this.belongsTo(models.Comments, {onDelete: 'CASCADE'});
     };
    
 

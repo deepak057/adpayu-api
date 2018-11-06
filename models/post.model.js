@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
         this.AdOption = this.belongsTo(models.AdOptions, {onDelete: 'CASCADE'});
         this.Imgs= this.belongsToMany(models.Imgs, {through: 'PostImgs', onDelete: 'CASCADE'});
         this.Tages = this.belongsToMany(models.Tags, {through: 'PostsTags', onDelete: 'CASCADE'})
-
+        this.Likes = this.belongsToMany(models.Likes, {through: 'PostLikes', onDelete: 'CASCADE'});
     };
    
 

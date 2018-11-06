@@ -5,6 +5,7 @@ const UserController 	= require('../controllers/user.controller');
 const PostsController 	= require('../controllers/posts.controller');
 const TagsController 	= require('../controllers/tags.controller');
 const CommentsController 	= require('../controllers/comments.controller');
+const LikesController 	= require('../controllers/likes.controller');
 
 const CompanyController = require('../controllers/company.controller');
 const HomeController 	= require('../controllers/home.controller');
@@ -41,6 +42,13 @@ router.get('/tags/user',           passport.authenticate('jwt', {session:false})
 /** Comments routes**/
 router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C
 router.delete('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // C
+
+/** Likes routes**/
+router.post('/like/post/:postId',           passport.authenticate('jwt', {session:false}), LikesController.createPostLike);        // C
+router.delete('/like/post/:postId',           passport.authenticate('jwt', {session:false}), LikesController.removePostLike);        // C
+router.post('/like/comment/:postId',           passport.authenticate('jwt', {session:false}), LikesController.createCommentLike);        // C
+router.delete('/like/comment/:postId',           passport.authenticate('jwt', {session:false}), LikesController.removeCommentLike);        // C
+
 
 router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C
 router.get(     '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.getAll);                  // R
