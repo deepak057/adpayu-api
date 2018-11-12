@@ -46,8 +46,8 @@ router.delete('/comments/:postId',           passport.authenticate('jwt', {sessi
 /** Likes routes**/
 router.post('/like/post/:postId',           passport.authenticate('jwt', {session:false}), LikesController.createPostLike);        // C
 router.delete('/like/post/:postId',           passport.authenticate('jwt', {session:false}), LikesController.removePostLike);        // C
-router.post('/like/comment/:postId',           passport.authenticate('jwt', {session:false}), LikesController.createCommentLike);        // C
-router.delete('/like/comment/:postId',           passport.authenticate('jwt', {session:false}), LikesController.removeCommentLike);        // C
+router.post('/like/comment/:commentId',           passport.authenticate('jwt', {session:false}), LikesController.createCommentLike);        // C
+router.delete('/like/comment/:commentId',           passport.authenticate('jwt', {session:false}), LikesController.removeCommentLike);        // C
 
 
 router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C
