@@ -1,5 +1,27 @@
-const { Posts, Comments, User, Questions, AdOptions, Imgs, Tags } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, Imgs, Tags, Likes } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
+
+
+/**
+** Convert the posts and include Likes
+**/
+function toWeb(posts, user) {
+    
+  if(posts.constructor !== Array) {
+    return posts.toWeb(user);
+  }
+
+  else {
+    let posts_web = [];
+
+    for (let i in posts){
+      posts_web.push(posts[i].toWeb(user))
+    }
+
+    return posts_web;
+  }
+ 
+}
 
 const create = async function(req, res){
     let err, post, comments, question, adOptions, imgs, tags;
@@ -119,43 +141,20 @@ const create = async function(req, res){
           },
           {
             model: Tags
+          },
+          {
+            model: Likes,
           }
 
 
         ], where: {id: post.id}})
       .then((post) => {
-            return ReS(res, post, 201);
+            return ReS(res, toWeb(post, user), 201);
 
       })
 
 }
 module.exports.create = create;
-
-const getAll = async function(req, res){
-    let user = req.user;
-    let err, companies;
-
-    [err, companies] = await to(user.getCompanies({include: [ {association: Company.Users} ] }));
-
-    let companies_json =[]
-    for( let i in companies){
-        let company = companies[i];
-        let users =  company.Users;
-        let company_info = company.toWeb();
-        let users_info = [];
-        for (let i in users){
-            let user = users[i];
-            // let user_info = user.toJSON();
-            users_info.push({user:user.id});
-        }
-        company_info.users = users_info;
-        companies_json.push(company_info);
-    }
-
-    console.log('c t', companies_json);
-    return ReS(res, {companies:companies_json});
-}
-module.exports.getAll = getAll;
 
 const get = function(req, res){
     let user = req.user;
@@ -181,6 +180,9 @@ const get = function(req, res){
           {
             model: Questions,
           },
+          {
+            model: Likes,
+          }
         ];
 
     let criteria = {
@@ -197,7 +199,7 @@ const get = function(req, res){
       Posts.findAll(criteria)
          .then(posts => {
 
-            return ReS(res, {posts: posts});
+            return ReS(res, {posts: toWeb(posts, user)});
 
       })
 
@@ -216,7 +218,7 @@ const get = function(req, res){
         Posts.findAll(criteria)
          .then(posts => {
 
-            return ReS(res, {posts: posts});
+            return ReS(res, {posts: toWeb(posts, user)});
 
       })
 

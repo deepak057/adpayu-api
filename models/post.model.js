@@ -28,8 +28,16 @@ module.exports = (sequelize, DataTypes) => {
     };
    
 
-    Model.prototype.toWeb = function (pw) {
+    Model.prototype.toWeb = function (user) {
         let json = this.toJSON();
+
+        for(let i in json['Likes']) {
+            json['Likes'][i].liked = false;
+            if(json['Likes'][i].UserId == user.id) {
+                json['Likes'][i].liked = true;
+            }
+        }
+
         return json;
     };
 

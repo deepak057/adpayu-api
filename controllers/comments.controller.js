@@ -23,6 +23,7 @@ const create =  function(req, res){
              user.addComments(comment);
 
              comment = comment.toWeb();
+             comment.Likes = [];
 
              //add User model
              comment.User = req.user;

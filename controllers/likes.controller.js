@@ -4,25 +4,32 @@ const Sequelize = require('sequelize');
 
 const Op = Sequelize.Op;
 
-const createPostLike =  function(req, res){
+const createPostLike = async function(req, res){
   let like, err, post;
 
-  [err, post] = await to(Posts.fndOne({where: {id: req.params.postId}}));
+  [err, post] = await to(Posts.findOne({where: {id: req.params.postId}}));
   if(err) return ReE(res, 'Post not found');
 
 
   else {
+    let user = req.user;
 
-    [err, like] = await to(Likes.create());
-    if(err) return ReE(res, 'error occured');
+    [err, like] = await to(Likes.findOne({where: {UserId: user.id, PostId: post.id}}));
+
+    if(like)  return ReS(res, {message:'Post already Liked', like: like}, 204);
 
     else{
-      like.setUser(req.user);
-      like.setPost(post);
-      user.addLikes(like);
-      post.addLikes(like);
-      return ReS(res, {message:'Post Liked', like: like}, 204);
+      Likes.create()
+        .then((like) => {
 
+         like.setUser(req.user);
+         like.setPost(post);
+         user.addLikes(like);
+         post.addLikes(like);
+         return ReS(res, {message:'Post Liked', like: like}, 204);
+
+        })
+    
     }
 
    
@@ -32,7 +39,15 @@ const createPostLike =  function(req, res){
 module.exports.createPostLike = createPostLike;
 
 const removePostLike = async function(req, res){
-    
+    let like, err;
+    let user = req.user;
+
+    [err, like] = await to(Likes.destroy({where: {UserId: user.id, PostId: req.params.postId}}));
+
+    if(err)  return ReE(res, {message:'Failed unlike'});
+
+    else  return ReS(res, {message:'Post unliked'}, 204);
+
 }
 module.exports.removePostLike = removePostLike;
 
