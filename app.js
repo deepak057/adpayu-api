@@ -4,6 +4,7 @@ const bodyParser 	= require('body-parser');
 const passport      = require('passport');
 const pe            = require('parse-error');
 const cors          = require('cors');
+const fileUpload = require('express-fileupload');
 
 const v1    = require('./routes/v1');
 const app   = express();
@@ -13,6 +14,7 @@ const CONFIG = require('./config/config');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(fileUpload());
 // app.use(cookieParser());
 // app.use(express.static(path.join(__dirname, 'public')));
 

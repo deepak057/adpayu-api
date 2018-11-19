@@ -8,19 +8,51 @@ const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
 function toWeb(posts, user) {
     
   if(posts.constructor !== Array) {
-    return posts.toWeb(user);
+    return getWebPost(posts, user)
   }
 
   else {
     let posts_web = [];
 
     for (let i in posts){
-      posts_web.push(posts[i].toWeb(user))
+
+        posts_web.push(getWebPost(posts[i], user))
+
     }
 
     return posts_web;
   }
  
+}
+
+function getWebPost (post, user) {
+  let post_web = setDefaultLike (post, user);
+  post_web.Comments = getPostComments(post, user);
+  return post_web;
+}
+
+function getPostComments (post, user) {
+  let comments_web = [];
+
+    for (let i in post.Comments){
+      comments_web.push(setDefaultLike(post.Comments[i], user))
+    }
+
+    return comments_web;
+
+}
+
+function setDefaultLike (model, user) {
+  let json = model.toJSON();
+
+        for(let i in json['Likes']) {
+            json['Likes'][i].liked = false;
+            if(json['Likes'][i].UserId == user.id) {
+                json['Likes'][i].liked = true;
+            }
+        }
+
+  return json;
 }
 
 const create = async function(req, res){
@@ -126,6 +158,9 @@ const create = async function(req, res){
     Posts.findOne({include: [
           {
             model: Comments,
+            include: [{
+              model: Likes
+            }]
           },
           {
             model: User
@@ -165,7 +200,14 @@ const get = function(req, res){
 
           {
             model: Comments,
-            include: [{model: User}]
+            include: [
+              {
+                model: User
+              },
+              {
+                model: Likes
+              }
+            ]
           },
           {
             model: User,

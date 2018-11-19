@@ -25,19 +25,12 @@ module.exports = (sequelize, DataTypes) => {
         this.Imgs= this.belongsToMany(models.Imgs, {through: 'PostImgs', onDelete: 'CASCADE'});
         this.Tages = this.belongsToMany(models.Tags, {through: 'PostsTags', onDelete: 'CASCADE'})
         this.Likes = this.belongsToMany(models.Likes, {through: 'PostLikes', onDelete: 'CASCADE'});
+        this.Images = this.belongsToMany(models.Images, {through: 'PostImages', onDelete: 'CASCADE'});
     };
    
 
     Model.prototype.toWeb = function (user) {
         let json = this.toJSON();
-
-        for(let i in json['Likes']) {
-            json['Likes'][i].liked = false;
-            if(json['Likes'][i].UserId == user.id) {
-                json['Likes'][i].liked = true;
-            }
-        }
-
         return json;
     };
 

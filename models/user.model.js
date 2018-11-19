@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         this.AdOptions = this.belongsToMany(models.AdOptions, {through: 'UserAdOptions', onDelete: 'CASCADE'});
         this.Tags = this.belongsToMany(models.Tags, {through: 'UserTags', onDelete: 'CASCADE'});
         this.Likes = this.belongsToMany(models.Likes, {through: 'UserLikes', onDelete: 'CASCADE'});
+        this.Images = this.belongsToMany(models.Images, {through: 'UserImages', onDelete: 'CASCADE'});
     };
 
     Model.beforeSave(async (user, options) => {

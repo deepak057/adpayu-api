@@ -44,7 +44,7 @@ const removePostLike = async function(req, res){
 
     [err, like] = await to(Likes.destroy({where: {UserId: user.id, PostId: req.params.postId}}));
 
-    if(err)  return ReE(res, {message:'Failed unlike'});
+    if(err)  return ReE(res, {message:'Failed to unlike'});
 
     else  return ReS(res, {message:'Post unliked'}, 204);
 
@@ -52,11 +52,50 @@ const removePostLike = async function(req, res){
 module.exports.removePostLike = removePostLike;
 
 const createCommentLike = async function(req, res){
+    let like, err, comment;
+
+  [err, comment] = await to(Comments.findOne({where: {id: req.params.commentId}}));
+  if(err) return ReE(res, 'Comment not found');
+
+
+  else {
+    let user = req.user;
+
+    [err, like] = await to(Likes.findOne({where: {UserId: user.id, CommentId: comment.id}}));
+
+    if(like)  return ReS(res, {message:'Comment already Liked', like: like}, 204);
+
+    else{
+      Likes.create()
+        .then((like) => {
+
+         like.setUser(user);
+         like.setComment(comment);
+         user.addLikes(like);
+         comment.addLikes(like);
+         return ReS(res, {message:'Comment Liked', like: like}, 204);
+
+        })
     
+    }
+
+   
+  }
+
+
 }
 module.exports.createCommentLike = createCommentLike;
 
 const removeCommentLike = async function(req, res){
+    let like, err;
     
+    let user = req.user;
+
+    [err, like] = await to(Likes.destroy({where: {UserId: user.id, CommentId: req.params.commentId}}));
+
+    if(err)  return ReE(res, {message:'Failed to unlike'});
+
+    else  return ReS(res, {message:'Comment unliked'}, 204);
+
 }
 module.exports.removeCommentLike = removeCommentLike;
