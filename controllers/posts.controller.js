@@ -1,5 +1,5 @@
-const { Posts, Comments, User, Questions, AdOptions, Imgs, Tags, Likes } = require('../models');
-const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
+const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes } = require('../models');
+const { to, ReE, ReS, isEmptyObject, sleep } = require('../services/util.service');
 
 
 /**
@@ -56,7 +56,7 @@ function setDefaultLike (model, user) {
 }
 
 const create = async function(req, res){
-    let err, post, comments, question, adOptions, imgs, tags;
+    let err, post, comments, question, adOptions, images, tags;
     let user = req.user;
 
     let post_info = req.body;
@@ -110,17 +110,24 @@ const create = async function(req, res){
         user.addAdOptions(adOptions);
     }
 
-    if(post_info.imgs.length > 0) {
+    if(post_info.images.length > 0) {
 
+        for(let j in post_info.images) {
+            [err, image] = await to(Images.find({where: { id: post_info.images[j].id}}));
+            if(image) {
+              post.addImages(image)
+              image.setPost(post)
+            }
+          }
 
-        [err, imgs] = await to(Imgs.bulkCreate(post_info.imgs));
+        /*[err, imgs] = await to(Imgs.bulkCreate(post_info.imgs));
          if(err) return ReE(res, err, 422);
 
         for(var i in imgs){
             imgs[i].setPost(post);
             imgs[i].setUser(user);
             post.addImgs(imgs[i]);
-        }
+        }*/
     }
 
     /*
@@ -152,8 +159,11 @@ const create = async function(req, res){
     [err, post] = await to(post.save());
     if(err) return ReE(res, err, 422);
 
-    let post_json = post.toWeb();
-    post_json.user = [{user:user}];
+    /*
+    ** Delay code execution by 100 miliseconds so that some database queries can finish executing
+    ** And we get the most updated Post object to be sent to the front end
+    */
+    await sleep(100);
 
     Posts.findOne({include: [
           {
@@ -169,7 +179,7 @@ const create = async function(req, res){
             model: AdOptions,
           },
           {
-            model: Imgs,
+            model: Images,
           },
           {
             model: Questions,
@@ -211,13 +221,12 @@ const get = function(req, res){
           },
           {
             model: User,
-            where: {id: 1}
           },
           {
             model: AdOptions,
           },
           {
-            model: Imgs,
+            model: Images,
           },
           {
             model: Questions,

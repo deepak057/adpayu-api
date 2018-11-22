@@ -44,3 +44,9 @@ module.exports.isEmptyObject  = function (obj) { //check if an object is empty, 
     return Object.keys(obj).length === 0 && obj.constructor === Object
 }
 
+module.exports.sleep  = function (ms) { 
+
+   return new Promise(resolve=>{
+        setTimeout(resolve,ms)
+    })
+}

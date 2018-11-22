@@ -51,7 +51,7 @@ router.post('/like/comment/:commentId',           passport.authenticate('jwt', {
 router.delete('/like/comment/:commentId',           passport.authenticate('jwt', {session:false}), LikesController.removeCommentLike);        // C
 
 /** Image Upload routes**/
-router.post('/upload/images/',   passport.authenticate('jwt', {session:false}),     ImagesController.create);        // C
+router.post('/upload/images/',   passport.authenticate('jwt', {session:false}),  ImagesController.create);        // C
 
 router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C
 router.get(     '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.getAll);                  // R

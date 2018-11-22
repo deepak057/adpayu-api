@@ -15,7 +15,7 @@ const create = async function(req, res){
   }
 
 // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
-  let sampleFile = req.files.file;
+  let sampleFile = req.files.image;
     
   let name = uniqid() + path.extname(sampleFile.name);
     

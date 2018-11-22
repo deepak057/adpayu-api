@@ -5,6 +5,7 @@ const passport      = require('passport');
 const pe            = require('parse-error');
 const cors          = require('cors');
 const fileUpload = require('express-fileupload');
+const path = require('path');
 
 const v1    = require('./routes/v1');
 const app   = express();
@@ -15,6 +16,8 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(fileUpload());
+//app.use(express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 // app.use(cookieParser());
 // app.use(express.static(path.join(__dirname, 'public')));
 
