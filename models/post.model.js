@@ -9,12 +9,6 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Posts', {
         type     : DataTypes.STRING,
         content  : DataTypes.STRING,
-        video  : DataTypes.STRING,
-        show  : DataTypes.STRING,
-        likes  : DataTypes.STRING,
-        showComments  : DataTypes.STRING,
-        uid: DataTypes.BIGINT,
-
     });
 
     Model.associate = function(models){
@@ -26,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         this.Tages = this.belongsToMany(models.Tags, {through: 'PostsTags', onDelete: 'CASCADE'})
         this.Likes = this.belongsToMany(models.Likes, {through: 'PostLikes', onDelete: 'CASCADE'});
         this.Images = this.belongsToMany(models.Images, {through: 'PostImages', onDelete: 'CASCADE'});
+        this.Video = this.belongsTo(models.Videos, {onDelete: 'CASCADE'});
     };
    
 
