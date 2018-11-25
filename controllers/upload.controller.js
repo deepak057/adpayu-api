@@ -8,11 +8,11 @@ const path = require('path');
 const Op = Sequelize.Op;
 
 
-const create = async function(req, res){
+const uploadImage = async function(req, res){
 
    if (Object.keys(req.files).length == 0) {
     return res.status(400).send('No files were uploaded.');
-  }
+   }
 
 // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
   let sampleFile = req.files.image;
@@ -42,4 +42,31 @@ const create = async function(req, res){
 
 
 }
-module.exports.create = create;
+module.exports.uploadImage = uploadImage;
+
+const uploadVideo = async function(req, res){
+  if (Object.keys(req.files).length == 0) {
+    return res.status(400).send('No files were uploaded.');
+   }
+
+// The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
+  let sampleFile = req.files.video;
+    
+  let name = uniqid() + path.extname(sampleFile.name);
+    
+      // Use the mv() method to place the file somewhere on your server
+    sampleFile.mv(appRoot+'/uploads/'+ name, function(err) {
+      if (err) {
+        return ReE(res, err);
+      }
+
+      else {
+
+        return ReS(res, {path: name}, 201);
+      }
+
+    });
+
+}
+
+module.exports.uploadVideo = uploadVideo;

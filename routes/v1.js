@@ -6,7 +6,7 @@ const PostsController 	= require('../controllers/posts.controller');
 const TagsController 	= require('../controllers/tags.controller');
 const CommentsController 	= require('../controllers/comments.controller');
 const LikesController 	= require('../controllers/likes.controller');
-const ImagesController 	= require('../controllers/images.controller');
+const UploadController 	= require('../controllers/upload.controller');
 
 const CompanyController = require('../controllers/company.controller');
 const HomeController 	= require('../controllers/home.controller');
@@ -51,7 +51,8 @@ router.post('/like/comment/:commentId',           passport.authenticate('jwt', {
 router.delete('/like/comment/:commentId',           passport.authenticate('jwt', {session:false}), LikesController.removeCommentLike);        // C
 
 /** Image Upload routes**/
-router.post('/upload/images/',   passport.authenticate('jwt', {session:false}),  ImagesController.create);        // C
+router.post('/upload/image/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadImage);        // C
+router.post('/upload/video/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadVideo);        // C
 
 router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C
 router.get(     '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.getAll);                  // R

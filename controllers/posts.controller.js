@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos } = require('../models');
 const { to, ReE, ReS, isEmptyObject, sleep } = require('../services/util.service');
 
 
@@ -56,7 +56,7 @@ function setDefaultLike (model, user) {
 }
 
 const create = async function(req, res){
-    let err, post, comments, question, adOptions, images, tags;
+    let err, post, comments, question, adOptions, images, tags, video;
     let user = req.user;
 
     let post_info = req.body;
@@ -99,6 +99,16 @@ const create = async function(req, res){
          user.addQuestions(question);
          question.setUser(user);
 
+    }
+
+    if(!isEmptyObject(post_info.video)){
+
+        [err, video] = await to(Videos.create(post_info.video));
+         if(err) return ReE(res, err, 422);
+
+         post.setVideo(video);
+         user.addVideos(video);
+         video.setUser(user)
     }
 
     if(post_info.adOptions.postIsAd) {
@@ -189,6 +199,9 @@ const create = async function(req, res){
           },
           {
             model: Likes,
+          },
+          {
+            model: Videos,
           }
 
 
@@ -233,6 +246,9 @@ const get = function(req, res){
           },
           {
             model: Likes,
+          },
+          {
+            model: Videos
           }
         ];
 
