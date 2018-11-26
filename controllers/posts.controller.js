@@ -2,6 +2,21 @@ const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, 
 const { to, ReE, ReS, isEmptyObject, sleep } = require('../services/util.service');
 
 
+
+/*
+* function to get limit and offset depending 
+* upon the given page number
+*/
+
+function getLimitOffset (page) {
+  let limit = 10;
+  let offset = page == 1? 0: (page -1 ) * limit
+  return {
+    limit: limit,
+    offset: offset
+  }
+}
+
 /*
 ** Get default DB Include models
 */
@@ -226,11 +241,17 @@ const get = function(req, res){
 
     let tag = req.params.tag || 'all';
 
+    let page = req.query.page || 1;
+
     let dbIncludes = getDBInclude()
+
+    let limitNOffset = getLimitOffset(page);
 
     let criteria = {
       include: dbIncludes ,
-      order: [['updatedAt', 'DESC']], limit: 10,
+      order: [['updatedAt', 'DESC']], 
+      limit: limitNOffset.limit,
+      offset: limitNOffset.offset
     };
 
     if(tag === 'all')  {
