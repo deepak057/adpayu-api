@@ -2,6 +2,52 @@ const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, 
 const { to, ReE, ReS, isEmptyObject, sleep } = require('../services/util.service');
 
 
+/*
+** Get default DB Include models
+*/
+
+function getDBInclude (pushModel) {
+  let return_ = [
+
+          {
+            model: Comments,
+            include: [
+              {
+                model: User
+              },
+              {
+                model: Likes
+              }
+            ]
+          },
+          {
+            model: User,
+          },
+          {
+            model: AdOptions,
+          },
+          {
+            model: Images,
+          },
+          {
+            model: Questions,
+          },
+          {
+            model: Likes,
+          },
+          {
+            model: Videos
+          }
+        ];
+
+    if(pushModel) {
+      return_.push(pushModel)
+    }
+
+    return return_;
+}
+
+
 /**
 ** Convert the posts and include Likes
 **/
@@ -129,15 +175,6 @@ const create = async function(req, res){
               image.setPost(post)
             }
           }
-
-        /*[err, imgs] = await to(Imgs.bulkCreate(post_info.imgs));
-         if(err) return ReE(res, err, 422);
-
-        for(var i in imgs){
-            imgs[i].setPost(post);
-            imgs[i].setUser(user);
-            post.addImgs(imgs[i]);
-        }*/
     }
 
     /*
@@ -175,37 +212,7 @@ const create = async function(req, res){
     */
     await sleep(100);
 
-    Posts.findOne({include: [
-          {
-            model: Comments,
-            include: [{
-              model: Likes
-            }]
-          },
-          {
-            model: User
-          },
-          {
-            model: AdOptions,
-          },
-          {
-            model: Images,
-          },
-          {
-            model: Questions,
-          },
-          {
-            model: Tags
-          },
-          {
-            model: Likes,
-          },
-          {
-            model: Videos,
-          }
-
-
-        ], where: {id: post.id}})
+    Posts.findOne({include: getDBInclude({model: Tags}), where: {id: post.id}})
       .then((post) => {
             return ReS(res, toWeb(post, user), 201);
 
@@ -219,38 +226,7 @@ const get = function(req, res){
 
     let tag = req.params.tag || 'all';
 
-    let dbIncludes = [
-
-          {
-            model: Comments,
-            include: [
-              {
-                model: User
-              },
-              {
-                model: Likes
-              }
-            ]
-          },
-          {
-            model: User,
-          },
-          {
-            model: AdOptions,
-          },
-          {
-            model: Images,
-          },
-          {
-            model: Questions,
-          },
-          {
-            model: Likes,
-          },
-          {
-            model: Videos
-          }
-        ];
+    let dbIncludes = getDBInclude()
 
     let criteria = {
       include: dbIncludes ,
