@@ -21,9 +21,15 @@ const create = async function(req, res){
 module.exports.create = create;
 
 const get = async function(req, res){
-    let user = req.user;
+    let user, err;
+    if(req.params.uid) {
+      [err, user] = await to (User.scope('profile').findOne({where: {id: req.params.uid}}))
+      if(err) return ReE(res, err, 422);
+    } else {
+      user = req.user
+    }
 
-    return ReS(res, {user:user.toWeb()});
+    return ReS(res, {user:user});
 }
 module.exports.get = get;
 

@@ -12,6 +12,15 @@ module.exports = (sequelize, DataTypes) => {
         email     : {type: DataTypes.STRING, allowNull: true, unique: true, validate: { isEmail: {msg: "Phone number invalid."} }},
         phone     : {type: DataTypes.STRING, allowNull: true, unique: true, validate: { len: {args: [7, 20], msg: "Phone number invalid, too short."}, isNumeric: { msg: "not a valid phone number."} }},
         password  : DataTypes.STRING,
+    },{
+        defaultScope: {
+          attributes: { exclude: [] },
+        },
+        scopes: {
+          profile: {
+           attributes: { exclude: ['password', 'email'] },
+          }
+        }
     });
 
     Model.associate = function(models){
