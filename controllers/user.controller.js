@@ -1,6 +1,6 @@
 const { User }          = require('../models');
 const authService       = require('../services/auth.service');
-const { to, ReE, ReS }  = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName}  = require('../services/util.service');
 
 const create = async function(req, res){
     const body = req.body;
@@ -19,6 +19,11 @@ const create = async function(req, res){
     }
 }
 module.exports.create = create;
+
+const uploadProfilePicture = async function(req, res) {
+
+}
+module.exports.uploadProfilePicture = uploadProfilePicture;
 
 const get = async function(req, res){
     let user, err;

@@ -1,5 +1,7 @@
 const {to} = require('await-to-js');
 const pe = require('parse-error');
+const uniqid = require('uniqid');
+const path = require('path');
 
 module.exports.to = async (promise) => {
     let err, res;
@@ -49,4 +51,8 @@ module.exports.sleep  = function (ms) {
    return new Promise(resolve=>{
         setTimeout(resolve,ms)
     })
+}
+
+module.exports.uniqeFileName = function (fileName) {
+      return fileName? uniqid() + path.extname(fileName) : ''
 }

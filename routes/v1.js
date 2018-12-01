@@ -52,7 +52,8 @@ router.delete('/like/comment/:commentId',           passport.authenticate('jwt',
 
 /** Image Upload routes**/
 router.post('/upload/image/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadImage);        // C
-router.post('/upload/video/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadVideo);        // C
+router.post('/upload/video/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadVideo);      // C
+router.post('/upload/profilePicture/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadUserProfilePic);        // C
 
 router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C
 router.get(     '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.getAll);                  // R
