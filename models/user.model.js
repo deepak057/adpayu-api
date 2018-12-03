@@ -18,8 +18,8 @@ module.exports = (sequelize, DataTypes) => {
           attributes: { exclude: [] },
         },
         scopes: {
-          profile: {
-           attributes: { exclude: ['password', 'email'] },
+          public: {
+           attributes: { exclude: ['password', 'email', 'createdAt', 'updatedAt'] },
           }
         }
     });

@@ -28,7 +28,7 @@ function getDBInclude (pushModel) {
             model: Comments,
             include: [
               {
-                model: User
+                model: User.scope('public')
               },
               {
                 model: Likes
@@ -36,7 +36,7 @@ function getDBInclude (pushModel) {
             ]
           },
           {
-            model: User,
+            model: User.scope('public')
           },
           {
             model: AdOptions,

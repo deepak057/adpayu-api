@@ -28,7 +28,7 @@ module.exports.uploadProfilePicture = uploadProfilePicture;
 const get = async function(req, res){
     let user, err;
     if(req.params.uid) {
-      [err, user] = await to (User.scope('profile').findOne({where: {id: req.params.uid}}))
+      [err, user] = await to (User.scope('public').findOne({where: {id: req.params.uid}}))
       if(err) return ReE(res, err, 422);
     } else {
       user = req.user
@@ -42,6 +42,11 @@ const update = async function(req, res){
     let err, user, data
     user = req.user;
     data = req.body;
+
+    delete data.phone;
+    delete data.password;
+    delete data.password;
+
     user.set(data);
 
     [err, user] = await to(user.save());
@@ -49,7 +54,7 @@ const update = async function(req, res){
         if(err.message=='Validation error') err = 'The email address or phone number is already in use';
         return ReE(res, err);
     }
-    return ReS(res, {message :'Updated User: '+user.email});
+    return ReS(res, {user: user});
 }
 module.exports.update = update;
 
