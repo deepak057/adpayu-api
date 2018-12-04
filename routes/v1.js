@@ -7,9 +7,7 @@ const TagsController 	= require('../controllers/tags.controller');
 const CommentsController 	= require('../controllers/comments.controller');
 const LikesController 	= require('../controllers/likes.controller');
 const UploadController 	= require('../controllers/upload.controller');
-
-const CompanyController = require('../controllers/company.controller');
-const HomeController 	= require('../controllers/home.controller');
+const FriendsController 	= require('../controllers/friends.controller');
 
 const custom 	        = require('./../middleware/custom');
 
@@ -55,14 +53,9 @@ router.post('/upload/image/',   passport.authenticate('jwt', {session:false}),  
 router.post('/upload/video/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadVideo);      // C
 router.post('/upload/profilePicture/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadUserProfilePic);        // C
 
-router.post(    '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.create);                  // C
-router.get(     '/companies',             passport.authenticate('jwt', {session:false}), CompanyController.getAll);                  // R
-
-router.get(     '/companies/:company_id', passport.authenticate('jwt', {session:false}), custom.company, CompanyController.get);     // R
-router.put(     '/companies/:company_id', passport.authenticate('jwt', {session:false}), custom.company, CompanyController.update);  // U
-router.delete(  '/companies/:company_id', passport.authenticate('jwt', {session:false}), custom.company, CompanyController.remove);  // D
-
-router.get('/dash', passport.authenticate('jwt', {session:false}),HomeController.Dashboard)
+/** Freinds routes**/
+router.post('/friends/request/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.create);        // C
+router.post('/friends/remove/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.remove);        // D
 
 
 //********* API DOCUMENTATION **********

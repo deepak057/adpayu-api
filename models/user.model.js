@@ -21,10 +21,11 @@ module.exports = (sequelize, DataTypes) => {
           public: {
            attributes: { exclude: ['password', 'email', 'createdAt', 'updatedAt'] },
           }
-        }
+        },
     });
 
     Model.associate = function(models){
+        this.Friends = this.belongsToMany(models.User, {as: 'Friends', through: models.Friendship});
         this.Posts = this.belongsToMany(models.Posts, {through: 'UserPosts', onDelete: 'CASCADE'});
         this.Comments = this.belongsToMany(models.Comments, {through: 'UserComments', onDelete: 'CASCADE'});
         this.Questions = this.belongsToMany(models.Questions, {through: 'UserQuestions', onDelete: 'CASCADE'});

@@ -1,4 +1,4 @@
-const { User }          = require('../models');
+const { User, Friendship }          = require('../models');
 const authService       = require('../services/auth.service');
 const { to, ReE, ReS, uniqeFileName}  = require('../services/util.service');
 
@@ -26,15 +26,18 @@ const uploadProfilePicture = async function(req, res) {
 module.exports.uploadProfilePicture = uploadProfilePicture;
 
 const get = async function(req, res){
-    let user, err;
+    let user, err, friendship;
     if(req.params.uid) {
-      [err, user] = await to (User.scope('public').findOne({where: {id: req.params.uid}}))
+      [err, user] = await to (User.scope('public').findOne({ where: {id: req.params.uid}}))
       if(err) return ReE(res, err, 422);
+      [err, friendship] = await to (Friendship.getFriendship(req.user.id, req.params.uid))
+      if(err) return ReE(res, err, 422);
+
     } else {
       user = req.user
     }
 
-    return ReS(res, {user:user});
+    return ReS(res, {user:user, friendship: friendship});
 }
 module.exports.get = get;
 
@@ -80,3 +83,4 @@ const login = async function(req, res){
     return ReS(res, {token:user.getJWT(), user:user.toWeb()});
 }
 module.exports.login = login;
+

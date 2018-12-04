@@ -16,7 +16,7 @@ const createPostLike = async function(req, res){
 
     [err, like] = await to(Likes.findOne({where: {UserId: user.id, PostId: post.id}}));
 
-    if(like)  return ReS(res, {message:'Post already Liked', like: like}, 204);
+    if(like)  return ReS(res, {message:'Post already Liked', like: like}, 200);
 
     else{
       Likes.create()
@@ -26,7 +26,7 @@ const createPostLike = async function(req, res){
          like.setPost(post);
          user.addLikes(like);
          post.addLikes(like);
-         return ReS(res, {message:'Post Liked', like: like}, 204);
+         return ReS(res, {message:'Post Liked', like: like}, 200);
 
         })
     
@@ -46,7 +46,7 @@ const removePostLike = async function(req, res){
 
     if(err)  return ReE(res, {message:'Failed to unlike'});
 
-    else  return ReS(res, {message:'Post unliked'}, 204);
+    else  return ReS(res, {message:'Post unliked'}, 200);
 
 }
 module.exports.removePostLike = removePostLike;
@@ -63,7 +63,7 @@ const createCommentLike = async function(req, res){
 
     [err, like] = await to(Likes.findOne({where: {UserId: user.id, CommentId: comment.id}}));
 
-    if(like)  return ReS(res, {message:'Comment already Liked', like: like}, 204);
+    if(like)  return ReS(res, {message:'Comment already Liked', like: like}, 200);
 
     else{
       Likes.create()
@@ -73,7 +73,7 @@ const createCommentLike = async function(req, res){
          like.setComment(comment);
          user.addLikes(like);
          comment.addLikes(like);
-         return ReS(res, {message:'Comment Liked', like: like}, 204);
+         return ReS(res, {message:'Comment Liked', like: like}, 200);
 
         })
     
@@ -95,7 +95,7 @@ const removeCommentLike = async function(req, res){
 
     if(err)  return ReE(res, {message:'Failed to unlike'});
 
-    else  return ReS(res, {message:'Comment unliked'}, 204);
+    else  return ReS(res, {message:'Comment unliked'}, 200);
 
 }
 module.exports.removeCommentLike = removeCommentLike;
