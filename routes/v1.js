@@ -55,7 +55,8 @@ router.post('/upload/profilePicture/',   passport.authenticate('jwt', {session:f
 
 /** Freinds routes**/
 router.post('/friends/request/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.create);        // C
-router.post('/friends/remove/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.remove);        // D
+router.put('/friends/add/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.add);        // U
+router.delete('/friends/remove/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.remove);        // D
 
 
 //********* API DOCUMENTATION **********

@@ -48,6 +48,10 @@ module.exports = (sequelize, DataTypes) => {
          return this.destroy(getCommonFriendCondition(userId, FriendId))
     }
 
+    Model.acceptFriendship = function (userId, FriendId) {
+        return this.update({accepted: true}, getCommonFriendCondition(userId, FriendId))
+    }
+
     Model.prototype.toWeb = function (pw) {
         let json = this.toJSON();
         return json;
