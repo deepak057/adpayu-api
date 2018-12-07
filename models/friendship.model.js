@@ -44,6 +44,12 @@ module.exports = (sequelize, DataTypes) => {
         return this.findOne(getCommonFriendCondition(userId, FriendId))
     }
 
+    /*
+    * Note- Below two methods should be Instance methods but I created them class 
+    ** Methods instead for now as I think I will have to first find a record and then apply the given modifications in two steps
+    ** So, I created them class methods for the time being. Will definetly improve them in future
+    */
+
     Model.cancelFriendship = function (userId, FriendId) {
          return this.destroy(getCommonFriendCondition(userId, FriendId))
     }

@@ -34,6 +34,9 @@ module.exports = (sequelize, DataTypes) => {
         this.Likes = this.belongsToMany(models.Likes, {through: 'UserLikes', onDelete: 'CASCADE'});
         this.Images = this.belongsToMany(models.Images, {through: 'UserImages', onDelete: 'CASCADE'});
         this.Videos = this.belongsToMany(models.Videos, {through: 'UserVideos', onDelete: 'CASCADE'});
+        this.Notifications = this.hasMany(models.Notifications, {as: 'sender', foreignKey: 'fromId', onDelete: 'CASCADE'});
+        this.Notifications = this.hasMany(models.Notifications, {as: 'receiver', foreignKey: 'toId', onDelete: 'CASCADE'});
+
     };
 
     Model.beforeSave(async (user, options) => {
