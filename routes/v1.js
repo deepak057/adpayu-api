@@ -8,6 +8,7 @@ const CommentsController 	= require('../controllers/comments.controller');
 const LikesController 	= require('../controllers/likes.controller');
 const UploadController 	= require('../controllers/upload.controller');
 const FriendsController 	= require('../controllers/friends.controller');
+const NotificationsController   = require('../controllers/notifications.controller');
 
 const custom 	        = require('./../middleware/custom');
 
@@ -58,6 +59,8 @@ router.post('/friends/request/:friendId',   passport.authenticate('jwt', {sessio
 router.put('/friends/add/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.add);        // U
 router.delete('/friends/remove/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.remove);        // D
 
+/** Notifications routes**/
+router.get('/notifications',   passport.authenticate('jwt', {session:false}),  NotificationsController.get);        // C
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));

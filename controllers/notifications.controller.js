@@ -1,15 +1,30 @@
 const { User, Notifications } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
 
-async function getUser (user) {
-  if( typeof user === 'object' ) {
-    return user
-  } else {
-    let err, userDb;
-    [err, userDb] = await to(User.findOne({where: {id: user}}));
-    return err? false: userDb
-  }
+const get = async function (req, res) {
+  Notifications.findAll({
+
+    where: {toId: req.user.id},
+    order: [['updatedAt', 'DESC']], 
+    limit: 10,
+    include: [
+      {
+        model: User.scope('public'),
+        as: 'sender'
+      }
+    ]
+
+  })
+    .then ((notifications) => {
+      return ReS(res, {notifications: notifications}, 200);
+    })
+    .catch((err) => {
+      return ReE(res, err, 422);
+    })
 }
+
+module.exports.get = get;
+
 
 const create = async function (notification, fromId, toId) {
 
