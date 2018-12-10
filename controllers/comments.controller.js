@@ -1,8 +1,14 @@
 const { Comments, Posts } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
-const Sequelize = require('sequelize');
+const NotificationsController   = require('./notifications.controller');
+const NOTIFICATIONS = require('../config/app-constants');
 
-const Op = Sequelize.Op;
+function getNotification(commentId) {
+  return {
+    type: NOTIFICATIONS.types.COMMENT_ON_POST,
+    meta: '{commentId: ' + commentId + '}'
+  }
+}
 
 const create =  function(req, res){
 
@@ -21,6 +27,11 @@ const create =  function(req, res){
              comment.setUser(user);
              post.addComments(comment);
              user.addComments(comment);
+
+             // send notification
+             if (req.user.id !== post.UserId) {
+               NotificationsController.create(getNotification(comment.id), req.user.id, post.UserId)
+             }
 
              comment = comment.toWeb();
              comment.Likes = [];
@@ -46,6 +57,8 @@ const remove = async function(req, res){
 
     [err, comment] = await to(Comments.destroy({where: {id: req.query.commentId}}));
     if(err) return ReE(res, 'error occured trying to delete the comment');
+
+    NotificationsController.remove(getNotification(req.query.commentId), req.user.id)
 
     return ReS(res, {message:'Comment deleted'}, 204);
 }

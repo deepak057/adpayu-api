@@ -48,9 +48,20 @@ const create = async function (notification, fromId, toId) {
 
 module.exports.create = create;
 
-const remove = async function(notification, fromId, toId){
+const remove = async function(notification, fromId = false, toId = false){
+  let whereObj = {}
+  whereObj.type = notification.type
+  if('meta' in notification) {
+    whereObj.meta = notification.meta
+  }
+  if(fromId){
+    whereObj.fromId = fromId
+  }
+  if(toId){
+    whereObj.toId = toId
+  }
   Notifications.destroy({
-    where: {fromId: fromId, type: notification.type, toId: toId},
+    where: whereObj,
   })
 }
 module.exports.remove = remove;

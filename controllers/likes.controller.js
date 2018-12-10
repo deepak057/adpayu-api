@@ -1,8 +1,14 @@
 const { Likes, Posts, User, Comments } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
-const Sequelize = require('sequelize');
+const NotificationsController   = require('./notifications.controller');
+const NOTIFICATIONS = require('../config/app-constants');
 
-const Op = Sequelize.Op;
+function getNotification(type, likeId) {
+  return {
+    type: type === 'post' ? NOTIFICATIONS.types.LIKE_ON_POST: NOTIFICATIONS.types.LIKE_ON_COMMENT,
+    meta: '{' + type + 'Id: ' + likeId + '}'
+  }
+}
 
 const createPostLike = async function(req, res){
   let like, err, post;
@@ -26,6 +32,11 @@ const createPostLike = async function(req, res){
          like.setPost(post);
          user.addLikes(like);
          post.addLikes(like);
+
+         // send notification to creator of the post
+         if(req.user.id !== post.UserId)
+         NotificationsController.create(getNotification('post', req.params.postId), req.user.id, post.UserId)
+
          return ReS(res, {message:'Post Liked', like: like}, 200);
 
         })
@@ -46,8 +57,12 @@ const removePostLike = async function(req, res){
 
     if(err)  return ReE(res, {message:'Failed to unlike'});
 
-    else  return ReS(res, {message:'Post unliked'}, 200);
+    else  {
+      // remove associated notification
+      NotificationsController.remove(getNotification('post', req.params.postId), req.user.id)
 
+      return ReS(res, {message:'Post unliked'}, 200);
+    }
 }
 module.exports.removePostLike = removePostLike;
 
@@ -73,6 +88,11 @@ const createCommentLike = async function(req, res){
          like.setComment(comment);
          user.addLikes(like);
          comment.addLikes(like);
+
+         // send notification to creator of the comment
+         if(req.user.id !== comment.UserId)
+         NotificationsController.create(getNotification('comment', req.params.commentId), req.user.id, comment.UserId)
+
          return ReS(res, {message:'Comment Liked', like: like}, 200);
 
         })
@@ -95,7 +115,12 @@ const removeCommentLike = async function(req, res){
 
     if(err)  return ReE(res, {message:'Failed to unlike'});
 
-    else  return ReS(res, {message:'Comment unliked'}, 200);
+    else  {
 
+      // send notification to creator of the post
+      NotificationsController.remove(getNotification('comment', req.params.commentId), req.user.id)
+
+      return ReS(res, {message:'Comment unliked'}, 200);
+    }
 }
 module.exports.removeCommentLike = removeCommentLike;
