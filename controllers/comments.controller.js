@@ -3,10 +3,13 @@ const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const NOTIFICATIONS = require('../config/app-constants');
 
-function getNotification(commentId) {
+function getNotification(commentId, postId) {
   return {
     type: NOTIFICATIONS.types.COMMENT_ON_POST,
-    meta: '{commentId: ' + commentId + '}'
+    meta: JSON.stringify({
+      commentId: commentId,
+      postId: postId
+    })
   }
 }
 
@@ -30,7 +33,7 @@ const create =  function(req, res){
 
              // send notification
              if (req.user.id !== post.UserId) {
-               NotificationsController.create(getNotification(comment.id), req.user.id, post.UserId)
+               NotificationsController.create(getNotification(comment.id, post.id), req.user.id, post.UserId)
              }
 
              comment = comment.toWeb();
@@ -53,12 +56,16 @@ const create =  function(req, res){
 module.exports.create = create;
 
 const remove = async function(req, res){
-    let comment, err;
+    let comment, err, postId;
 
-    [err, comment] = await to(Comments.destroy({where: {id: req.query.commentId}}));
+    [err, comment] = await to(Comments.findOne({where: {id: req.query.commentId}}));
     if(err) return ReE(res, 'error occured trying to delete the comment');
+      
+    postId = comment.PostId;
 
-    NotificationsController.remove(getNotification(req.query.commentId), req.user.id)
+    comment.destroy();
+
+    NotificationsController.remove(getNotification(req.query.commentId, postId), req.user.id)
 
     return ReS(res, {message:'Comment deleted'}, 204);
 }

@@ -89,6 +89,11 @@ function toWeb(posts, user) {
 function getWebPost (post, user) {
   let post_web = setDefaultLike (post, user);
   post_web.Comments = getPostComments(post, user);
+
+  //add some custom properties 
+  post_web.show = true
+  post_web.showComments = false
+  
   return post_web;
 }
 
@@ -232,6 +237,9 @@ const create = async function(req, res){
             return ReS(res, toWeb(post, user), 201);
 
       })
+      .catch((err) => {
+        return ReE(res, err, 422);
+      })
 
 }
 module.exports.create = create;
@@ -292,13 +300,26 @@ const get = function(req, res){
       })
 
     }
-
-    
-
-    
-
 }
 module.exports.get = get;
+
+const getPostById = function(req, res){
+    let postId = req.params.postId || false
+
+    if(postId) {
+      Posts.findOne({include: getDBInclude({model: Tags}), where: {id: postId}})
+      .then((post) => {
+            return ReS(res, toWeb(post, req.user), 201);
+      })
+      .catch((err) => {
+        return ReE(res, err, 422);
+      })
+    } else {
+      return ReE(res, {'error': 'No Post Id provided'}, 422);
+    }
+}
+
+module.exports.getPostById = getPostById;
 
 const update = async function(req, res){
     let err, company, data;
