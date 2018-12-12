@@ -1,5 +1,8 @@
 const { User, Notifications } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
+const Sequelize = require('sequelize');
+
+const Op = Sequelize.Op;
 
 const get = async function (req, res) {
   Notifications.findAll({
@@ -52,7 +55,9 @@ const remove = async function(notification, fromId = false, toId = false){
   let whereObj = {}
   whereObj.type = notification.type
   if('meta' in notification) {
-    whereObj.meta = notification.meta
+    // using literal query to prevent sequalize from adding "slashes" in the Mysql query string
+    // By default, Sequalize escapes the string which we don't want in the case of searching a JSON string
+    whereObj.meta = Sequelize.literal("meta = '" +notification.meta + "'")
   }
   if(fromId){
     whereObj.fromId = fromId
