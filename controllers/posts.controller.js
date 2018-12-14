@@ -1,21 +1,5 @@
 const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos } = require('../models');
-const { to, ReE, ReS, isEmptyObject, sleep } = require('../services/util.service');
-
-
-
-/*
-* function to get limit and offset depending 
-* upon the given page number
-*/
-
-function getLimitOffset (page) {
-  let limit = 10;
-  let offset = page == 1? 0: (page -1 ) * limit
-  return {
-    limit: limit,
-    offset: offset
-  }
-}
+const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset } = require('../services/util.service');
 
 /*
 ** Get default DB Include models

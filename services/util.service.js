@@ -56,3 +56,20 @@ module.exports.sleep  = function (ms) {
 module.exports.uniqeFileName = function (fileName) {
       return fileName? uniqid() + path.extname(fileName) : ''
 }
+
+/*
+* function to get limit and offset depending 
+* upon the given page number
+*/
+module.exports.getLimitOffset = function (page, resultsPerPage = 10) {
+    let limit = resultsPerPage;
+    let offset = page == 1? 0: (page -1 ) * limit
+    return {
+    limit: limit,
+    offset: offset
+    }
+}
+
+module.exports.cloneOject = function (obj) {
+    return JSON.parse(JSON.stringify(obj));
+}

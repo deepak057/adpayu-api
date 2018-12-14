@@ -1,15 +1,21 @@
 const { User, Notifications } = require('../models');
-const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
+const { to, ReE, ReS, isEmptyObject, getLimitOffset, cloneOject } = require('../services/util.service');
 const Sequelize = require('sequelize');
 
 const Op = Sequelize.Op;
 
 const get = async function (req, res) {
+
+  let limitNOffset = getLimitOffset(req.query.page || 1);
+
+  let autoMarkSeen = req.query.autoMarkSeen? req.query.autoMarkSeen === 'true': false;
+
   Notifications.findAll({
 
     where: {toId: req.user.id},
     order: [['updatedAt', 'DESC']], 
-    limit: 10,
+    limit: limitNOffset.limit,
+    offset: limitNOffset.offset,
     include: [
       {
         model: User.scope('public'),
@@ -19,7 +25,17 @@ const get = async function (req, res) {
 
   })
     .then ((notifications) => {
-      return ReS(res, {notifications: notifications}, 200);
+      
+      let notificationsTosend = cloneOject(notifications);
+
+      if(autoMarkSeen && notifications.length) {
+        notifications.forEach(function (notification) {
+          if(!notification.seen) {
+            notification.updateAttributes({ seen: true });
+          }
+        });
+      }
+      return ReS(res, {notifications: notificationsTosend}, 200);
     })
     .catch((err) => {
       return ReE(res, err, 422);
@@ -70,3 +86,26 @@ const remove = async function(notification, fromId = false, toId = false){
   })
 }
 module.exports.remove = remove;
+
+const markSeen = async function(req, res){
+  if (req.body.notiIds && req.body.notiIds.length) {
+    Notifications.update({
+      seen: true,
+      },
+      {
+        where: {
+         id: req.body.notiIds
+        }
+      })
+      .then((notifications) => {
+        return ReS(res, {notifications: notifications}, 200);
+      })
+      .catch((err) => {
+        ReE(res, {error: 'Something went wrong while marking your notifications as seen'}, 422);
+      })
+  } else {
+    ReE(res, {error: 'Notifications Ids not provided'}, 422);
+  }
+}
+
+module.exports.markSeen = markSeen;

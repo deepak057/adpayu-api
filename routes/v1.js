@@ -62,6 +62,7 @@ router.delete('/friends/remove/:friendId',   passport.authenticate('jwt', {sessi
 
 /** Notifications routes**/
 router.get('/notifications',   passport.authenticate('jwt', {session:false}),  NotificationsController.get);        // C
+router.put('/notifications/markSeen',   passport.authenticate('jwt', {session:false}),  NotificationsController.markSeen);        // U
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));
