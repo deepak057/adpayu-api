@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
 const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset } = require('../services/util.service');
 
 /*
@@ -252,6 +252,12 @@ const get = function(req, res){
           model: Tags,
         })
 
+      /* User.getFriends(req.user.id)
+        .then ((friends) => {
+            console.log('\n\n\n\n\n\n\n\n' + friends.length + '\n\n\n\n\n\n\n')
+        })
+      */
+      
       Posts.findAll(criteria)
          .then(posts => {
 

@@ -25,7 +25,8 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     Model.associate = function(models){
-        this.Friends = this.belongsToMany(models.User, {as: 'Friends', through: models.Friendship});
+        this.myFriends = this.belongsToMany(models.User, {as: 'myFriends', foreignKey: 'UserId', through: models.Friendship});
+        this.othersFriend = this.belongsToMany(models.User, {as: 'othersFriend', foreignKey: 'FriendId', through: models.Friendship});
         this.Posts = this.belongsToMany(models.Posts, {through: 'UserPosts', onDelete: 'CASCADE'});
         this.Comments = this.belongsToMany(models.Comments, {through: 'UserComments', onDelete: 'CASCADE'});
         this.Questions = this.belongsToMany(models.Questions, {through: 'UserQuestions', onDelete: 'CASCADE'});
@@ -38,6 +39,33 @@ module.exports = (sequelize, DataTypes) => {
         this.Notifications = this.hasMany(models.Notifications, {as: 'receiver', foreignKey: 'toId', onDelete: 'CASCADE'});
 
     };
+
+    Model.getFriends = function (uid) {
+
+        let common_ = { where: {accepted: true}}
+
+        return this.scope('public').find({
+            where: {id: uid},
+            include: [
+                {
+                    model: this.scope('public'),
+                    as: 'othersFriend',
+                    through: common_
+                },
+                {
+                    model: this.scope('public'),
+                    as: 'myFriends',
+                    through: common_
+                }
+            ]
+        })
+          .then ((user) => {
+            return new Promise((resolve) => { resolve(user.othersFriend.concat(user.myFriends)) })
+          })
+          .catch((error) => {
+            return new Promise((resolve, reject) => { reject(error) })
+          })
+    }
 
     Model.beforeSave(async (user, options) => {
         let err;

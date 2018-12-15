@@ -45,7 +45,7 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     /*
-    * Note- Below two methods should be Instance methods but I created them class 
+    * Note- Below two methods should be Instance methods but I created them as class 
     ** Methods instead for now as I think I will have to first find a record and then apply the given modifications in two steps
     ** So, I created them class methods for the time being. Will definetly improve them in future
     */
