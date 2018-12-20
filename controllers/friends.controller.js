@@ -11,7 +11,7 @@ const create =  async function(req, res){
       if(err) {
         return ReE(res, err, 422);
       } else {
-        req.user.addFriend(friend);
+        req.user.addMyFriends(friend, {as: 'myFriends'});
         NotificationsController.create({type: NOTIFICATIONS.types.SENT_FRIEND_REQUEST}, req.user.id, friend.id)
         return ReS(res, {message:'Success'}, 200);
       }

@@ -1,5 +1,23 @@
 const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
 const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset } = require('../services/util.service');
+const Sequelize = require('sequelize');
+const op = Sequelize.Op;
+
+/*
+* Function to get the array of only UIDs
+*/
+
+function getUIDs (users, currentUser) {
+  let uids= []
+  if(users.length) {
+    users.forEach(function(user){
+      uids.push(user.id)
+    })
+  }
+  uids.push(currentUser.id)
+  return uids
+}
+
 
 /*
 ** Get default DB Include models
@@ -228,7 +246,9 @@ const create = async function(req, res){
 }
 module.exports.create = create;
 
-const get = function(req, res){
+const get = async function(req, res){
+    let friends;
+
     let user = req.user;
 
     let tag = req.params.tag || 'all';
@@ -239,11 +259,25 @@ const get = function(req, res){
 
     let limitNOffset = getLimitOffset(page);
 
+    // get current user's friends
+    [err, friends] = await to(User.getFriends(req.user.id))
+     if(err) {
+       return ReE(res, err, 422);
+     }
+
     let criteria = {
       include: dbIncludes ,
       order: [['updatedAt', 'DESC']], 
       limit: limitNOffset.limit,
-      offset: limitNOffset.offset
+      offset: limitNOffset.offset,
+      where: {[op.or]: [
+          {
+            UserId: getUIDs(friends, req.user)
+          },
+          {
+            AdOptionId: { [op.ne] : null}
+          }
+        ]}
     };
 
     if(tag === 'all')  {
@@ -252,11 +286,7 @@ const get = function(req, res){
           model: Tags,
         })
 
-      /* User.getFriends(req.user.id)
-        .then ((friends) => {
-            console.log('\n\n\n\n\n\n\n\n' + friends.length + '\n\n\n\n\n\n\n')
-        })
-      */
+
       
       Posts.findAll(criteria)
          .then(posts => {
