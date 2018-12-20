@@ -275,7 +275,10 @@ const get = async function(req, res){
             UserId: getUIDs(friends, req.user)
           },
           {
-            AdOptionId: { [op.ne] : null}
+            AdOptionId: { [op.ne]: null}
+          },
+          {
+            public: { [op.eq]: true}
           }
         ]}
     };

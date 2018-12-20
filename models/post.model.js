@@ -9,6 +9,11 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Posts', {
         type     : DataTypes.STRING,
         content  : DataTypes.STRING,
+        public: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+            allowNull: false
+        }
     });
 
     Model.associate = function(models){
