@@ -39,6 +39,7 @@ router.delete('/posts',           passport.authenticate('jwt', {session:false}),
 /** Tags routes**/
 router.get('/tags',           passport.authenticate('jwt', {session:false}), TagsController.get);        // R
 router.get('/tags/user',           passport.authenticate('jwt', {session:false}), TagsController.getUserTags);        // R
+router.get('/browseTags',           passport.authenticate('jwt', {session:false}), TagsController.browseTags);        // R
 
 /** Comments routes**/
 router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C

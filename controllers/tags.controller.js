@@ -33,3 +33,18 @@ const getUserTags = function(req, res){
 
 }
 module.exports.getUserTags = getUserTags;
+
+const browseTags = function(req, res){
+
+  let user = req.user;
+
+    Tags.findAll()
+      .then((tags)=>{
+        return ReS(res, {tags: tags});
+      })
+      .catch((error) => {
+        return ReE(res, error);
+      })
+
+}
+module.exports.browseTags = browseTags;
