@@ -1,5 +1,5 @@
 const { Tags } = require('../models');
-const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
+const { to, ReE, ReS, isEmptyObject, getLimitOffset } = require('../services/util.service');
 const Sequelize = require('sequelize');
 
 const Op = Sequelize.Op;
@@ -35,10 +35,13 @@ const getUserTags = function(req, res){
 module.exports.getUserTags = getUserTags;
 
 const browseTags = function(req, res){
+    
+    let limitNOffset = getLimitOffset((req.query.page || 1), 16);
 
-  let user = req.user;
-
-    Tags.findAll()
+    Tags.findAll({
+      limit: limitNOffset.limit,
+      offset: limitNOffset.offset
+    })
       .then((tags)=>{
         return ReS(res, {tags: tags});
       })
