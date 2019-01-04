@@ -39,7 +39,9 @@ router.delete('/posts',           passport.authenticate('jwt', {session:false}),
 /** Tags routes**/
 router.get('/tags',           passport.authenticate('jwt', {session:false}), TagsController.get);        // R
 router.get('/tags/user',           passport.authenticate('jwt', {session:false}), TagsController.getUserTags);        // R
-router.get('/browseTags',           passport.authenticate('jwt', {session:false}), TagsController.browseTags);        // R
+router.get('/tags/browse',           passport.authenticate('jwt', {session:false}), TagsController.browseTags);        // R
+router.put('/tags/follow/:tagId',           passport.authenticate('jwt', {session:false}), TagsController.follow);        // R
+router.delete('/tags/unfollow/:tagId',           passport.authenticate('jwt', {session:false}), TagsController.unfollow);        // R
 
 /** Comments routes**/
 router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C

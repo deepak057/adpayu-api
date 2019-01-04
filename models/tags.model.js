@@ -8,11 +8,12 @@ const CONFIG            = require('../config/config');
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Tags', {
         name     : DataTypes.STRING,
-        icon     : {type: DataTypes.STRING, defaultValue: 'mdi mdi-gauge'}
+        icon     : {type: DataTypes.STRING, defaultValue: 'mdi mdi-gauge'},
+        UserId: { type: DataTypes.INTEGER, allowNull: false}
     });
 
     Model.associate = function(models){
-        this.User = this.belongsTo(models.User, {onDelete: 'CASCADE'});
+        this.Users = this.belongsToMany(models.User, {onDelete: 'CASCADE', through: 'UserTags'});
     };
    
 

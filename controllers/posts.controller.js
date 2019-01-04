@@ -14,6 +14,8 @@ function getUIDs (users, currentUser) {
       uids.push(user.id)
     })
   }
+  // also push the id of current user so that
+  // it alwasy shows posts created by self
   uids.push(currentUser.id)
   return uids
 }
@@ -23,7 +25,17 @@ function getUIDs (users, currentUser) {
 ** Get default DB Include models
 */
 
-function getDBInclude (pushModel) {
+function getDBInclude (tagIds = []) {
+  let tags = {
+    model: Tags,
+  }
+  
+  if (tagIds.length) {
+    tags.where = {
+      id: tagIds
+    }
+  }
+
   let return_ = [
 
           {
@@ -54,12 +66,11 @@ function getDBInclude (pushModel) {
           },
           {
             model: Videos
-          }
+          },
+          
         ];
 
-    if(pushModel) {
-      return_.push(pushModel)
-    }
+    return_.push(tags)
 
     return return_;
 }
@@ -218,6 +229,8 @@ const create = async function(req, res){
         },
         ). spread ((tag, created) => {
           post.addTags(tag)
+          tag.addUsers(user)
+          user.addTags(tag)
         })
 
       }
@@ -234,7 +247,7 @@ const create = async function(req, res){
     */
     await sleep(100);
 
-    Posts.findOne({include: getDBInclude({model: Tags}), where: {id: post.id}})
+    Posts.findOne({include: getDBInclude(), where: {id: post.id}})
       .then((post) => {
             return ReS(res, toWeb(post, user), 201);
 
@@ -270,7 +283,12 @@ const get = async function(req, res){
       order: [['updatedAt', 'DESC']], 
       limit: limitNOffset.limit,
       offset: limitNOffset.offset,
-      where: {[op.or]: [
+      
+      /*
+      * Get only those posts which are from user's friends, public, selft created or ads
+      */
+      where: {
+        [op.or]: [
           {
             UserId: getUIDs(friends, req.user)
           },
@@ -285,44 +303,53 @@ const get = async function(req, res){
 
     if(tag === 'all')  {
 
-      criteria.include.push({
-          model: Tags,
-        })
+      // get the tags of current user and create an array containing Tag Ids
+      /* req.user.getTags()
+        .then ((userTags) => {
+          let tagsId = [];
+          if(userTags) {
+            for(let i in userTags) {
+              tagsId.push(userTags[i].id)
+            }
+          }
 
+          // update the db include array by passing it TagIds of the tags that
+          // current user follows
+          // criteria.include = getDBInclude(tagsId)
 
-      
+      */
+
       Posts.findAll(criteria)
-         .then(posts => {
+       .then(posts => {
+          return ReS(res, {posts: toWeb(posts, user)});
+       })
+       .catch ((error) => {
+         return ReS(res, error);
+       })
+        
 
-            return ReS(res, {posts: toWeb(posts, user)});
+    }  else {
 
-      })
+        Tags.findOne({where: {name: tag}})
+          .then ((Dbtag) => {
+            
+            // update the db include array by passing it TagIds of the tag that
+            // has been requested
+            criteria.include = getDBInclude([Dbtag.id])
 
-    }  
+            Posts.findAll(criteria)
+             .then(posts => {
+                return ReS(res, {posts: toWeb(posts, user)});
+             })
+             .catch ((error) => {
+               return ReS(res, error);
+              })
 
-    else {
-
-      Tags.findOne({where: {name: tag}})
-      .then ((Dbtag) => {
-
-       criteria.include.push({
-          model: Tags,
-          where: {id: Dbtag.id}
-        })
-
-        Posts.findAll(criteria)
-         .then(posts => {
-
-            return ReS(res, {posts: toWeb(posts, user)});
-
-      })
-
-      }).catch ((error) => {
-        return ReS(res, error);
-
-      })
-
-    }
+          })
+          .catch ((error) => {
+            return ReS(res, error);
+          })
+  }
 }
 module.exports.get = get;
 
@@ -330,7 +357,7 @@ const getPostById = function(req, res){
     let postId = req.params.postId || false
 
     if(postId) {
-      Posts.findOne({include: getDBInclude({model: Tags}), where: {id: postId}})
+      Posts.findOne({include: getDBInclude(), where: {id: postId}})
       .then((post) => {
             return ReS(res, toWeb(post, req.user), 201);
       })
