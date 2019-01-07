@@ -353,6 +353,42 @@ const get = async function(req, res){
 }
 module.exports.get = get;
 
+const getTimelineFeed = async function(req, res){
+  let profileUserId = parseInt(req.params.userId) || req.user.id
+
+  let page = req.query.page || 1;
+
+  let limitNOffset = getLimitOffset(page);
+
+  let criteria = {
+      include: getDBInclude() ,
+      order: [['updatedAt', 'DESC']], 
+      limit: limitNOffset.limit,
+      offset: limitNOffset.offset,
+      where: {}
+  }    
+
+  if (profileUserId === req.user.id) {
+     criteria.where = {
+        UserId: req.user.id
+     }
+  } else {
+
+  }
+  
+  Posts.findAll(criteria)
+   .then(posts => {
+      return ReS(res, {posts: toWeb(posts, req.user)});
+   })
+   .catch ((error) => {
+     return ReS(res, error);
+   })
+
+}
+
+module.exports.getTimelineFeed = getTimelineFeed;
+
+
 const getPostById = function(req, res){
     let postId = req.params.postId || false
 

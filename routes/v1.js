@@ -33,6 +33,7 @@ router.post(    '/users/login',     UserController.login);
 router.post('/posts',           passport.authenticate('jwt', {session:false}), PostsController.create);        // C
 router.get('/posts/:tag',           passport.authenticate('jwt', {session:false}), PostsController.get);        	   // R
 router.get('/post/:postId',           passport.authenticate('jwt', {session:false}), PostsController.getPostById);        	   // R
+router.get('/posts/timelineFeed/:userId',           passport.authenticate('jwt', {session:false}), PostsController.getTimelineFeed);        	   // R
 router.put('/posts',           passport.authenticate('jwt', {session:false}), PostsController.update);         // U
 router.delete('/posts',           passport.authenticate('jwt', {session:false}), PostsController.remove);        // D
 
