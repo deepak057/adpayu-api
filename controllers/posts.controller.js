@@ -7,7 +7,7 @@ const op = Sequelize.Op;
 * Function to get the array of only UIDs
 */
 
-function getUIDs (users, currentUser) {
+function getUIDs (users, currentUser = false) {
   let uids= []
   if(users.length) {
     users.forEach(function(user){
@@ -16,7 +16,10 @@ function getUIDs (users, currentUser) {
   }
   // also push the id of current user so that
   // it alwasy shows posts created by self
-  uids.push(currentUser.id)
+  if (currentUser) {
+    uids.push(currentUser.id)
+  }
+
   return uids
 }
 
@@ -373,7 +376,36 @@ const getTimelineFeed = async function(req, res){
         UserId: req.user.id
      }
   } else {
+    let err, friends, isFriend = false;
 
+    // get profile user's friends
+    [err, friends] = await to(User.getFriends(profileUserId))
+     if(err) {
+       return ReE(res, err, 422);
+     }
+
+     // check if current user is friends with Profile user
+     if(friends.length) {
+       isFriend = getUIDs(friends).indexOf(req.user.id) !== -1
+     }
+     
+     if (isFriend) {
+       criteria.where = {
+         UserId: profileUserId,
+       }
+     } else {
+        criteria.where = {
+          UserId: profileUserId,
+          [op.or]: [
+            {
+              AdOptionId: { [op.ne]: null}
+            },
+            {
+              public: { [op.eq]: true}
+            }
+          ]
+        }
+     }
   }
   
   Posts.findAll(criteria)
