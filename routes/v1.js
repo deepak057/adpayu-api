@@ -60,9 +60,11 @@ router.post('/upload/video/',   passport.authenticate('jwt', {session:false}),  
 router.post('/upload/profilePicture/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadUserProfilePic);        // C
 
 /** Freinds routes**/
+router.get('/friends/',   passport.authenticate('jwt', {session:false}),  FriendsController.get);        // G
 router.post('/friends/request/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.create);        // C
 router.put('/friends/add/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.add);        // U
 router.delete('/friends/remove/:friendId',   passport.authenticate('jwt', {session:false}),  FriendsController.remove);        // D
+
 
 /** Notifications routes**/
 router.get('/notifications',   passport.authenticate('jwt', {session:false}),  NotificationsController.get);        // C

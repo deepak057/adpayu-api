@@ -3,6 +3,24 @@ const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const NOTIFICATIONS = require('../config/app-constants');
 
+const get =  async function(req, res){
+    let err, friends, friendsWeb = [], friendship, temp;
+
+    // get all the users
+    // including current user's friends
+    // or other users from whom curent
+    // user has received a friend request 
+    // or has sent a friend requests to
+    
+    [err, friends] = await to(User.getFriends(req.user.id, false))
+     if(err) {
+       return ReE(res, err, 422);
+     }
+    return ReS(res, {friends: friends}, 200);
+
+}
+module.exports.get = get;
+
 const create =  async function(req, res){
     let friendId, friend, err;
     friendId = req.params.friendId;

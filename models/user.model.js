@@ -40,9 +40,20 @@ module.exports = (sequelize, DataTypes) => {
 
     };
 
-    Model.getFriends = function (uid) {
+    Model.getFriends = function (uid, acceptedOnly= true) {
 
-        let common_ = { where: {accepted: true}}
+        let common_ = {}
+
+        /*
+        * return only those records where
+        * friend request has actually been 
+        * accepted
+        */
+        if(acceptedOnly) {
+            common_.where = {
+                accepted: true
+            }
+        }
 
         return this.scope('public').find({
             where: {id: uid},
