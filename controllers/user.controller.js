@@ -46,10 +46,19 @@ const update = async function(req, res){
     user = req.user;
     data = req.body;
 
+    // delete properties that are 
+    // not supposed to be updated
     delete data.phone;
-    delete data.password;
-    delete data.password;
-
+    delete data.email;
+    
+    // change the password if
+    // newPassword property is not empty
+    if(req.body.newPassword) {
+        data.password = req.body.newPassword
+    } else {
+        delete data.password;
+    }
+    
     user.set(data);
 
     [err, user] = await to(user.save());

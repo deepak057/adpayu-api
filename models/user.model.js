@@ -12,7 +12,11 @@ module.exports = (sequelize, DataTypes) => {
         email     : {type: DataTypes.STRING, allowNull: true, unique: true, validate: { isEmail: {msg: "Phone number invalid."} }},
         phone     : {type: DataTypes.STRING, allowNull: true, unique: true, validate: { len: {args: [7, 20], msg: "Phone number invalid, too short."}, isNumeric: { msg: "not a valid phone number."} }},
         password  : DataTypes.STRING,
-        pic       : DataTypes.STRING
+        pic       : DataTypes.STRING,
+        gender    : {type: DataTypes.STRING, defaultValue: ''},
+        location  : {type: DataTypes.STRING, defaultValue: ''},
+        about     : DataTypes.TEXT,
+        tagline   : {type: DataTypes.STRING, defaultValue: ''},
     },{
         defaultScope: {
           attributes: { exclude: [] },
