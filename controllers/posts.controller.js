@@ -299,7 +299,8 @@ const get = async function(req, res){
             AdOptionId: { [op.ne]: null}
           },
           {
-            public: { [op.eq]: true}
+            public: { [op.eq]: true},
+            //'$Tag.id$': userTags
           }
         ]}
     };

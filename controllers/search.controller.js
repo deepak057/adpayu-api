@@ -11,21 +11,39 @@ const get = function(req, res){
       let keyword = req.query.k;
 
       Posts.findAll({
-        where: {
-          public: true
+        where: {      
+          [Op.and]: [
+            {
+              AdOptionId: {[Op.eq]: null},
+            },
+            {
+              [Op.or]: [
+                { 
+                  public: {[Op.eq]: true},
+                },
+                {
+                  UserId: ['2']
+                }
+              ],
+            },
+            {
+              [Op.or]: [
+                {
+                  '$Question.question$': {[Op.like] :  '%' +keyword+'%'}
+                },
+                {
+                  '$Video.title$': {[Op.like] :  '%' +keyword+'%'}
+                }
+              ]
+            }
+          ]
         },
         include: [
           {
             model: Questions,
-            where: {
-              question: {[Op.like] :  '%' +keyword+'%'}
-            }
           },
           {
             model: Videos,
-            where: {
-              title: {[Op.like] :  '%' +keyword+'%'}
-            }
           }
         ]
       })
