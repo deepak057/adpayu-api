@@ -9,6 +9,7 @@ const LikesController 	= require('../controllers/likes.controller');
 const UploadController 	= require('../controllers/upload.controller');
 const FriendsController 	= require('../controllers/friends.controller');
 const NotificationsController   = require('../controllers/notifications.controller');
+const SearchController   = require('../controllers/search.controller');
 
 const custom 	        = require('./../middleware/custom');
 
@@ -69,6 +70,9 @@ router.delete('/friends/remove/:friendId',   passport.authenticate('jwt', {sessi
 /** Notifications routes**/
 router.get('/notifications',   passport.authenticate('jwt', {session:false}),  NotificationsController.get);        // C
 router.put('/notifications/markSeen',   passport.authenticate('jwt', {session:false}),  NotificationsController.markSeen);        // U
+
+/** Search routes**/
+router.get('/search/:type',   passport.authenticate('jwt', {session:false}),  SearchController.get);        // R
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));
