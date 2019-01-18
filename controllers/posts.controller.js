@@ -149,34 +149,29 @@ const get = async function(req, res){
        return ReE(res, err, 422);
      }
 
-    let criteria = {
-      include: dbIncludes ,
-      order: [['updatedAt', 'DESC']], 
-      limit: limitNOffset.limit,
-      offset: limitNOffset.offset,
-      
-      /*
-      * Get only those posts which are from user's friends, public, selft created or ads
-      */
-      where: {
-        [op.or]: [
+     let condition = [
           {
             UserId: getUIDs(friends, req.user)
           },
           {
             AdOptionId: { [op.ne]: null}
           },
-          {
-            public: { [op.eq]: true},
-            //'$Tag.id$': userTags
-          }
-        ]}
+      ]
+
+    let criteria = {
+      include: dbIncludes ,
+      order: Sequelize.literal('updatedAt DESC LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit), 
+      
+      /*
+      * Get only those posts which are from user's friends, public, selft created or ads
+      */
+        
     };
 
     if(tag === 'all')  {
 
       // get the tags of current user and create an array containing Tag Ids
-      /* req.user.getTags()
+      req.user.getTags()
         .then ((userTags) => {
           let tagsId = [];
           if(userTags) {
@@ -185,20 +180,26 @@ const get = async function(req, res){
             }
           }
 
+          condition.push({public: { [op.eq]: true},'$Tags.id$': tagsId});
+
+          criteria.where = {[op.or]: condition}
+
+          Posts.findAll(criteria)
+           .then((posts) => {
+              return ReS(res, {posts: toWeb(posts, user)});
+            })
+           .catch ((error) => {
+             return ReS(res, error);
+            })
+
+        })
+        .catch ((error) => {
+          return ReS(res, error);
+        })
+
           // update the db include array by passing it TagIds of the tags that
           // current user follows
           // criteria.include = getDBInclude(tagsId)
-
-      */
-
-      Posts.findAll(criteria)
-       .then(posts => {
-          return ReS(res, {posts: toWeb(posts, user)});
-       })
-       .catch ((error) => {
-         return ReS(res, error);
-       })
-        
 
     }  else {
 
@@ -207,7 +208,11 @@ const get = async function(req, res){
             
             // update the db include array by passing it TagIds of the tag that
             // has been requested
-            criteria.include = getDBInclude([Dbtag.id])
+            criteria.include = getDBInclude([Dbtag.id]);
+
+            condition.push({public: { [op.eq]: true}});
+
+            criteria.where = {[op.or]: condition}
 
             Posts.findAll(criteria)
              .then(posts => {
