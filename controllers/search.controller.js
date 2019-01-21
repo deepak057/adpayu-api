@@ -5,9 +5,29 @@ const Sequelize = require('sequelize');
 
 const Op = Sequelize.Op;
 
+/*
+** function to return OR condition
+* array depending upon the search filter
+*/
+function getContentCondition (searchType, keyword) {
+      let contentCondition = [];
+      let onlyQuestions = { '$Question.question$': {[Op.like] :  '%' +keyword+'%'}};
+      let onlyVideos = { '$Video.title$': {[Op.like] :  '%' +keyword+'%'}}
+      if (searchType === 'video') {
+        contentCondition.push(onlyVideos)
+      } else if (searchType === 'questions') {
+        contentCondition.push(onlyQuestions)
+      } else {
+        contentCondition.push(onlyVideos);
+        contentCondition.push(onlyQuestions)
+      }
+
+      return contentCondition;
+}
+
 const get = async function(req, res){
     
-      let searchType = req.params.type | 'content';
+      let searchType = req.params.type || 'content';
 
       let keyword = req.query.k;
 
@@ -22,6 +42,7 @@ const get = async function(req, res){
      if(err) {
        return ReE(res, err, 422);
      }
+
 
      /*
      * Find all the public video and questions 
@@ -55,14 +76,7 @@ const get = async function(req, res){
               ],
             },
             {
-              [Op.or]: [
-                {
-                  '$Question.question$': {[Op.like] :  '%' +keyword+'%'}
-                },
-                {
-                  '$Video.title$': {[Op.like] :  '%' +keyword+'%'}
-                }
-              ]
+              [Op.or]: getContentCondition (searchType, keyword)
             }
           ]
         },
