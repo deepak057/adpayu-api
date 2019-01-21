@@ -1,4 +1,4 @@
-const { Posts, User } = require('../models');
+const { Posts, User, Friendship } = require('../models');
 const { to, ReE, ReS, isEmptyObject, getLimitOffset } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb} = require('../services/app.service');
 const Sequelize = require('sequelize');
@@ -37,7 +37,28 @@ const get = async function(req, res){
 
       let limitNOffset = getLimitOffset(page);
 
-    // get current user's friends
+      if (searchType === 'users') {
+        User.scope('public').findAll({
+          where: {
+            [Op.or]: [
+              {
+                first: {[Op.like]: '%' +keyword+'%'}
+              },
+              {
+                last: {[Op.like]: '%' +keyword+'%'}
+              }
+            ]
+          }
+        })
+          .then ((users) => {
+            return ReS(res, {users: users});
+          })
+          .catch ((err) => {
+            return ReE(res, err, 422);
+          })
+      } else {
+        
+        // get current user's friends
     [err, friends] = await to(User.getFriends(req.user.id))
      if(err) {
        return ReE(res, err, 422);
@@ -88,6 +109,10 @@ const get = async function(req, res){
         .catch((err) => {
           return ReE(res, {'error': err}, 422);
         })
+      }
+  
+
+    
 }
 
 module.exports.get = get;
