@@ -1,29 +1,10 @@
 const { Tags, User } = require('../models');
 const { to, ReE, ReS, isEmptyObject, getLimitOffset } = require('../services/util.service');
+const { tagsToWeb} = require('../services/app.service');
+
 const Sequelize = require('sequelize');
 
 const Op = Sequelize.Op;
-
-/*
-** function to add "following" boolean to indicate wehter 
-** current user follow a given tag or not
-*/
-function toWeb (tags) {
-  let tagsWeb = []
-  if(tags.length) {
-    for (let i in tags) {
-      let t = tags[i].toWeb()
-      if(t.Users.length) {
-        t.following = true
-      } else {
-        t.following = false
-      }
-      delete t.Users
-      tagsWeb.push(t)
-    }
-  }
-  return tagsWeb
-}
 
 const get = function(req, res){
 
@@ -64,7 +45,7 @@ const browseTags = function(req, res){
     
     let limitNOffset = getLimitOffset((req.query.page || 1), 16);
 
-    Tags.findAll({
+    let criteria = {
       limit: limitNOffset.limit,
       offset: limitNOffset.offset,
       include: [
@@ -79,9 +60,22 @@ const browseTags = function(req, res){
           }
         }
       ]
-    })
+    }
+
+    /*
+    *  add search by name condition if k (keyword parameter is supplied)
+    */
+    if(req.query.k) {
+      criteria.where = {
+        name: {
+          [Op.like]: '%'+ req.query.k + '%'
+        }
+      }
+    }
+
+    Tags.findAll(criteria)
       .then((tags)=>{
-        return ReS(res, {tags: toWeb(tags)});
+        return ReS(res, {tags: tagsToWeb(tags)});
       })
       .catch((error) => {
         return ReE(res, error);

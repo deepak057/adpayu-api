@@ -133,3 +133,24 @@ function setDefaultLike (model, user) {
 
   return json;
 }
+
+/*
+** function to add "following" boolean to indicate wehter 
+** current user follow a given tag or not
+*/
+module.exports.tagsToWeb = function (tags) {
+  let tagsWeb = []
+  if(tags.length) {
+    for (let i in tags) {
+      let t = tags[i].toWeb()
+      if(t.Users.length) {
+        t.following = true
+      } else {
+        t.following = false
+      }
+      delete t.Users
+      tagsWeb.push(t)
+    }
+  }
+  return tagsWeb
+}
