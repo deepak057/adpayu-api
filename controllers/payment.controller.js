@@ -1,4 +1,4 @@
-const { Orders } = require('../models');
+const { Orders, Forex } = require('../models');
 const { to, ReE, ReS, isEmptyObject, uniqeFileName } = require('../services/util.service');
 const Sequelize = require('sequelize');
 var crypto = require('crypto');
@@ -11,12 +11,26 @@ const getToken = async function(req, res){
 
 	try {
 
+		let err, forex, amountINR;
+		
+		/*
+		* Get USD to INR forex rate
+		*/
+		[err, forex] = await to(Forex.getUSD2INR());
+        if(err) return ReE(res, err, 422);
+
+        /*
+        * conver the given USD amount to INR
+        * and round the figure upto two decimal places
+        */
+        amountINR = Math.round((req.query.orderAmount * forex) * 100) / 100
+
 		/**
 	    ** Keep track of this order
 	    ** in system's database
 	    **/
 
-	    Orders.create({amount: req.query.orderAmount})
+	    Orders.create({amount: amountINR})
 	      .then ((order) => {
 	      	
 	        order.setUser(req.user);
@@ -31,14 +45,14 @@ const getToken = async function(req, res){
 			/*
 			* get the whole query string
 			*/
-		    let i = req.url.indexOf('?');
-		    let queryString = req.url.substr(i+1);
+		    let queryString;
 
 		    //append AppId and OrderId to the above QueryString
-		    queryString = 'appId='+ appId + '&orderId=' + orderId + '&' + queryString;
+		    queryString = 'appId='+ appId + '&orderId=' + orderId + '&orderAmount=' + amountINR + '&returnUrl=' + req.query.returnUrl + '&paymentModes=' + req.query.paymentModes;
 
 		    //generate payment Token
 		    let hash = crypto.createHmac('sha256', appSecret).update(queryString).digest('base64')
+
 
 		    /* create parameters object to be sent 
 		    ** to client side, with all the required
@@ -52,6 +66,8 @@ const getToken = async function(req, res){
 		    params.customerName = req.user.first + ' ' + req.user.last;
             params.customerPhone = '93949573653';
             params.customerEmail = req.user.email;
+            params.orderAmount = amountINR;
+            params.orderAmountUSD = req.query.orderAmount;
 
 	      	return ReS(res, {
 	           params: params

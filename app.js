@@ -6,6 +6,7 @@ const pe            = require('parse-error');
 const cors          = require('cors');
 const fileUpload = require('express-fileupload');
 const path = require('path');
+const cron = require("node-cron");
 
 const v1    = require('./routes/v1');
 const app   = express();
@@ -71,4 +72,13 @@ module.exports = app;
 //This is here to handle all the uncaught promise rejections
 process.on('unhandledRejection', error => {
     console.error('Uncaught Error', pe(error));
+});
+
+
+//cron job running once in 12 hours and stores 
+// USD to INR forex rate in database    
+cron.schedule("* */12 * * *", function() {
+  console.log("Fetching USD to INR forex rate")
+  const ForexController   = require('./controllers/forex.controller');
+  ForexController.fetchForexRates()
 });
