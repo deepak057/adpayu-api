@@ -160,6 +160,9 @@ const get = async function(req, res){
 
     let criteria = {
       include: dbIncludes ,
+      //attributes: [[Sequelize.literal('DISTINCT'), '']],
+      distinct: true,
+      //attributes: [[Sequelize.literal('DISTINCT'), 'key'], 'value'],
       order: Sequelize.literal('updatedAt DESC LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit), 
       
       /*

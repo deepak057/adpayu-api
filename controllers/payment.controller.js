@@ -20,7 +20,7 @@ const getToken = async function(req, res){
         if(err) return ReE(res, err, 422);
 
         /*
-        * conver the given USD amount to INR
+        * convert the given USD amount to INR
         * and round the figure upto two decimal places
         */
         amountINR = Math.round((req.query.orderAmount * forex) * 100) / 100
@@ -43,16 +43,13 @@ const getToken = async function(req, res){
 			let orderId = order.id;
 			
 			/*
-			* get the whole query string
+			* create the whole query string based
+			** on the supplied parameters
 			*/
-		    let queryString;
-
-		    //append AppId and OrderId to the above QueryString
-		    queryString = 'appId='+ appId + '&orderId=' + orderId + '&orderAmount=' + amountINR + '&returnUrl=' + req.query.returnUrl + '&paymentModes=' + req.query.paymentModes;
+		    let queryString = 'appId='+ appId + '&orderId=' + orderId + '&orderAmount=' + amountINR + '&returnUrl=' + req.query.returnUrl + '&paymentModes=' + req.query.paymentModes;
 
 		    //generate payment Token
 		    let hash = crypto.createHmac('sha256', appSecret).update(queryString).digest('base64')
-
 
 		    /* create parameters object to be sent 
 		    ** to client side, with all the required
