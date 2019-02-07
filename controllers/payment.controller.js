@@ -4,8 +4,6 @@ const Sequelize = require('sequelize');
 var crypto = require('crypto');
 require('dotenv').config();//instatiate environment variables
 
-const Op = Sequelize.Op;
-
 
 const getToken = async function(req, res){
 
@@ -80,9 +78,6 @@ const getToken = async function(req, res){
 		    params.paymentToken = hash;
 		    params.appId = appId;
 		    params.orderId = orderId;
-		    params.customerName = req.user.first + ' ' + req.user.last;
-            params.customerPhone = '93949573653';
-            params.customerEmail = req.user.email;
             params.orderAmount = orderAmount;
             params.orderAmountUSD = orderAmountUSD;
             params.amountINR = amountINR;
@@ -90,6 +85,7 @@ const getToken = async function(req, res){
             params.amountUSD = amountUSD;
             params.processingFeeUSD = processingFeeUSD;
             params.processingFeePercentage = processingFeePercentage;
+            params.notifyUrl = 'http://' + req.headers.host + '/v1/payment/processResponse';
 
 	      	return ReS(res, {
 	           params: params
@@ -107,3 +103,30 @@ const getToken = async function(req, res){
 }
 
 module.exports.getToken = getToken;
+
+const processResponse = async function(req, res){
+	
+	console.log("\n\n\n\n\n\nReceiving updates from Payment Gatewy...\n\n\n\n\n\n")
+
+	try {
+	  let data = req.body;
+
+	  Orders.update({status: data.txStatus, message: txMsg, response: JSON.stringify(data)},{where: {
+		id: data.orderId
+	  }})
+	    .then((order) => {
+          return ReS(res, {
+	           success: true, message: 'Order updated successfully'
+	        }, 200);
+	    })
+	    .catch((err) => {
+	      	return ReE(res, {success: false, error: 'Order not found'}, 422);
+	      });
+
+	} catch(err) {
+		return ReE(res, {success: false, error: 'Something went wrong while generating the payment token'}, 422);
+	}
+	
+}
+
+module.exports.processResponse = processResponse;

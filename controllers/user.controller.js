@@ -48,7 +48,6 @@ const update = async function(req, res){
 
     // delete properties that are 
     // not supposed to be updated
-    delete data.phone;
     delete data.email;
     
     // change the password if

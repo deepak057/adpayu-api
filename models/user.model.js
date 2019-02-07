@@ -9,8 +9,8 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('User', {
         first     : DataTypes.STRING,
         last      : DataTypes.STRING,
-        email     : {type: DataTypes.STRING, allowNull: true, unique: true, validate: { isEmail: {msg: "Phone number invalid."} }},
-        phone     : {type: DataTypes.STRING, allowNull: true, unique: true, validate: { len: {args: [7, 20], msg: "Phone number invalid, too short."}, isNumeric: { msg: "not a valid phone number."} }},
+        email     : {type: DataTypes.STRING, allowNull: false, unique: true, validate: { isEmail: {msg: "Email is invalid."} }},
+        phone     : {type: DataTypes.STRING, allowNull: true, unique: true, /*validate: { len: {args: [7, 20], msg: "Phone number invalid, too short."}, isNumeric: { msg: "not a valid phone number."} }*/},
         password  : DataTypes.STRING,
         pic       : DataTypes.STRING,
         gender    : {type: DataTypes.STRING, defaultValue: ''},

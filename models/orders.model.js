@@ -7,9 +7,10 @@ const CONFIG            = require('../config/config');
 
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Orders', {
-        status: { type: DataTypes.ENUM('pending', 'success', 'failed'), defaultValue: 'pending'},
+        status: { type: DataTypes.STRING, defaultValue: 'PENDING'},
         amount: DataTypes.FLOAT,
         currency: {type: DataTypes.STRING, defaultValue: 'INR'},
+        response: DataTypes.TEXT,
         message: DataTypes.STRING,
         INRPerUSDRate: DataTypes.FLOAT,
         processingFeePercentage: DataTypes.FLOAT
