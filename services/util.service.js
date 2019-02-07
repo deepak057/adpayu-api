@@ -73,3 +73,7 @@ module.exports.getLimitOffset = function (page, resultsPerPage = 10) {
 module.exports.cloneOject = function (obj) {
     return JSON.parse(JSON.stringify(obj));
 }
+
+module.exports.roundTwoDecimalPlaces = function (number) {
+    return Math.round(number * 100) / 100
+}

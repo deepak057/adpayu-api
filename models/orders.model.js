@@ -11,6 +11,8 @@ module.exports = (sequelize, DataTypes) => {
         amount: DataTypes.FLOAT,
         currency: {type: DataTypes.STRING, defaultValue: 'INR'},
         message: DataTypes.STRING,
+        INRPerUSDRate: DataTypes.FLOAT,
+        processingFeePercentage: DataTypes.FLOAT
     });
 
     Model.associate = function(models){

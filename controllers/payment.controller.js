@@ -1,5 +1,5 @@
 const { Orders, Forex } = require('../models');
-const { to, ReE, ReS, isEmptyObject, uniqeFileName } = require('../services/util.service');
+const { to, ReE, ReS, roundTwoDecimalPlaces } = require('../services/util.service');
 const Sequelize = require('sequelize');
 var crypto = require('crypto');
 require('dotenv').config();//instatiate environment variables
@@ -11,7 +11,7 @@ const getToken = async function(req, res){
 
 	try {
 
-		let err, forex, amountINR;
+		let err, forex, amountINR, amountUSD = parseFloat(req.query.orderAmount), processingFeePercentage = 3, processingFeeINR, processingFeeUSD, orderAmount, orderAmountUSD;
 		
 		/*
 		* Get USD to INR forex rate
@@ -23,14 +23,34 @@ const getToken = async function(req, res){
         * convert the given USD amount to INR
         * and round the figure upto two decimal places
         */
-        amountINR = Math.round((req.query.orderAmount * forex) * 100) / 100
+        amountINR = roundTwoDecimalPlaces((amountUSD * forex))
+
+        /*
+        * calculate processing fee in USD
+        */
+        processingFeeUSD = roundTwoDecimalPlaces( (amountUSD / 100 ) * processingFeePercentage )
+
+        /*
+        * Total order amount in USD
+        */
+        orderAmountUSD = roundTwoDecimalPlaces(amountUSD + processingFeeUSD)
+
+        /*
+        * calculate Processing Fee in INR
+        */
+        processingFeeINR = roundTwoDecimalPlaces( (amountINR / 100 ) * processingFeePercentage )
+
+        /**
+        ** Toal Order amount in INR
+        **/
+        orderAmount = roundTwoDecimalPlaces(amountINR + processingFeeINR)
 
 		/**
 	    ** Keep track of this order
 	    ** in system's database
 	    **/
 
-	    Orders.create({amount: amountINR})
+	    Orders.create({amount: amountINR, INRPerUSDRate: forex, processingFeePercentage: processingFeePercentage})
 	      .then ((order) => {
 	      	
 	        order.setUser(req.user);
@@ -46,7 +66,7 @@ const getToken = async function(req, res){
 			* create the whole query string based
 			** on the supplied parameters
 			*/
-		    let queryString = 'appId='+ appId + '&orderId=' + orderId + '&orderAmount=' + amountINR + '&returnUrl=' + req.query.returnUrl + '&paymentModes=' + req.query.paymentModes;
+		    let queryString = 'appId='+ appId + '&orderId=' + orderId + '&orderAmount=' + orderAmount + '&returnUrl=' + req.query.returnUrl + '&paymentModes=' + req.query.paymentModes;
 
 		    //generate payment Token
 		    let hash = crypto.createHmac('sha256', appSecret).update(queryString).digest('base64')
@@ -63,8 +83,13 @@ const getToken = async function(req, res){
 		    params.customerName = req.user.first + ' ' + req.user.last;
             params.customerPhone = '93949573653';
             params.customerEmail = req.user.email;
-            params.orderAmount = amountINR;
-            params.orderAmountUSD = req.query.orderAmount;
+            params.orderAmount = orderAmount;
+            params.orderAmountUSD = orderAmountUSD;
+            params.amountINR = amountINR;
+            params.processingFeeINR = processingFeeINR;
+            params.amountUSD = amountUSD;
+            params.processingFeeUSD = processingFeeUSD;
+            params.processingFeePercentage = processingFeePercentage;
 
 	      	return ReS(res, {
 	           params: params
