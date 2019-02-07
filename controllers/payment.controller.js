@@ -104,14 +104,19 @@ const getToken = async function(req, res){
 
 module.exports.getToken = getToken;
 
+/*
+* this method is automaticaly called
+* by payment gateway and gives status 
+* of transactions made by user
+* when called, it updates the order details
+* in system's database
+*/
 const processResponse = async function(req, res){
 	
-	console.log("\n\n\n\n\n\nReceiving updates from Payment Gatewy...\n\n\n\n\n\n")
-
 	try {
 	  let data = req.body;
 
-	  Orders.update({status: data.txStatus, message: txMsg, response: JSON.stringify(data)},{where: {
+	  Orders.update({status: data.txStatus, message: data.txMsg, response: JSON.stringify(data)},{where: {
 		id: data.orderId
 	  }})
 	    .then((order) => {
@@ -120,10 +125,12 @@ const processResponse = async function(req, res){
 	        }, 200);
 	    })
 	    .catch((err) => {
+	    	console.log(err)
 	      	return ReE(res, {success: false, error: 'Order not found'}, 422);
 	      });
 
 	} catch(err) {
+		console.log(err)
 		return ReE(res, {success: false, error: 'Something went wrong while generating the payment token'}, 422);
 	}
 	
