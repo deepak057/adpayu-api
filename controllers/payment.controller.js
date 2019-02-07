@@ -59,12 +59,15 @@ const getToken = async function(req, res){
 
 			//OrderId
 			let orderId = order.id;
+
+			//adding OrderId as query parameter to the Return URL
+			let returnUrl = req.query.returnUrl + '?orderId='+orderId;
 			
 			/*
 			* create the whole query string based
 			** on the supplied parameters
 			*/
-		    let queryString = 'appId='+ appId + '&orderId=' + orderId + '&orderAmount=' + orderAmount + '&returnUrl=' + req.query.returnUrl + '&paymentModes=' + req.query.paymentModes;
+		    let queryString = 'appId='+ appId + '&orderId=' + orderId + '&orderAmount=' + orderAmount + '&returnUrl=' + returnUrl + '&paymentModes=' + req.query.paymentModes;
 
 		    //generate payment Token
 		    let hash = crypto.createHmac('sha256', appSecret).update(queryString).digest('base64')
@@ -85,6 +88,10 @@ const getToken = async function(req, res){
             params.amountUSD = amountUSD;
             params.processingFeeUSD = processingFeeUSD;
             params.processingFeePercentage = processingFeePercentage;
+            params.returnUrl = returnUrl;
+            //URL to the service that will 
+            //receive response from payment gateway 
+            //with status of the transaction
             params.notifyUrl = 'http://' + req.headers.host + '/v1/payment/processResponse';
 
 	      	return ReS(res, {
@@ -93,10 +100,12 @@ const getToken = async function(req, res){
 
 	      })
 	      .catch((err) => {
+	      	console.log(err)
 	      	return ReE(res, {success: false, error: 'Something went wrong while generating the payment token'}, 422);
 	      });
 
 	} catch(err) {
+		console.log(err)
 		return ReE(res, {success: false, error: 'Something went wrong while generating the payment token'}, 422);
 	}
 	
@@ -105,16 +114,19 @@ const getToken = async function(req, res){
 module.exports.getToken = getToken;
 
 /*
-* this method is automaticaly called
-* by payment gateway and gives status 
-* of transactions made by user
+* this service method is automaticaly called
+* by payment gateway after a transaction
+* gives status of transactions made by users
 * when called, it updates the order details
-* in system's database
+* in system's database based on the response
+* received from the payment gateway
 */
 const processResponse = async function(req, res){
 	
 	try {
 	  let data = req.body;
+
+	  console.log("Receiving response from Payment Gateway for Order id: "+ data.orderId)
 
 	  Orders.update({status: data.txStatus, message: data.txMsg, response: JSON.stringify(data)},{where: {
 		id: data.orderId
