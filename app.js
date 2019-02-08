@@ -77,7 +77,7 @@ process.on('unhandledRejection', error => {
 
 //cron job running once in 12 hours and stores 
 // USD to INR forex rate in database    
-cron.schedule("* */12 * * *", function() {
+cron.schedule("0 0 */12 * * *", function() {
   console.log("Fetching USD to INR forex rate")
   const ForexController   = require('./controllers/forex.controller');
   ForexController.fetchForexRates()

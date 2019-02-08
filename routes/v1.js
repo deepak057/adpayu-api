@@ -78,6 +78,7 @@ router.get('/search/:type',   passport.authenticate('jwt', {session:false}),  Se
 /** Payment routes**/
 router.get('/payment/getToken',   passport.authenticate('jwt', {session:false}),  PaymentController.getToken);        // R
 router.post('/payment/processResponse',  PaymentController.processResponse);        // P
+router.get('/payment/checkOrderStatus/:orderId',   passport.authenticate('jwt', {session:false}),  PaymentController.checkOrderStatus);        // R
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));

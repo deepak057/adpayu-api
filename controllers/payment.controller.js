@@ -139,7 +139,7 @@ const processResponse = async function(req, res){
 	    .catch((err) => {
 	    	console.log(err)
 	      	return ReE(res, {success: false, error: 'Order not found'}, 422);
-	      });
+	    });
 
 	} catch(err) {
 		console.log(err)
@@ -149,3 +149,30 @@ const processResponse = async function(req, res){
 }
 
 module.exports.processResponse = processResponse;
+
+const checkOrderStatus = async function(req, res){
+  try {
+    let orderId = parseInt(req.params.orderId);
+    if (!orderId) {
+      throw new Error('Order Id is not found');
+    }
+    // making sure that same order is accessing the order as the one
+    // who created it
+    Orders.find({where: {UserId: req.user.id, id: orderId}})
+      .then((order) => {
+      	return ReS(res, {
+	           order: order
+	        }, 200);
+      })
+      .catch((err) => {
+    	console.log(err)
+      	throw new Error('Order not found');
+	   });
+  } catch(err) {
+	console.log(err)
+	return ReE(res, {success: false, error: 'Something went wrong while checking the payment status'}, 422);
+  }
+}
+
+module.exports.checkOrderStatus = checkOrderStatus;
+
