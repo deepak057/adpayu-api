@@ -1,6 +1,7 @@
 const { User, Friendship }          = require('../models');
 const authService       = require('../services/auth.service');
 const { to, ReE, ReS, uniqeFileName}  = require('../services/util.service');
+const ADS = require('../config/app-constants');
 
 const create = async function(req, res){
     const body = req.body;
@@ -88,7 +89,14 @@ const login = async function(req, res){
     [err, user] = await to(authService.authUser(req.body));
     if(err) return ReE(res, err, 422);
 
-    return ReS(res, {token:user.getJWT(), user:user.toWeb()});
+    return ReS(res, {
+        token:user.getJWT(), 
+        user:user.toWeb(), 
+        options: {
+            // default ad pricing structure
+            adDefaultPricing: ADS.defaultPricing
+        }
+    });
 }
 module.exports.login = login;
 

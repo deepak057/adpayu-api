@@ -11,3 +11,14 @@ NOTIFICATIONS.types = {
 }
 
 module.exports = NOTIFICATIONS;
+
+let ADS = {}
+
+ADS.defaultPricing = {
+  defaultCPI: 0.0071,
+  defaultCPC: 0.028,
+  defaultCPV: 0.21,
+  defaultImpressionTarget: 500
+}
+
+module.exports = ADS;
