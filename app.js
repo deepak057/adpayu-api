@@ -25,6 +25,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 //Passport
 app.use(passport.initialize());
 
+/*
+* function to uodate forex rates 
+* in database
+*/
+function updateForexRates () {
+  console.log("Fetching USD to INR forex rate");
+  const ForexController   = require('./controllers/forex.controller');
+  ForexController.fetchForexRates()
+}
+
 //Log Env
 console.log("Environment:", CONFIG.app)
 //DATABASE
@@ -36,7 +46,14 @@ models.sequelize.authenticate().then(() => {
     console.error('Unable to connect to SQL database:',CONFIG.db_name, err);
 });
 if(CONFIG.app==='dev'){
-    models.sequelize.sync();//creates table if they do not already exist
+    models.sequelize.sync()//creates table if they do not already exist
+      .then ((data) => {
+
+        //update the forex rates after
+        // all the tables are created
+        updateForexRates();
+
+      })
     // models.sequelize.sync({ force: true });//deletes all tables then recreates them useful for testing and development purposes
 }
 // CORS
@@ -78,7 +95,5 @@ process.on('unhandledRejection', error => {
 //cron job running once in 12 hours and stores 
 // USD to INR forex rate in database    
 cron.schedule("0 0 */12 * * *", function() {
-  console.log("Fetching USD to INR forex rate")
-  const ForexController   = require('./controllers/forex.controller');
-  ForexController.fetchForexRates()
+  updateForexRates()
 });

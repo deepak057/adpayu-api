@@ -10,13 +10,18 @@ module.exports = (sequelize, DataTypes) => {
         postIsAd: { type: DataTypes.BOOLEAN, defaultValue: true},
         cpc     : DataTypes.FLOAT,
         cpv     : DataTypes. FLOAT,
-        clickURL: DataTypes.STRING
-
+        cpi		: DataTypes.FLOAT,
+        impressionTarget: DataTypes.INTEGER,
+        clickTarget: DataTypes.INTEGER,
+        viewTarget: DataTypes.INTEGER,
+        adLink: DataTypes.STRING,
+        adLinkLabel: DataTypes.STRING,
+        adCountries: DataTypes.TEXT
     });
 
     Model.associate = function(models){
         this.User = this.belongsTo(models.User, {onDelete: 'CASCADE'});
-
+        this.Order = this.belongsTo(models.Orders, {onDelete: 'CASCADE'});
     };
    
 

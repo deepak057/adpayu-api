@@ -12,14 +12,12 @@ const create = async function(req, res){
     let post_info = req.body;
 
     /*
-    Temporary workarounds
+    * delete the ID parameter just in case 
+    * it was sent by the client
     */
-    post_info.likes = '';
-
-    /***
-    Workarounds end
-    **/
-
+    if('id' in post_info) {
+      delete post_info.id
+    }
 
     [err, post] = await to(Posts.create(post_info));
     if(err) return ReE(res, err, 422);
@@ -28,57 +26,47 @@ const create = async function(req, res){
     user.addPosts(post);
     post.setUser(user);
 
-   /* if(!isEmptyObject(post_info.comments)){
-        [err, comments] = await to(Comments.create(post_info.comments));
-        if(err) return ReE(res, err, 422);
-
-        post.addComments(comments);
-        comments.setPost(post);
-        user.addComments(comments);
-        comments.setUser(user);
-
-    }*/
-
 
      if(!isEmptyObject(post_info.question)){
 
-        [err, question] = await to(Questions.create(post_info.question));
-         if(err) return ReE(res, err, 422);
+      [err, question] = await to(Questions.create(post_info.question));
+       if(err) return ReE(res, err, 422);
 
-         post.setQuestion(question);
-         user.addQuestions(question);
-         question.setUser(user);
+       post.setQuestion(question);
+       user.addQuestions(question);
+       question.setUser(user);
 
     }
 
     if(!isEmptyObject(post_info.video)){
 
-        [err, video] = await to(Videos.create(post_info.video));
-         if(err) return ReE(res, err, 422);
+      [err, video] = await to(Videos.create(post_info.video));
+       if(err) return ReE(res, err, 422);
 
-         post.setVideo(video);
-         user.addVideos(video);
-         video.setUser(user)
+       post.setVideo(video);
+       user.addVideos(video);
+       video.setUser(user)
     }
 
     if(post_info.adOptions.postIsAd) {
-        [err, adOptions] = await to(AdOptions.create(post_info.adOptions));
-         if(err) return ReE(res, err, 422);
+        
+      [err, adOptions] = await to(AdOptions.create(getAdOptions(post_info.adOptions)));
+       if(err) return ReE(res, err, 422);
 
-        post.setAdOption(adOptions);
-        adOptions.setUser(user);
-        user.addAdOptions(adOptions);
+      post.setAdOption(adOptions);
+      adOptions.setUser(user);
+      user.addAdOptions(adOptions);
     }
 
     if(post_info.images.length > 0) {
 
-        for(let j in post_info.images) {
-            [err, image] = await to(Images.find({where: { id: post_info.images[j].id}}));
-            if(image) {
-              post.addImages(image)
-              image.setPost(post)
-            }
+      for(let j in post_info.images) {
+          [err, image] = await to(Images.find({where: { id: post_info.images[j].id}}));
+          if(image) {
+            post.addImages(image)
+            image.setPost(post)
           }
+        }
     }
 
     /*
@@ -128,6 +116,23 @@ const create = async function(req, res){
       })
 
 }
+
+/*
+* function to return the AdOptions object
+* to be save in the database
+*/
+
+function getAdOptions (adOptions) {
+  let countries = [];
+  if (adOptions.adCountries.length) {
+    for(let i in adOptions.adCountries) {
+      countries.push(adOptions.adCountries[i].code)
+    }
+  }
+  adOptions.adCountries = countries.toString();
+  return adOptions;
+}
+
 module.exports.create = create;
 
 const get = async function(req, res){
