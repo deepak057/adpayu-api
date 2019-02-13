@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders } = require('../models');
 const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb } = require('../services/app.service');
 const Sequelize = require('sequelize');
@@ -6,14 +6,14 @@ const op = Sequelize.Op;
 
 
 const create = async function(req, res){
-    let err, post, comments, question, adOptions, images, tags, video;
+    let err, post, comments, question, adOptions, images, tags, video, order;
     let user = req.user;
 
     let post_info = req.body;
 
     /*
     * delete the ID parameter just in case 
-    * it was sent by the client
+    * it was sent by from the client side
     */
     if('id' in post_info) {
       delete post_info.id
@@ -22,11 +22,12 @@ const create = async function(req, res){
     [err, post] = await to(Posts.create(post_info));
     if(err) return ReE(res, err, 422);
 
-    // Saving relations
+    // Saving user and post relations
     user.addPosts(post);
     post.setUser(user);
 
 
+    //save the question
      if(!isEmptyObject(post_info.question)){
 
       [err, question] = await to(Questions.create(post_info.question));
@@ -38,6 +39,7 @@ const create = async function(req, res){
 
     }
 
+    //save the video 
     if(!isEmptyObject(post_info.video)){
 
       [err, video] = await to(Videos.create(post_info.video));
@@ -48,16 +50,26 @@ const create = async function(req, res){
        video.setUser(user)
     }
 
+    //save the ad configuration
     if(post_info.adOptions.postIsAd) {
-        
+      
       [err, adOptions] = await to(AdOptions.create(getAdOptions(post_info.adOptions)));
-       if(err) return ReE(res, err, 422);
+      if(err) return ReE(res, err, 422);
+
+      if ('orderId' in post_info && post_info.orderId.length) {
+        //make sure the order was created by the current user
+        [err, order] = await to(Orders.find({where: {id: post_info.orderId, UserId: user.id}}));
+        if(err) return ReE(res, {success: false, error: 'Order not found'}, 422);
+        //associate the order with the AdOptions
+        adOptions.setOrder(order);
+      }
 
       post.setAdOption(adOptions);
       adOptions.setUser(user);
       user.addAdOptions(adOptions);
     }
 
+    //save images
     if(post_info.images.length > 0) {
 
       for(let j in post_info.images) {
@@ -68,6 +80,8 @@ const create = async function(req, res){
           }
         }
     }
+
+    //save Tags
 
     /*
     ** Loop through given Tags and cretae new tags if they don't already exist in database
@@ -96,7 +110,7 @@ const create = async function(req, res){
 
     }
 
-
+    //update the post
     [err, post] = await to(post.save());
     if(err) return ReE(res, err, 422);
 
@@ -115,6 +129,13 @@ const create = async function(req, res){
         return ReE(res, err, 422);
       })
 
+}
+
+/*
+* function to save ad confuiguration in the database
+*/
+
+async function saveAdOptions (req, postObject) {
 }
 
 /*
