@@ -82,6 +82,7 @@ router.get('/payment/checkOrderStatus/:orderId',   passport.authenticate('jwt', 
 
 /** Ads routes**/
 router.get('/ad/defaultOptions',   passport.authenticate('jwt', {session:false}),  AdsController.defaultOptions);        // R
+router.post('/ad/adConsumed/:action/:postId',   passport.authenticate('jwt', {session:false}),  AdsController.adConsumed);        // C
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));

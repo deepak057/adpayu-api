@@ -41,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
         this.Videos = this.belongsToMany(models.Videos, {through: 'UserVideos', onDelete: 'CASCADE'});
         this.Notifications = this.hasMany(models.Notifications, {as: 'sender', foreignKey: 'fromId', onDelete: 'CASCADE'});
         this.Notifications = this.hasMany(models.Notifications, {as: 'receiver', foreignKey: 'toId', onDelete: 'CASCADE'});
-
+        // this.SeenAds = this.belongsToMany(models.SeenAds, {through: models.SeenAds, onDelete: 'CASCADE'});
     };
 
     Model.getFriends = function (uid, acceptedOnly= true) {
