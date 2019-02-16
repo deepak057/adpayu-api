@@ -22,9 +22,9 @@ module.exports = (sequelize, DataTypes) => {
     Model.associate = function(models){
         this.User = this.belongsTo(models.User, {onDelete: 'CASCADE'});
         this.Order = this.belongsTo(models.Orders, {onDelete: 'CASCADE'});
+        this.AdStat = this.belongsTo(models.AdStats, {onDelete: 'CASCADE'});
     };
    
-
     Model.prototype.toWeb = function (pw) {
         let json = this.toJSON();
         return json;

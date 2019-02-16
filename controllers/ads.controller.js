@@ -1,4 +1,4 @@
-const { SeenAds, Posts, AdOptions, Orders } = require('../models');
+const { SeenAds, Posts, AdOptions, Orders, AdStats } = require('../models');
 const { to, ReE, ReS } = require('../services/util.service');
 const ADS = require('../config/app-constants');
 const Sequelize = require('sequelize');
@@ -36,9 +36,14 @@ const adConsumed = async function(req, res){
 	  },
 	  include: [{
 	  	model: AdOptions,
-	  	include: [{
-	  		model: Orders
-	  	}]
+	  	include: [
+		  	{
+		  		model: Orders
+		  	},
+		  	{
+		  		model: AdStats
+		  	}
+	  	]
 	  }]
 	  }));
       if(err) {
@@ -61,10 +66,19 @@ const adConsumed = async function(req, res){
         		  .then ((seenAdNew) => {
         		  	seenAdNew.setPost(post);
         		  	seenAdNew.setUser(user);
-        		  	return ReS(res, {
-		              success: true,
-		              message: action + ' successfull'
-		    	    }, 200);
+
+        		  	//update the Ad Stats and send response to client
+        		  	updateAdStats (post, action)
+        		  	  .then ((adStat) => {
+        		  	  	return ReS(res, {
+		                  success: true,
+		                  message: action + ' successfull'
+		    	        }, 200);
+        		  	  })
+        		  	  .catch ((err) => {
+        		  	    console.log(err)
+      	  			    throw new Error('Something went wrong');
+        		      })
         		  })
         		  .catch ((err) => {
         		  	console.log(err)
@@ -122,4 +136,105 @@ function canProceed (post) {
 	let order = post && post.AdOption.Order && post.AdOption.Order.status === 'SUCCESS'
 	//check if Ad has already exhausted its budget
 	return order
+}
+
+/*
+* function to check if an ad's targtes and budget
+* have already been acheived
+*/
+
+function checkAdTarget (post, updatedAdStats) {
+}
+
+
+/*
+* function to update the ad stats after
+* ad is successfully consumed by an user
+*/
+
+async function updateAdStats (post, action) {
+	let adconfig = post.AdOption;
+	
+	let statsData = post.AdOption.AdStat;
+
+	if (statsData) {
+		return AdStats.update(getAdStatsValues (adconfig, action, statsData), {where: {id: statsData.id}})
+		  .then ((AdStat) => {
+		  	return new Promise((resolve) => { resolve(AdStat) })
+		  })
+		  .catch ((err) => {
+		  	console.log(err);
+		  	return new Promise((resolve, reject) => { reject(err) })
+		  })
+	} else {
+		return AdStats.create(getAdStatsValues (adconfig, action))
+		  .then ((AdStat) => {
+		  	return new Promise((resolve) => { resolve(AdStat) })
+		  })
+		  .catch ((err) => {
+		  	console.log(err);
+		  	return new Promise((resolve, reject) => { reject(err) })
+		  })
+	}
+}
+
+/*
+* function to return an object containig values
+* to be save in Ad Stats table
+*/
+function getAdStatsValues (adconfig, action, adStats = false) {
+	let save = {}
+
+	if(adconfig) {
+		switch (action) {
+			case 'impression':
+			  save.impressions = incrementStatValue(adStats? adStats.impressions: false)
+			  save.cpiTotal = incrementStatValue(adStats? adStats.cpiTotal: false, adconfig.cpi)
+			case 'click':
+			  if (adconfig.clickTarget) {
+			  	save.clicks = incrementStatValue(adStats? adStats.clicks: false)
+			  	save.cpcTotal = incrementStatValue(adStats? adStats.cpcTotal: false, adconfig.cpc)
+			  }
+			case 'view':
+			   if (adconfig.viewTarget) {
+			   	 save.views = incrementStatValue(adStats? adStats.views: false)
+			     save.cpvTotal = incrementStatValue(adStats? adStats.cpvTotal: false, adconfig.cpv)
+			   }
+		}
+	}
+
+  return save;
+}
+
+function incrementStatValue (val, defaultVal = 1) {
+	if (val) {
+		val = Number(val) + defaultVal
+	} else {
+		val = defaultVal
+	}
+	return val
+}
+
+/*
+* function to get the Ad Stats
+* database object if it doesn't exist
+* already
+*/
+
+async function getAdStats (post, action) {
+	let adStats = post.AdOption.AdStat, adStatsNew;
+	if (!adStats) {
+		let err;
+		[err, adStatsNew] = await to(AdStats.create())
+	  	if(err) {
+	  	  console.log(err)
+	  	  throw new Error('Something went wrong while trying to create Ad Stats');
+	    } else {
+	    	post.AdOption.setAdStat(adStatsNew);
+	    	return adStatsNew
+	    }
+	} else {
+		return adStats;
+	}
+	
 }
