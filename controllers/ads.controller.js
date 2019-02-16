@@ -51,7 +51,7 @@ const adConsumed = async function(req, res){
       	throw new Error('Post/ad not found');
       }
 
-      if (canProceed(post)) {
+      if (canProceed(post, action)) {
 
 	  	[err, seenAd] = await to(SeenAds.find({where: { PostId: postId, UserId: user.id, action: action}}));
       	if(err) {
@@ -93,7 +93,7 @@ const adConsumed = async function(req, res){
         }
 
       } else {
-      	throw new Error('Can not proceed to crediting amount');
+      	throw new Error('Can not proceed to crediting amount as ad might have acheived its targets');
       }
 
 	} catch (err) {
@@ -131,11 +131,9 @@ function getAdAmount (post, action) {
 * crediting the amount to user
 */
 
-function canProceed (post) {
-	//check if associated Order was successfull
-	let order = post && post.AdOption.Order && post.AdOption.Order.status === 'SUCCESS'
-	//check if Ad has already exhausted its budget
-	return order
+function canProceed (post, action) {
+	//check if associated Order was successfull and check if Ad has not already exhausted its budget
+	return post && post.AdOption.Order && post.AdOption.Order.status === 'SUCCESS' && checkAdTarget (post, action)
 }
 
 /*
@@ -143,7 +141,22 @@ function canProceed (post) {
 * have already been acheived
 */
 
-function checkAdTarget (post, updatedAdStats) {
+function checkAdTarget (post, action, updatedAdStats = false) {
+	let adconfig = post.AdOption;
+
+	let adStats = updatedAdStats || post.AdOption.AdStat
+
+	switch (action) {
+		case 'impression':
+		  return Number(adStats.impressions) < Number(adconfig.impressionTarget)
+		case 'click':
+		  return Number(adStats.clicks) < Number(adconfig.clickTarget)
+		case 'views':
+		  return Number(adStats.views) < Number(adconfig.viewTarget)
+		default:
+		  throw new Error ('Not a valid ad action provided while checking the ad targets')
+		  return false
+	}
 }
 
 
