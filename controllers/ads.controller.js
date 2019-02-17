@@ -150,7 +150,7 @@ function checkAdTarget (post, action, updatedAdStats = false) {
 	// else return true becuase AdStats will
 	// be null only if this ad is being seen
 	// for the very first time
-	if (!adStats) {
+	if (adStats) {
 		switch (action) {
 			case 'impression':
 			  return Number(adStats.impressions) < Number(adconfig.impressionTarget)
