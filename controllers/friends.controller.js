@@ -1,7 +1,7 @@
 const { User, Friendship } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
-const NOTIFICATIONS = require('../config/app-constants');
+const { NOTIFICATIONS } = require('../config/app-constants');
 
 const get =  async function(req, res){
     let err, friends, friendsWeb = [], friendship, temp;

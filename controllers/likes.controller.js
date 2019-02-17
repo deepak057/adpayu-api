@@ -1,7 +1,7 @@
 const { Likes, Posts, User, Comments } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
-const NOTIFICATIONS = require('../config/app-constants');
+const { NOTIFICATIONS } = require('../config/app-constants');
 
 function getNotification(type, postId, postType = 'text', commentId = false) {
   let meta = {}

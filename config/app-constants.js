@@ -10,7 +10,7 @@ NOTIFICATIONS.types = {
     LIKE_ON_COMMENT: 'LIKE_ON_COMMENT'
 }
 
-module.exports = NOTIFICATIONS;
+module.exports.NOTIFICATIONS = NOTIFICATIONS;
 
 let ADS = {}
 
@@ -21,4 +21,4 @@ ADS.defaultPricing = {
   defaultImpressionTarget: 500
 }
 
-module.exports = ADS;
+module.exports.ADS = ADS;

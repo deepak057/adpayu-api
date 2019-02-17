@@ -1,7 +1,7 @@
 const { Comments, Posts } = require('../models');
 const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
-const NOTIFICATIONS = require('../config/app-constants');
+const { NOTIFICATIONS } = require('../config/app-constants');
 
 function getNotification(commentId, postId, type= 'text') {
   return {

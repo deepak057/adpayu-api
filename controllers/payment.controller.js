@@ -3,7 +3,6 @@ const { to, ReE, ReS, roundTwoDecimalPlaces } = require('../services/util.servic
 const Sequelize = require('sequelize');
 var crypto = require('crypto');
 require('dotenv').config();//instatiate environment variables
-const ADS = require('../config/app-constants');
 
 const getToken = async function(req, res){
 

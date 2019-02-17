@@ -1,6 +1,6 @@
 const { SeenAds, Posts, AdOptions, Orders, AdStats } = require('../models');
 const { to, ReE, ReS } = require('../services/util.service');
-const ADS = require('../config/app-constants');
+const { ADS } = require('../config/app-constants');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 
