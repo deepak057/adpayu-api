@@ -146,17 +146,26 @@ function checkAdTarget (post, action, updatedAdStats = false) {
 
 	let adStats = updatedAdStats || post.AdOption.AdStat
 
-	switch (action) {
-		case 'impression':
-		  return Number(adStats.impressions) < Number(adconfig.impressionTarget)
-		case 'click':
-		  return Number(adStats.clicks) < Number(adconfig.clickTarget)
-		case 'views':
-		  return Number(adStats.views) < Number(adconfig.viewTarget)
-		default:
-		  throw new Error ('Not a valid ad action provided while checking the ad targets')
-		  return false
+	// check the stats only if adstats exist
+	// else return true becuase AdStats will
+	// be null only if this ad is being seen
+	// for the very first time
+	if (!adStats) {
+		switch (action) {
+			case 'impression':
+			  return Number(adStats.impressions) < Number(adconfig.impressionTarget)
+			case 'click':
+			  return Number(adStats.clicks) < Number(adconfig.clickTarget)
+			case 'views':
+			  return Number(adStats.views) < Number(adconfig.viewTarget)
+			default:
+			  throw new Error ('Not a valid ad action provided while checking the ad targets')
+			  return false
+		}
+	} else {
+		return true;
 	}
+	
 }
 
 
