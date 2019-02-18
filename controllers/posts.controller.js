@@ -120,7 +120,7 @@ const create = async function(req, res){
     */
     await sleep(100);
 
-    Posts.findOne({include: getDBInclude(), where: {id: post.id}})
+    Posts.findOne({include: getDBInclude(user), where: {id: post.id}})
       .then((post) => {
             return ReS(res, toWeb(post, user), 201);
 
@@ -165,7 +165,7 @@ const get = async function(req, res){
 
     let page = req.query.page || 1;
 
-    let dbIncludes = getDBInclude()
+    let dbIncludes = getDBInclude(user)
 
     let limitNOffset = getLimitOffset(page);
 
@@ -200,7 +200,7 @@ const get = async function(req, res){
     if(tag === 'all')  {
 
       // get the tags of current user and create an array containing Tag Ids
-      req.user.getTags()
+      user.getTags()
         .then ((userTags) => {
           let tagsId = [];
           if(userTags) {
@@ -237,7 +237,7 @@ const get = async function(req, res){
             
             // update the db include array by passing it TagIds of the tag that
             // has been requested
-            criteria.include = getDBInclude([Dbtag.id]);
+            criteria.include = getDBInclude(user, [Dbtag.id]);
 
             condition.push({public: { [op.eq]: true}});
 
@@ -267,7 +267,7 @@ const getTimelineFeed = async function(req, res){
   let limitNOffset = getLimitOffset(page);
 
   let criteria = {
-      include: getDBInclude() ,
+      include: getDBInclude(req.user) ,
       order: [['updatedAt', 'DESC']], 
       limit: limitNOffset.limit,
       offset: limitNOffset.offset,
@@ -328,7 +328,7 @@ const getPostById = function(req, res){
     let postId = req.params.postId || false
 
     if(postId) {
-      Posts.findOne({include: getDBInclude(), where: {id: postId}})
+      Posts.findOne({include: getDBInclude(req.user), where: {id: postId}})
       .then((post) => {
             return ReS(res, toWeb(post, req.user), 201);
       })

@@ -1,4 +1,4 @@
-const { AdsConsumed, Posts, AdOptions, Orders, AdStats } = require('../models');
+const { ConsumedAds, Posts, AdOptions, Orders, AdStats } = require('../models');
 const { to, ReE, ReS } = require('../services/util.service');
 const { ADS } = require('../config/app-constants');
 const Sequelize = require('sequelize');
@@ -53,13 +53,13 @@ const adConsumed = async function(req, res){
 
       if (canProceed(post, action)) {
 
-	  	[err, adConsumed] = await to(AdsConsumed.find({where: { PostId: postId, UserId: user.id, action: action}}));
+	  	[err, adConsumed] = await to(ConsumedAds.find({where: { PostId: postId, UserId: user.id, action: action}}));
       	if(err) {
       	  console.log(err)
       	  throw new Error('Something went wrong');
         } else {
         	if (!adConsumed) {
-        		AdsConsumed.create({
+        		ConsumedAds.create({
         			action: action,
         			amountUSD: getAdAmount(post, action)
         		})
@@ -70,10 +70,25 @@ const adConsumed = async function(req, res){
         		  	//update the Ad Stats and send response to client
         		  	updateAdStats (post, action)
         		  	  .then ((adStat) => {
-        		  	  	return ReS(res, {
-		                  success: true,
-		                  message: action + ' successfull'
-		    	        }, 200);
+        		  	  	
+        		  	  	//get the ad consumption 
+        		  	  	// records and send them to client
+        		  	  	ConsumedAds.findAll({where: {
+        		  	  		PostId: post.id,
+        		  	  		UserId: user.id
+        		  	  	}})
+        		  	  	  .then ((consumedAdsObjs) => {
+        		  	  	  	return ReS(res, {
+		                      success: true,
+		                      message: action + ' successfull',
+		                      ConsumedAds: consumedAdsObjs,
+		                      alreadyConsumed: false
+		    	            }, 200);
+        		  	  	  })
+        		  	  	  .catch ((err) => {
+        		  	        console.log(err)
+      	  			        throw new Error('Something went wrong while getting the Ad consumption records');
+        		          })
         		  	  })
         		  	  .catch ((err) => {
         		  	    console.log(err)
@@ -87,7 +102,8 @@ const adConsumed = async function(req, res){
         	} else {
 	    		return ReS(res, {
 	             success: true,
-	             message: action + ' has been done already'
+	             message: action + ' has been done already',
+	             alreadyConsumed: true
 	    	   }, 200);
         	}
         }
@@ -98,7 +114,7 @@ const adConsumed = async function(req, res){
 
 	} catch (err) {
 		console.log(err)
-		return ReE(res, {success: false, error: 'Something went wrong trying to mark this ad as seen'}, 422);
+		return ReE(res, {success: false, error: 'Something went wrong while attempting to complete the action'}, 422);
 	}
 }
 
@@ -217,16 +233,19 @@ function getAdStatsValues (adconfig, action, adStats = false) {
 			case 'impression':
 			  save.impressions = incrementStatValue(adStats? adStats.impressions: false)
 			  save.cpiTotal = incrementStatValue(adStats? adStats.cpiTotal: false, adconfig.cpi)
+			  break;
 			case 'click':
 			  if (adconfig.clickTarget) {
 			  	save.clicks = incrementStatValue(adStats? adStats.clicks: false)
 			  	save.cpcTotal = incrementStatValue(adStats? adStats.cpcTotal: false, adconfig.cpc)
 			  }
+			  break;
 			case 'view':
 			   if (adconfig.viewTarget) {
 			   	 save.views = incrementStatValue(adStats? adStats.views: false)
 			     save.cpvTotal = incrementStatValue(adStats? adStats.cpvTotal: false, adconfig.cpv)
 			   }
+			   break;
 		}
 	}
 

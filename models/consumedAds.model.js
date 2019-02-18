@@ -6,7 +6,7 @@ const {TE, to}          = require('../services/util.service');
 const CONFIG            = require('../config/config');
 
 module.exports = (sequelize, DataTypes) => {
-    var Model = sequelize.define('AdsConsumed', {
+    var Model = sequelize.define('ConsumedAds', {
         action: {
             type:   DataTypes.ENUM,
             values: ['impression', 'click', 'view'],

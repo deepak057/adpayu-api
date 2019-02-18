@@ -9,6 +9,10 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Forex', {
         USD: {type: DataTypes.FLOAT, defaultValue: 1},
         INR: DataTypes.FLOAT
+    }, {
+
+        //prevent Sequelize from adding "s" to the table name
+        freezeTableName: true
     });
 
     Model.associate = function(models){

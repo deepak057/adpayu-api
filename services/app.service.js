@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, ConsumedAds, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
 /*
 * Function to get the array of only UIDs
 * extracted from the given array of User
@@ -25,7 +25,7 @@ module.exports.getUIDs = function(users, currentUser = false) {
 ** Get default DB Include models
 */
 
-module.exports.getDBInclude = function(tagIds = []) {
+module.exports.getDBInclude = function(user, tagIds = []) {
   let tags = {
     model: Tags,
   }
@@ -67,6 +67,13 @@ module.exports.getDBInclude = function(tagIds = []) {
           {
             model: Videos,
           },
+          {
+            model: ConsumedAds,
+            where: {
+              UserId: user.id
+            },
+            required: false,
+          }
           
         ];
 
