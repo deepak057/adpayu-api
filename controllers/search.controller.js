@@ -119,7 +119,7 @@ const get = async function(req, res){
               }
             ]
           },
-          include: getDBInclude()
+          include: getDBInclude(req.user)
         })
           .then((posts) => {
             return ReS(res, {posts: toWeb(posts, req.user)});
