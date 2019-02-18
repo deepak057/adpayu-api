@@ -1,4 +1,4 @@
-const { SeenAds, Posts, AdOptions, Orders, AdStats } = require('../models');
+const { AdsConsumed, Posts, AdOptions, Orders, AdStats } = require('../models');
 const { to, ReE, ReS } = require('../services/util.service');
 const { ADS } = require('../config/app-constants');
 const Sequelize = require('sequelize');
@@ -21,7 +21,7 @@ module.exports.defaultOptions = defaultOptions;
 const adConsumed = async function(req, res){
 	try {
 
-	  let postId = req.params.postId, action = req.params.action || 'impression' , post, err, user = req.user, seenAd;
+	  let postId = req.params.postId, action = req.params.action || 'impression' , post, err, user = req.user, adConsumed;
 
 	  // make sure a valid PostId is sent by the client
 	  // and that the ad post is not created by the current user
@@ -53,19 +53,19 @@ const adConsumed = async function(req, res){
 
       if (canProceed(post, action)) {
 
-	  	[err, seenAd] = await to(SeenAds.find({where: { PostId: postId, UserId: user.id, action: action}}));
+	  	[err, adConsumed] = await to(AdsConsumed.find({where: { PostId: postId, UserId: user.id, action: action}}));
       	if(err) {
       	  console.log(err)
       	  throw new Error('Something went wrong');
         } else {
-        	if (!seenAd) {
-        		SeenAds.create({
+        	if (!adConsumed) {
+        		AdsConsumed.create({
         			action: action,
         			amountUSD: getAdAmount(post, action)
         		})
-        		  .then ((seenAdNew) => {
-        		  	seenAdNew.setPost(post);
-        		  	seenAdNew.setUser(user);
+        		  .then ((adConsumedObj) => {
+        		  	adConsumedObj.setPost(post);
+        		  	adConsumedObj.setUser(user);
 
         		  	//update the Ad Stats and send response to client
         		  	updateAdStats (post, action)
@@ -191,7 +191,12 @@ async function updateAdStats (post, action) {
 	} else {
 		return AdStats.create(getAdStatsValues (adconfig, action))
 		  .then ((AdStat) => {
-		  	return new Promise((resolve) => { resolve(AdStat) })
+		  	return new Promise((resolve) => { 
+		  		// associate the AdOption with this 
+		  		// new AdStat record
+		  		post.AdOption.setAdStat(AdStat)
+		  		resolve(AdStat) 
+		  	})
 		  })
 		  .catch ((err) => {
 		  	console.log(err);
