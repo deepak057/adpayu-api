@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, ConsumedAds, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
 /*
 * Function to get the array of only UIDs
 * extracted from the given array of User
@@ -54,6 +54,11 @@ module.exports.getDBInclude = function(user, tagIds = []) {
           },
           {
             model: AdOptions,
+            include: [
+              {
+                model: AdStats
+              }
+            ]
           },
           {
             model: Images,

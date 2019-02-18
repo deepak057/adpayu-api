@@ -260,27 +260,3 @@ function incrementStatValue (val, defaultVal = 1) {
 	}
 	return val
 }
-
-/*
-* function to get the Ad Stats
-* database object if it doesn't exist
-* already
-*/
-
-async function getAdStats (post, action) {
-	let adStats = post.AdOption.AdStat, adStatsNew;
-	if (!adStats) {
-		let err;
-		[err, adStatsNew] = await to(AdStats.create())
-	  	if(err) {
-	  	  console.log(err)
-	  	  throw new Error('Something went wrong while trying to create Ad Stats');
-	    } else {
-	    	post.AdOption.setAdStat(adStatsNew);
-	    	return adStatsNew
-	    }
-	} else {
-		return adStats;
-	}
-	
-}
