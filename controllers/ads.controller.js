@@ -292,9 +292,13 @@ async function postAdConsumptionChecks (postId, user) {
 	  	console.log(err)
 	  	throw new Error('Post/ad not found');
 	  } else {
+
+	  	// add impressions if impressions are exhausted but click targets still remain
 	  	if (!canProceed(post, 'impression') && canProceed(post, 'click')){
-		} else if (!canProceed(post, 'impression') && canProceed(post, 'view')) {
-		} else if (!canProceed(post, 'impression') && !canProceed(post, 'click') && !canProceed(post, 'view')){
+	  		fixImpressionTarget (post, 'click')
+		} else if (!canProceed(post, 'impression') && canProceed(post, 'view')) {  // add impressions if impressions are exhausted but view targets still remain
+			fixImpressionTarget (post, 'view')
+		} else if (!canProceed(post, 'impression') && !canProceed(post, 'click') && !canProceed(post, 'view')){ // de-associate the adconfiguration from this post and archive it
 			archiveAdConfiguration (post, user);
 		}
 	  }
@@ -303,6 +307,43 @@ async function postAdConsumptionChecks (postId, user) {
 	return ReE(res, {success: false, error: 'Something went wrong while doing the post ad asumption checks'}, 422);
   }
 }
+
+/*
+* function to manipulate ad COnfiguration
+* by deducing money from click or view targets 
+* and then adding that to the impression target
+*/
+
+function fixImpressionTarget (postObj, deducefrom = 'click') {
+	let adConfig = postObj.AdOption, impressionsToAdd = 1;
+	if (deducefrom === 'click') {
+		if (Number(adConfig.cpi) < Number(adConfig.cpc)) {
+			impressionsToAdd = Math.ceil(Number(adConfig.cpc)/Number(adConfig.cpi))
+		}
+		adConfig.clickTarget -= 1
+	} else if (deducefrom === 'view') {
+		if (Number(adConfig.cpi) < Number(adConfig.cpv)) {
+			impressionsToAdd = Math.ceil(Number(adConfig.cpv)/Number(adConfig.cpi))
+		}
+		adConfig.viewTarget -= 1
+	}
+
+	adConfig.impressionTarget += impressionsToAdd
+	adConfig.save()
+	  .then ((config) => {
+	  	let targetsManipulation = {
+	  		impressionsAdded: impressionsToAdd,
+	  		ViewOrClickRemoved: 1,
+	  		removedAction: deducefrom
+	  	}
+	    NotificationsController.create(getNotification(postObj.id, adConfig.id, targetsManipulation), false, postObj.UserId)
+	  })
+	  .catch ((pErr) => {
+  	  	console.log(pErr)
+  	  	throw new Error ('Something went wrong while saving the manipulated ad configuration')
+	  })
+}	  
+
 
 /*
 * function to check if all the ad targets are acheived
@@ -331,13 +372,21 @@ function archiveAdConfiguration (post, user) {
 	  })
 }
 
-function getNotification(postId, adOptionId) {
-  return {
-    type: NOTIFICATIONS.types.AD_TARGET_COMPLETED,
-    meta: JSON.stringify({
-      postId: parseInt(postId),
-      adOptionId: parseInt(adOptionId),
-      postType: 'ad'
-    })
-  }
+function getNotification(postId, adOptionId, targetsManipulation =  false) {
+  let return_ = {
+	    type: targetsManipulation? NOTIFICATIONS.types.AD_TARGET_MANIPULATED: NOTIFICATIONS.types.AD_TARGET_COMPLETED,
+	    meta: {
+	      postId: parseInt(postId),
+	      adOptionId: parseInt(adOptionId),
+	      postType: 'ad'
+	    }
+	}
+  
+  	if (targetsManipulation) {
+  		return_.meta.targetsManipulation = targetsManipulation
+  	}
+
+  	return_.meta = JSON.stringify(return_.meta)
+
+  	return return_
 }
