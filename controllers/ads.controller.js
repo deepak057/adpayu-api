@@ -172,7 +172,7 @@ function checkAdTarget (post, action, updatedAdStats = false) {
 			  return Number(adStats.impressions) < Number(adconfig.impressionTarget)
 			case 'click':
 			  return Number(adStats.clicks) < Number(adconfig.clickTarget)
-			case 'views':
+			case 'view':
 			  return Number(adStats.views) < Number(adconfig.viewTarget)
 			default:
 			  throw new Error ('Not a valid ad action provided while checking the ad targets')
