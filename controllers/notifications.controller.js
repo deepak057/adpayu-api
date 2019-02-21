@@ -49,7 +49,7 @@ const create = async function (notification, fromId, toId) {
 
   let err, notificationRecord, data; 
 
-  notification.fromId = fromId;
+  notification.fromId = fromId || toId;
   notification.toId = toId;
 
   Notifications.create(notification)

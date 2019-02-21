@@ -1,8 +1,10 @@
-const { ConsumedAds, Posts, AdOptions, Orders, AdStats } = require('../models');
+const { ConsumedAds, Posts, AdOptions, AdArchives, Orders, AdStats } = require('../models');
 const { to, ReE, ReS } = require('../services/util.service');
 const { ADS } = require('../config/app-constants');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
+const NotificationsController   = require('./notifications.controller');
+const { NOTIFICATIONS } = require('../config/app-constants');
 
 const defaultOptions = async function(req, res){
 	try {
@@ -25,27 +27,7 @@ const adConsumed = async function(req, res){
 
 	  // make sure a valid PostId is sent by the client
 	  // and that the ad post is not created by the current user
-	  [err, post] = await to(Posts.find({where: {
-	  	id: postId,
-	  	UserId: {
-	  		[op.ne]: user.id
-	  	},
-	  	adOptionId: {
-	  		[op.ne]: null
-	  	}
-	  },
-	  include: [{
-	  	model: AdOptions,
-	  	include: [
-		  	{
-		  		model: Orders
-		  	},
-		  	{
-		  		model: AdStats
-		  	}
-	  	]
-	  }]
-	  }));
+	  [err, post] = await to(Posts.find(getPostDBCriteria(postId, user)));
       if(err) {
       	console.log(err)
       	throw new Error('Post/ad not found');
@@ -78,6 +60,10 @@ const adConsumed = async function(req, res){
         		  	  		UserId: user.id
         		  	  	}})
         		  	  	  .then ((consumedAdsObjs) => {
+
+        		  	  	  	//finally, run the post ad asumption checks
+        		  	  	  	postAdConsumptionChecks(postId, user);
+
         		  	  	  	return ReS(res, {
 		                      success: true,
 		                      message: action + ' successfull',
@@ -169,11 +155,11 @@ function checkAdTarget (post, action, updatedAdStats = false) {
 	if (adStats) {
 		switch (action) {
 			case 'impression':
-			  return Number(adStats.impressions) < Number(adconfig.impressionTarget)
+			  return Number(adconfig.impressionTarget) ? Number(adStats.impressions) < Number(adconfig.impressionTarget): false
 			case 'click':
-			  return Number(adStats.clicks) < Number(adconfig.clickTarget)
+			  return Number(adconfig.clickTarget) ? Number(adStats.clicks) < Number(adconfig.clickTarget): false
 			case 'view':
-			  return Number(adStats.views) < Number(adconfig.viewTarget)
+			  return Number(adconfig.viewTarget) ? Number(adStats.views) < Number(adconfig.viewTarget): false
 			default:
 			  throw new Error ('Not a valid ad action provided while checking the ad targets')
 			  return false
@@ -259,4 +245,99 @@ function incrementStatValue (val, defaultVal = 1) {
 		val = defaultVal
 	}
 	return val
+}
+
+/*
+* function to return the database
+* criteria for fidning Post Object in
+*/
+
+function getPostDBCriteria (postId, user) {
+  return {
+	where: {
+		id: postId,
+		UserId: {
+			[op.ne]: user.id
+		},
+		adOptionId: {
+			[op.ne]: null
+		}
+	},
+	include: [{
+		model: AdOptions,
+		include: [
+	  	{
+	  		model: Orders
+	  	},
+	  	{
+	  		model: AdStats
+	  	}
+		]
+	}]
+  }
+}
+
+
+/*
+* function to check ad targets 
+* after the ad consumption 
+*/
+
+async function postAdConsumptionChecks (postId, user) {
+  
+  try {
+  	let post, err;
+	  [err, post] = await to(Posts.find(getPostDBCriteria(postId, user)));
+	  if(err) {
+	  	console.log(err)
+	  	throw new Error('Post/ad not found');
+	  } else {
+	  	if (!canProceed(post, 'impression') && canProceed(post, 'click')){
+		} else if (!canProceed(post, 'impression') && canProceed(post, 'view')) {
+		} else if (!canProceed(post, 'impression') && !canProceed(post, 'click') && !canProceed(post, 'view')){
+			archiveAdConfiguration (post, user);
+		}
+	  }
+  } catch (err) {
+	console.log(err)
+	return ReE(res, {success: false, error: 'Something went wrong while doing the post ad asumption checks'}, 422);
+  }
+}
+
+/*
+* function to check if all the ad targets are acheived
+* then simply remove the AdConfiguration from the post
+* and turn this ad post into a normal post
+*/
+
+function archiveAdConfiguration (post, user) {
+	let adConfig = post.AdOption
+	AdArchives.create({AdOptionId: adConfig.id, PostId: post.id})
+	  .then((archive) => {
+	  	//remove the Post configuration and make the post public
+	  	Posts.update({AdOptionId: null, public: true}, {where: { id: post.id}})
+	  	  .then ((postObj) => {
+	  	  	//send Notification to the user about ad completion
+	  	  	NotificationsController.create(getNotification(post.id, adConfig.id), false, post.UserId)
+	  	  })
+	  	  .catch ((pErr) => {
+	  	  	console.log(pErr)
+	  	  	throw new Error ('Something went wrong while removing the ad configuration')
+	  	  })
+	  })
+	  .catch((err)=> {
+	  	console.log(err)
+	  	throw new Error ('Something went wrong while archiving the ad config')
+	  })
+}
+
+function getNotification(postId, adOptionId) {
+  return {
+    type: NOTIFICATIONS.types.AD_TARGET_COMPLETED,
+    meta: JSON.stringify({
+      postId: parseInt(postId),
+      adOptionId: parseInt(adOptionId),
+      postType: 'ad'
+    })
+  }
 }
