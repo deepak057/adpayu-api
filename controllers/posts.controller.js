@@ -179,10 +179,10 @@ const get = async function(req, res){
           {
             UserId: getUIDs(friends, req.user)
           },
-          {
-            AdOptionId: { [op.ne]: null}
-          },
       ]
+
+      //ad location wise ad filtering search criteria
+      condition.push(getAdLocationSearchCriteria(user))
 
     let criteria = {
       include: dbIncludes ,
@@ -257,6 +257,53 @@ const get = async function(req, res){
           })
   }
 }
+
+
+/*
+* function to return AdOption database search criteria
+* to filter ads based on user's location
+* User will always see global ads and location based
+* ads if he has provided his country in Profile page
+* 
+*/
+
+function getAdLocationSearchCriteria (user) {
+
+  let AdOptionCondition;
+
+      if(user.location) {
+        AdOptionCondition = {
+          [op.and]: [
+
+            {
+
+              AdOptionId: { [op.ne]: null},
+            },
+
+            {
+              [op.or]: [
+                {
+                  '$AdOption.adCountries$': Sequelize.literal(' FIND_IN_SET("'+user.location+'",AdOption.adCountries)')
+                },
+                {
+                  '$AdOption.adCountries$': { [op.eq]: ''},
+                }
+              ]
+            }
+
+          ]
+          
+        }
+      } else {
+        AdOptionCondition = {
+          AdOptionId: { [op.ne]: null},
+          '$AdOption.adCountries$': { [op.eq]: ''},
+        }
+      }
+
+  return AdOptionCondition;
+}
+
 module.exports.get = get;
 
 const getTimelineFeed = async function(req, res){

@@ -4,6 +4,8 @@ const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, Image
 * extracted from the given array of User
 * objects
 */
+const Sequelize = require('sequelize');
+const op = Sequelize.Op;
 
 module.exports.getUIDs = function(users, currentUser = false) {
   let uids= []
@@ -30,6 +32,23 @@ module.exports.getDBInclude = function(user, tagIds = []) {
     model: Tags,
   }
   
+  let adOption = {
+      model: AdOptions,
+      /* where: {
+        adCountries: 
+      }*/
+      include: [
+        {
+          model: AdStats
+        }
+      ]
+  }
+
+  /*if (user.location) {
+   adOption.where = Sequelize.literal(' FIND_IN_SET("'+user.location+'",adCountries)')
+  }
+  */
+
   if (tagIds.length) {
     tags.where = {
       id: tagIds
@@ -52,14 +71,7 @@ module.exports.getDBInclude = function(user, tagIds = []) {
           {
             model: User.scope('public')
           },
-          {
-            model: AdOptions,
-            include: [
-              {
-                model: AdStats
-              }
-            ]
-          },
+          
           {
             model: Images,
           },
@@ -83,6 +95,7 @@ module.exports.getDBInclude = function(user, tagIds = []) {
         ];
 
     return_.push(tags)
+    return_.push(adOption)
 
     return return_;
 }
