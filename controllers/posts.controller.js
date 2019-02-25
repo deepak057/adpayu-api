@@ -328,6 +328,12 @@ const getTimelineFeed = async function(req, res){
   } else {
     let err, friends, isFriend = false;
 
+    criteria.where = {
+       UserId: profileUserId,
+       AdOptionId: { [op.eq]: null}
+
+    };
+
     // get profile user's friends
     [err, friends] = await to(User.getFriends(profileUserId))
      if(err) {
@@ -339,19 +345,9 @@ const getTimelineFeed = async function(req, res){
        isFriend = getUIDs(friends).indexOf(req.user.id) !== -1
      }
      
-     if (isFriend) {
-       criteria.where = {
-         UserId: profileUserId,
-         AdOptionId: { [op.eq]: null}
-
-       }
-     } else {
-        criteria.where = {
-          UserId: profileUserId,
-          AdOptionId: { [op.eq]: null},
-          public: { [op.eq]: true}
-        }
-     }
+     if (!isFriend) {
+       criteria.where.public = { [op.eq]: true}
+     } 
   }
   
   Posts.findAll(criteria)
