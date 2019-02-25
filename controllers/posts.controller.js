@@ -342,18 +342,14 @@ const getTimelineFeed = async function(req, res){
      if (isFriend) {
        criteria.where = {
          UserId: profileUserId,
+         AdOptionId: { [op.eq]: null}
+
        }
      } else {
         criteria.where = {
           UserId: profileUserId,
-          [op.or]: [
-            {
-              AdOptionId: { [op.ne]: null}
-            },
-            {
-              public: { [op.eq]: true}
-            }
-          ]
+          AdOptionId: { [op.eq]: null},
+          public: { [op.eq]: true}
         }
      }
   }
