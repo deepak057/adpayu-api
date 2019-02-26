@@ -17,6 +17,8 @@ module.exports = (sequelize, DataTypes) => {
         location  : {type: DataTypes.STRING, defaultValue: ''},
         about     : {type: DataTypes.TEXT, defaultValue: ''},
         tagline   : {type: DataTypes.STRING, defaultValue: ''},
+        feedEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
+        adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: true}
     },{
         defaultScope: {
           attributes: { exclude: [] },

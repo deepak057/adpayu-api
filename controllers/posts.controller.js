@@ -211,7 +211,7 @@ const get = async function(req, res){
 
           condition.push({public: { [op.eq]: true},'$Tags.id$': tagsId});
 
-          criteria.where = {[op.or]: condition}
+          criteria.where = getWhereCondition (user, condition)
 
           Posts.findAll(criteria)
            .then((posts) => {
@@ -241,7 +241,7 @@ const get = async function(req, res){
 
             condition.push({public: { [op.eq]: true}});
 
-            criteria.where = {[op.or]: condition}
+            criteria.where = getWhereCondition (user, condition)
 
             Posts.findAll(criteria)
              .then(posts => {
@@ -256,6 +256,48 @@ const get = async function(req, res){
             return ReS(res, error);
           })
   }
+}
+
+/*
+* function to prepare the final query 
+* based on user's ad and feed preferences
+*/
+function getWhereCondition (user, condition) {
+  let where;
+
+  if (user.adsEnabled && user.feedEnabled) {
+    where = {[op.or]: condition}
+  } else {
+      let adOptionIdCondition;
+
+      if (!user.adsEnabled && user.feedEnabled) {
+        adOptionIdCondition = {[op.eq]: null}
+      }
+
+      if (user.adsEnabled && !user.feedEnabled) {
+        adOptionIdCondition = {[op.ne]: null}
+      }
+      if (!user.adsEnabled && !user.feedEnabled) {
+        adOptionIdCondition = "somethingFake"
+      }
+
+      where = {
+
+        [op.and]: [
+          {
+            AdOptionId: adOptionIdCondition
+          },
+          {
+            [op.or]: condition
+          }
+        ]
+      } 
+
+  }
+
+  
+  return where;
+
 }
 
 
