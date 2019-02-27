@@ -438,12 +438,24 @@ const update = async function(req, res){
 module.exports.update = update;
 
 const remove = async function(req, res){
-    let company, err;
-    company = req.company;
-
-    [err, company] = await to(company.destroy());
-    if(err) return ReE(res, 'error occured trying to delete the company');
-
-    return ReS(res, {message:'Deleted Company'}, 204);
+    try {
+      let postId = req.params.postId;
+      Posts.find({where: {id: postId, UserId: req.user.id}})
+        .then((post) => {
+          post.destroy()
+            .then(() => {
+              const NotificationsController   = require('./notifications.controller');
+              NotificationsController.removePostNotifications(postId); //remove all the notifications record associated with this post
+              return ReS(res, {success: true, message: 'Post successfully deleted'}, 201);
+            })
+        })
+        .catch((e) => {
+          console.log(e)
+          throw new Error('Post not found')
+        })
+    } catch (e) {
+      console.log(e)
+      return ReE(res, {'success': false, 'error': 'Something went wrong while trying to delete the post'}, 422);
+    }
 }
 module.exports.remove = remove;

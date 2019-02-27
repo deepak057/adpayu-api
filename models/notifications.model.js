@@ -15,7 +15,8 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         meta: DataTypes.TEXT,
         fromId: DataTypes.INTEGER,
-        toId: DataTypes.INTEGER
+        toId: DataTypes.INTEGER,
+        postId: DataTypes.BIGINT
     });
 
     Model.associate = function(models){

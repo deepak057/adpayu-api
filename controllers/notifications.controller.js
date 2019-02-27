@@ -47,10 +47,14 @@ module.exports.get = get;
 
 const create = async function (notification, fromId, toId) {
 
-  let err, notificationRecord, data; 
+  let err, notificationRecord, data, postId = getPostId(notification); 
 
   notification.fromId = fromId || toId;
   notification.toId = toId;
+
+  if(postId) {
+    notification.postId = postId
+  }
 
   Notifications.create(notification)
     .then((notificationRecord) => {
@@ -66,6 +70,24 @@ const create = async function (notification, fromId, toId) {
 }
 
 module.exports.create = create;
+
+
+/*
+* method to get PostId from Notification object
+*/
+function getPostId (notification) {
+  if ('meta' in notification){
+    try {
+      let meta = JSON.parse(notification.meta)
+      if (meta && 'postId' in meta) {
+        return meta.postId
+      }
+    } catch (e) {
+      return false
+    }
+  }
+  return false
+}
 
 const remove = async function(notification, fromId = false, toId = false){
   let whereObj = {}
@@ -109,3 +131,10 @@ const markSeen = async function(req, res){
 }
 
 module.exports.markSeen = markSeen;
+
+
+function removePostNotifications (postId) {
+  return Notifications.destroy({where: {postId: postId}})
+}
+
+module.exports.removePostNotifications = removePostNotifications;
