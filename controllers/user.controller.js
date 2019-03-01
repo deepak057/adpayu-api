@@ -1,6 +1,6 @@
-const { User, Friendship }          = require('../models');
+const { User, Friendship, ConsumedAds }          = require('../models');
 const authService       = require('../services/auth.service');
-const { to, ReE, ReS, uniqeFileName}  = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces}  = require('../services/util.service');
 
 const create = async function(req, res){
     const body = req.body;
@@ -83,14 +83,20 @@ module.exports.remove = remove;
 
 const login = async function(req, res){
     const body = req.body;
-    let err, user;
+    let err, user, amount;
 
     [err, user] = await to(authService.authUser(req.body));
     if(err) return ReE(res, err, 422);
 
+    //get total amount of money that user has accumlated
+    [err, amount] = await to(ConsumedAds.getUserTotal(user.id));
+    if(err) return ReE(res, err, 422);
+
     return ReS(res, {
         token:user.getJWT(), 
-        user:user.toWeb()
+        user:user.toWeb(),
+        totalRevenue: amount
+
     });
 }
 module.exports.login = login;

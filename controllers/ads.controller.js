@@ -41,9 +41,10 @@ const adConsumed = async function(req, res){
       	  throw new Error('Something went wrong');
         } else {
         	if (!adConsumed) {
+        		let amountAdded = getAdAmount(post, action)
         		ConsumedAds.create({
         			action: action,
-        			amountUSD: getAdAmount(post, action)
+        			amountUSD: amountAdded
         		})
         		  .then ((adConsumedObj) => {
         		  	adConsumedObj.setPost(post);
@@ -68,6 +69,7 @@ const adConsumed = async function(req, res){
 		                      success: true,
 		                      message: action + ' successfull',
 		                      ConsumedAds: consumedAdsObjs,
+		                      amountAdded: amountAdded,
 		                      alreadyConsumed: false
 		    	            }, 200);
         		  	  	  })
