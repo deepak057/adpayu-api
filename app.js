@@ -35,6 +35,16 @@ function updateForexRates () {
   ForexController.fetchForexRates()
 }
 
+/*
+* function to create default tag in database
+*/
+
+function createDefaultTag () {
+  console.log("Creating default tag");
+  const TagsController   = require('./controllers/tags.controller');
+  TagsController.createDefaultTag()
+}
+
 //Log Env
 console.log("Environment:", CONFIG.app)
 //DATABASE
@@ -52,6 +62,9 @@ if(CONFIG.app==='dev'){
         //update the forex rates after
         // all the tables are created
         updateForexRates();
+
+        //create the default tag if it doesn't already exist
+        createDefaultTag()
 
       })
     // models.sequelize.sync({ force: true });//deletes all tables then recreates them useful for testing and development purposes

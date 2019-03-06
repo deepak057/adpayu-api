@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Tags', {
         name     : DataTypes.STRING,
         icon     : {type: DataTypes.STRING, defaultValue: 'mdi mdi-gauge'},
-        UserId: { type: DataTypes.INTEGER, allowNull: false}
+        UserId: { type: DataTypes.INTEGER}
     });
 
     Model.associate = function(models){

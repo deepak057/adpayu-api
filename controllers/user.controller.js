@@ -1,6 +1,7 @@
 const { User, Friendship, ConsumedAds }          = require('../models');
 const authService       = require('../services/auth.service');
 const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces}  = require('../services/util.service');
+const TagsController   = require('./tags.controller');
 
 const create = async function(req, res){
     const body = req.body;
@@ -13,6 +14,9 @@ const create = async function(req, res){
         let err, user;
 
         [err, user] = await to(authService.createUser(body));
+
+        //associate this user with default tag
+        TagsController.associateWithDefaultTag(user);
 
         if(err) return ReE(res, err, 422);
         return ReS(res, {message:'Successfully created new user.', user:user.toWeb(), token:user.getJWT()}, 201);

@@ -1,6 +1,7 @@
 const { Tags, User } = require('../models');
 const { to, ReE, ReS, isEmptyObject, getLimitOffset } = require('../services/util.service');
 const { tagsToWeb} = require('../services/app.service');
+const { TAGS } = require('../config/app-constants');
 
 const Sequelize = require('sequelize');
 
@@ -133,3 +134,42 @@ const unfollow = function(req, res){
 
 }
 module.exports.unfollow = unfollow;
+
+const createDefaultTag = function(){
+
+  let tagName = TAGS.defaultTag.name;
+
+  try{
+
+    Tags.find({where: {name: tagName}})
+    .then ((tag) => {
+      if (!tag) {
+        Tags.create({name: tagName})
+          .then((tag) => {
+            console.log('Default tag ' + tagName + ' created')
+          })
+      }
+    })
+  } catch (e) {
+    console.log(e)
+    console.log('Something went wrong while trying to create the default tag')
+  }  
+}
+
+module.exports.createDefaultTag = createDefaultTag;
+
+const associateWithDefaultTag = function(user){
+  let tagName = TAGS.defaultTag.name;
+
+  try {
+    Tags.find({where: {name: tagName}})
+      .then ((tag) => {
+        tag.addUsers(user)
+      })
+  } catch (e) {
+    console.log(e)
+    console.log('Something went wrong while associating the user with default tag.')
+  }
+}
+
+module.exports.associateWithDefaultTag = associateWithDefaultTag;

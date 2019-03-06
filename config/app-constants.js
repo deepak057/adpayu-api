@@ -24,3 +24,11 @@ ADS.defaultPricing = {
 }
 
 module.exports.ADS = ADS;
+
+let TAGS = {}
+
+TAGS.defaultTag = {
+  name: 'general'
+}
+
+module.exports.TAGS = TAGS;
