@@ -1,7 +1,8 @@
-const { Comments, Posts } = require('../models');
-const { to, ReE, ReS, isEmptyObject } = require('../services/util.service');
+const { Comments, Users, Likes, Posts, Videos, Questions } = require('../models');
+const { to, ReE, ReS } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const { NOTIFICATIONS } = require('../config/app-constants');
+const { getCommentIncludes, getSingleComment } = require('../services/app.service');
 
 function getNotification(commentId, postId, type= 'text') {
   return {
@@ -57,18 +58,51 @@ const create =  function(req, res){
 module.exports.create = create;
 
 const remove = async function(req, res){
-    let comment, err, post;
+    try {
+      let comment, err, post, commentId = parseInt(req.params.commentId), user = req.user;
 
-    [err, comment] = await to(Comments.findOne({where: {id: req.query.commentId}}));
-    if(err) return ReE(res, 'error occured trying to delete the comment');
+      [err, comment] = await to(Comments.findOne({where: {id: commentId, UserId: user.id}}));
+      if(err) return ReE(res, 'error occured trying to delete the comment');
       
-    [err, post] = await to(Posts.findOne({where: {id: comment.PostId}}));
-    if(err) return ReE(res, 'error occured trying to delete the comment');
+      [err, post] = await to(Posts.findOne({where: {id: comment.PostId}}));
+      if(err) return ReE(res, 'error occured trying to delete the comment');
       
-    comment.destroy();
+      comment.destroy();
 
-    NotificationsController.remove(getNotification(req.query.commentId, post.id, post.type), req.user.id)
+      NotificationsController.remove(getNotification(commentId, post.id, post.type), user.id)
 
-    return ReS(res, {message:'Comment deleted'}, 204);
+      return ReS(res, {message:'Comment deleted'}, 200);
+    } catch (e) {
+      console.log(e);
+      return ReE(res, 'error occured trying to delete the comment', 204);
+    }
+
 }
 module.exports.remove = remove;
+
+const getComment = async function(req, res){
+  try {
+    let commentId = req.params.commentId, comment, err, post;
+
+     [err, comment] = await to(Comments.find({where: {id: commentId},include: getCommentIncludes()}));
+     if(err) {
+        console.log(err)
+        throw new Error('error occured trying to get the comment')
+     }
+      
+      [err, post] = await to(Posts.find({where: {id: comment.PostId}, include: [{model: Questions},{model: Videos}]}));
+      if(err) {
+        console.log(err)
+        throw new Error('error occured trying to get the post')
+       }
+
+      return ReS(res, {comment: getSingleComment(comment, req.user), post: post}, 200);      
+
+  } catch (e) {
+    console.log(e)
+    return ReE(res, {success: false, message: 'Somehting went wrong while getting the comment.'});
+
+  }
+      
+}
+module.exports.getComment = getComment;

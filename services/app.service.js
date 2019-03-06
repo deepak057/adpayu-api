@@ -23,6 +23,27 @@ module.exports.getUIDs = function(users, currentUser = false) {
   return uids
 }
 
+
+/*
+* function to get the comment
+* model and dependencies
+*/
+
+function getCommentIncludes () {
+return [
+  {
+    model: User.scope('public')
+  },
+  {
+    model: Likes
+  }
+]
+}
+
+module.exports.getCommentIncludes = function () {
+  return getCommentIncludes()
+}
+
 /*
 ** Get default DB Include models
 */
@@ -58,17 +79,6 @@ module.exports.getDBInclude = function(user, tagIds = []) {
   let return_ = [
 
           {
-            model: Comments,
-            include: [
-              {
-                model: User.scope('public')
-              },
-              {
-                model: Likes
-              }
-            ]
-          },
-          {
             model: User.scope('public')
           },
           
@@ -96,6 +106,7 @@ module.exports.getDBInclude = function(user, tagIds = []) {
 
     return_.push(tags)
     return_.push(adOption)
+    return_.push({model: Comments, include: getCommentIncludes()})
 
     return return_;
 }
@@ -139,11 +150,19 @@ function getPostComments (post, user) {
   let comments_web = [];
 
     for (let i in post.Comments){
-      comments_web.push(setDefaultLike(post.Comments[i], user))
+      comments_web.push(getSingleComment(post.Comments[i], user))
     }
 
     return comments_web;
 
+}
+
+function getSingleComment (commentObj, user) {
+  return setDefaultLike(commentObj, user)
+}
+
+module.exports.getSingleComment = function (commentObj, user) {
+  return getSingleComment(commentObj, user)
 }
 
 function setDefaultLike (model, user) {

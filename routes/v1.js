@@ -48,7 +48,8 @@ router.delete('/tags/unfollow/:tagId',           passport.authenticate('jwt', {s
 
 /** Comments routes**/
 router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C
-router.delete('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // C
+router.delete('/comments/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // D
+router.get('/getComment/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.getComment);        // R
 
 /** Likes routes**/
 router.post('/like/post/:postId',           passport.authenticate('jwt', {session:false}), LikesController.createPostLike);        // C
