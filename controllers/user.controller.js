@@ -8,6 +8,10 @@ const create = async function(req, res){
 
     if(!body.unique_key && !body.email && !body.phone){
         return ReE(res, 'Please enter an email or phone number to register.');
+    } else if(!body.first || !body.last){
+      return ReE(res, 'Please enter your full name to register.');
+    } else if (!body.location) {
+      return ReE(res, 'Please choose your country to register.');
     } else if(!body.password){
         return ReE(res, 'Please enter a password to register.');
     }else{
