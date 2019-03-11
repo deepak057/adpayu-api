@@ -3,12 +3,13 @@ const { to, ReE, ReS, roundTwoDecimalPlaces } = require('../services/util.servic
 const Sequelize = require('sequelize');
 var crypto = require('crypto');
 require('dotenv').config();//instatiate environment variables
+const { ADS } = require('../config/app-constants');
 
 const getToken = async function(req, res){
 
 	try {
 
-		let err, forex, amountINR, amountUSD = parseFloat(req.query.orderAmount), processingFeePercentage = 3, processingFeeINR, processingFeeUSD, orderAmount, orderAmountUSD;
+		let err, forex, amountINR, amountUSD = parseFloat(req.query.orderAmount), processingFeePercentage = ADS.processingFeePercentage, processingFeeINR, processingFeeUSD, orderAmount, orderAmountUSD;
 		
 		/*
 		* Get USD to INR forex rate

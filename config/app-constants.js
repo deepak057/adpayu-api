@@ -23,6 +23,8 @@ ADS.defaultPricing = {
   defaultImpressionTarget: 500
 }
 
+ADS.processingFeePercentage = 3
+
 module.exports.ADS = ADS;
 
 let TAGS = {}
@@ -32,3 +34,9 @@ TAGS.defaultTag = {
 }
 
 module.exports.TAGS = TAGS;
+
+let MONEY_WITHDRAWL_CONFIG = {
+  siteFeePercentage: 10
+}
+
+module.exports.MONEY_WITHDRAWL_CONFIG = MONEY_WITHDRAWL_CONFIG;

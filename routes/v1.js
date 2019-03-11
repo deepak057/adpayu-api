@@ -12,6 +12,8 @@ const NotificationsController   = require('../controllers/notifications.controll
 const SearchController   = require('../controllers/search.controller');
 const PaymentController   = require('../controllers/payment.controller');
 const AdsController = require('../controllers/ads.controller');
+const WithdrawController = require('../controllers/withdraw.controller');
+
 const custom 	        = require('./../middleware/custom');
 
 const passport      	= require('passport');
@@ -84,6 +86,9 @@ router.get('/payment/checkOrderStatus/:orderId',   passport.authenticate('jwt', 
 /** Ads routes**/
 router.get('/ad/defaultOptions',   passport.authenticate('jwt', {session:false}),  AdsController.defaultOptions);        // R
 router.post('/ad/adConsumed/:action/:postId',   passport.authenticate('jwt', {session:false}),  AdsController.adConsumed);        // C
+
+/** Withdraw routes **/
+router.get('/withdraw/overview',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdrawOverview);        // R
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));
