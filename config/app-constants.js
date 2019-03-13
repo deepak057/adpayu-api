@@ -36,7 +36,21 @@ TAGS.defaultTag = {
 module.exports.TAGS = TAGS;
 
 let MONEY_WITHDRAWL_CONFIG = {
-  siteFeePercentage: 10
+  siteFeePercentage: 10,
+  paymentGatewayCharges: {
+    paytm: {
+      fixed: 4,
+      percentage: 1.5
+    },
+    bank: {
+      fixed: 6,
+      percentage: 1
+    },
+    manual: {
+      fixed: 5,
+      percentage: 1
+    }
+  }
 }
 
 module.exports.MONEY_WITHDRAWL_CONFIG = MONEY_WITHDRAWL_CONFIG;

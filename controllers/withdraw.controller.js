@@ -6,7 +6,7 @@ const NotificationsController   = require('./notifications.controller');
 const withdrawOverview = async function (req, res) {
   try {
     let details, err;
-    [err, details] =await to(getTransactionDetails(req.user))
+    [err, details] =await to(getTransactionDetails(req.user, req.query.mode))
     if (!err) {
       return ReS(res, {
         transaction: details
@@ -23,7 +23,7 @@ const withdrawOverview = async function (req, res) {
 
 module.exports.withdrawOverview = withdrawOverview;
 
-async function getTransactionDetails (user) {
+async function getTransactionDetails (user, mode = 'bank') {
   let err, amountUSD, amountINR, siteFeePercentage= MONEY_WITHDRAWL_CONFIG.siteFeePercentage,  siteFeeUSD, totalUSD, totalINR, siteFeeINR, forex;
 
    //get total amount of money in USD which current user has accumlated
@@ -45,11 +45,13 @@ async function getTransactionDetails (user) {
 
     siteFeeINR = roundTwoDecimalPlaces( (amountINR / 100 ) * siteFeePercentage )
 
+    /*
+    * total payable charges
+    */
     totalUSD = roundTwoDecimalPlaces(amountUSD - siteFeeUSD);
-
     totalINR = roundTwoDecimalPlaces(amountINR - siteFeeINR);
 
-    return {
+    return addPaymentGatewayCharges({
       amountAccumulatedUSD: amountUSD,
       amountAccumulatedINR: amountINR,
       siteFeePercentage: siteFeePercentage,
@@ -57,6 +59,30 @@ async function getTransactionDetails (user) {
       siteFeeINR: siteFeeINR,
       totalUSD: totalUSD,
       totalINR: totalINR
+    }, mode)
+
+}
+
+async function addPaymentGatewayCharges (transactionDetails, mode) {
+  try {
+
+    let PGCharges = MONEY_WITHDRAWL_CONFIG.paymentGatewayCharges[mode]
+
+    let temp = (transactionDetails.totalINR / 100) * PGCharges.percentage
+
+    let charges;
+
+    if (temp > PGCharges.fixed) {
+      charges = temp
+    } else {
+      charges = PGCharges.fixed
     }
+
+    transactionDetails.totalINR -= charges
+
+    return transactionDetails
+  } catch (e) {
+    throw e
+  }
 
 }
