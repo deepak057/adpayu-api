@@ -37,6 +37,7 @@ module.exports.TAGS = TAGS;
 
 let MONEY_WITHDRAWL_CONFIG = {
   siteFeePercentage: 10,
+  minRequiredAmountINR: 10,
   paymentGatewayCharges: {
     paytm: {
       fixed: 4,
