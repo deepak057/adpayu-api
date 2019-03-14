@@ -89,6 +89,7 @@ router.post('/ad/adConsumed/:action/:postId',   passport.authenticate('jwt', {se
 
 /** Withdraw routes **/
 router.get('/withdraw/overview',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdrawOverview);        // R
+router.post('/withdraw',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdraw);        // C
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));

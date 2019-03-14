@@ -2,6 +2,71 @@ const { ConsumedAds, Forex} = require('../models');
 const { to, ReE, ReS, roundTwoDecimalPlaces } = require('../services/util.service');
 const { MONEY_WITHDRAWL_CONFIG } = require('../config/app-constants');
 const NotificationsController   = require('./notifications.controller');
+require('dotenv').config();//instatiate environment variables
+const https = require('https');
+
+const APIConfig = {
+  /* test */
+  baseURL: 'payout-gamma.cashfree.com',
+  /* production */
+  //baseURL: 'https://payout-api.cashfree.com', 
+  secrets: {
+    id: process.env.CASHFREE_PAYOUT_CLIENT_ID,
+    secret: process.env.CASHFREE_PAYOUT_CLIENT_SECRET
+  }
+}
+
+function authenticate () {
+
+  // An object of options to indicate where to post to
+  var post_options = {
+      host: APIConfig.baseURL,
+      path: '/payout/v1/authorize',
+      method: 'POST',
+      headers: {
+          'X-Client-Id': APIConfig.secrets.id,
+          'X-Client-Secret': APIConfig.secrets.secret
+      }
+  };
+
+  let data = '';
+
+  console.log("Authenticating Cashfree Payout API...")
+
+  // Set up the request
+  var post_req = https.request(post_options, function(resp) {
+      resp.on('data', function (chunk) {
+           data += chunk;
+      });
+      resp.on('end', () => {
+        console.log('Cashfree Payout authentication response-' + data)
+      });
+      resp.on('error', (err) => {
+        console.log(err)
+      })
+  });
+
+post_req.write('');
+post_req.end();
+}
+
+const withdraw = async function (req, res) {
+  try {
+    let details, err;
+    [err, details] =await to(getTransactionDetails(req.user, req.body.mode))
+    if (!err) {
+      authenticate()
+    } else {
+      console.log(err)
+      throw new Error ('Transaction details not found.')
+    }
+  } catch (e) {
+    console.log(e)
+    return ReE(res, {success: false, message: 'Something went wrong while getting the details about this transaction.'}, 422);
+  }
+}
+
+module.exports.withdraw = withdraw;
 
 const withdrawOverview = async function (req, res) {
   try {
