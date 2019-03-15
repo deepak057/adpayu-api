@@ -16,38 +16,187 @@ const APIConfig = {
   }
 }
 
-function authenticate () {
+function getAuthenticationHeader (authenticationToken) {
+  return {
+     'Authorization': 'Bearer '+ authenticationToken
+  }
+}
 
-  // An object of options to indicate where to post to
-  var post_options = {
-      host: APIConfig.baseURL,
-      path: '/payout/v1/authorize',
-      method: 'POST',
-      headers: {
-          'X-Client-Id': APIConfig.secrets.id,
-          'X-Client-Secret': APIConfig.secrets.secret
-      }
-  };
+function getRequestOptions (path, headers, method = 'POST') {
+  return {
+    host: APIConfig.baseURL,
+    path: '/payout/v1/'+ path,
+    method: method,
+    headers: headers
+  }
+}
 
-  let data = '';
+/*
+* function to authenticate and obtain authentication
+* token
+*/
+function authenticate (details, transaferDetails, user, res) {
+  return new Promise(function(resolve, reject) {
+    let data = '';
 
-  console.log("Authenticating Cashfree Payout API...")
+      console.log("Authenticating Cashfree Payout API...")
 
-  // Set up the request
-  var post_req = https.request(post_options, function(resp) {
+      var post_req = https.request(getRequestOptions('authorize', {
+              'X-Client-Id': APIConfig.secrets.id,
+              'X-Client-Secret': APIConfig.secrets.secret
+          }), function(resp) {
+          resp.on('data', function (chunk) {
+               data += chunk;
+          });
+          resp.on('end', () => {
+            let response = JSON.parse(data)
+            if (response.status === 'SUCCESS') {
+              //return addBeneficiary(details, transaferDetails, response.data.token, user, res)
+              resolve(response.data.token)
+            } else {
+              resolve(false)
+            }
+            
+          });
+          resp.on('error', (err) => {
+            reject(err)
+          })
+      });
+
+      post_req.write('');
+      post_req.end();
+
+  });
+
+
+      
+}
+
+async function addBeneficiary (transactionDetails, transaferDetails, authenticationToken, user) {
+  return new Promise(function(resolve, reject) {
+      let data = ''
+
+      let postData = JSON.stringify({
+        beneId: user.id,
+        name: user.first + ' ' + user.last,
+        email: user.email,
+        phone: transaferDetails.phone,
+        bankAccount: transaferDetails.accountNumber,
+        ifsc: transaferDetails.IFSC,
+        address1: transaferDetails.address
+      })
+
+       console.log("Adding Beneficiary...")
+
+        var post_req = https.request(getRequestOptions('addBeneficiary',getAuthenticationHeader(authenticationToken)), function(resp) {
+          resp.on('data', function (chunk) {
+               data += chunk;
+          });
+          resp.on('end', () => {
+            console.log(data)
+            resolve(JSON.parse(data))
+          });
+          resp.on('error', (err) => {
+            reject(err)
+          })
+        });
+
+      post_req.write(postData);
+      post_req.end();
+  });
+  
+}
+
+async function fetchBeneficiary (transactionDetails, transaferDetails, authenticationToken, user, res) {
+  try {
+
+    let err, ben;
+    [err, ben] = await to(getBeneficiary(authenticationToken, user.id))
+
+    if (!ben) {
+      [err, ben] = await to(addBeneficiary(transactionDetails, transaferDetails, authenticationToken, user))
+    }
+
+    if (ben.status === 'ERROR') {
+      return ReS(res, {
+        ben: ben
+      }, 200);
+    } else {
+      requestTransfer (transactionDetails, transaferDetails, authenticationToken, user, res)
+        .then((data) => {
+          return ReS(res, {
+            data: data
+         }, 200);
+        })
+    }
+  } catch (e) {
+    console.log(e)
+    return ReE(res, {success: false, message: 'Something went wrong while during this transaction.'}, 422);
+  }
+}
+
+async function requestTransfer(transactionDetails, transaferDetails, authenticationToken, user, res) {
+  return new Promise(function(resolve, reject) {
+      let data = ''
+
+      let postData = JSON.stringify({
+        beneId: user.id,
+        amount: transactionDetails.totalINR,
+        transferId: 'rand'+ Math.floor((Math.random() * 1000000) + 1000),
+        transferMode: transaferDetails.mode === 'bank' ? 'banktransfer': transaferDetails.mode
+      })
+
+       console.log("Requesting transfer...")
+
+        var post_req = https.request(getRequestOptions('requestTransfer',getAuthenticationHeader(authenticationToken)), function(resp) {
+          resp.on('data', function (chunk) {
+               data += chunk;
+          });
+          resp.on('end', () => {
+            console.log(data)
+            resolve(JSON.parse(data))
+          });
+          resp.on('error', (err) => {
+            reject(err)
+          })
+        });
+
+      post_req.write(postData);
+      post_req.end();
+  });
+  
+}
+
+function getBeneficiary (token, benId) {
+  
+  return new Promise(function(resolve, reject) {
+
+    let data = '';
+
+    console.log("Checking if Beneficiary already exists in Cashfree Payout API...")
+
+    var get_req = https.request(getRequestOptions('getBeneficiary/'+benId, getAuthenticationHeader(token), 'GET'), function(resp) {
       resp.on('data', function (chunk) {
            data += chunk;
       });
       resp.on('end', () => {
-        console.log('Cashfree Payout authentication response-' + data)
-      });
+        console.log(data)
+          let response = JSON.parse(data)
+          if (response.subCode === '404') {
+             resolve(false)
+          } else {
+             resolve(response)
+          }
+        })
       resp.on('error', (err) => {
-        console.log(err)
+        reject(error)
       })
   });
 
-post_req.write('');
-post_req.end();
+  get_req.write('');
+  get_req.end();
+
+  });
 }
 
 const withdraw = async function (req, res) {
@@ -55,7 +204,14 @@ const withdraw = async function (req, res) {
     let details, err;
     [err, details] =await to(getTransactionDetails(req.user, req.body.mode))
     if (!err) {
-      authenticate()
+      authenticate(details, req.body, req.user, res)
+        .then((token) => {
+          if (token) {
+            fetchBeneficiary(details, req.body, token, req.user, res)
+          } else {
+            throw new Error ('Something went wrong while obtaining the security token.')
+          }
+        })
     } else {
       console.log(err)
       throw new Error ('Transaction details not found.')
