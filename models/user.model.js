@@ -18,14 +18,15 @@ module.exports = (sequelize, DataTypes) => {
         about     : {type: DataTypes.TEXT, defaultValue: ''},
         tagline   : {type: DataTypes.STRING, defaultValue: ''},
         feedEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
-        adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: true}
+        adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
+        bankDetails: DataTypes.TEXT
     },{
         defaultScope: {
           attributes: { exclude: [] },
         },
         scopes: {
           public: {
-           attributes: { exclude: ['password', 'email', 'createdAt', 'updatedAt'] },
+           attributes: { exclude: ['password', 'feedEnabled', 'adsEnabled', 'gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails'] },
           }
         },
     });

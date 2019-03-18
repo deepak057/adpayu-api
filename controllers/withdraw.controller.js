@@ -193,6 +193,7 @@ async function requestTransfer(transactionDetails, transaferDetails, authenticat
 
           console.log("Requesting transfer...")
 
+
             var post_req = https.request(getRequestOptions('requestTransfer',getAuthenticationHeader(authenticationToken)), function(resp) {
               resp.on('data', function (chunk) {
                    data += chunk;
@@ -207,6 +208,8 @@ async function requestTransfer(transactionDetails, transaferDetails, authenticat
                     if (response.status === "SUCCESS") {
                       settleConsumedAdsAmount(user)
                         .then ((userAmountSettled) => {
+                          //also, update current user saved bank account details
+                          user.bankDetails = JSON.stringify(transaferDetails); user.save()
                           resolve(response)
                         })
                     } else {
@@ -341,11 +344,12 @@ module.exports.withdraw = withdraw;
 
 const withdrawOverview = async function (req, res) {
   try {
-    let details, err;
-    [err, details] =await to(getTransactionDetails(req.user, req.query.mode))
+    let details, err, user = req.user;
+    [err, details] =await to(getTransactionDetails(user, req.query.mode))
     if (!err) {
       return ReS(res, {
-        transaction: details
+        transaction: details,
+        userBankDetails: JSON.parse(user.bankDetails)
       }, 200);
     } else {
       console.log(err)
