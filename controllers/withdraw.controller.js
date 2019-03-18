@@ -1,4 +1,4 @@
-const { ConsumedAds, Forex} = require('../models');
+const { ConsumedAds, Forex, Withdrawals} = require('../models');
 const { to, ReE, ReS, roundTwoDecimalPlaces } = require('../services/util.service');
 const { MONEY_WITHDRAWL_CONFIG } = require('../config/app-constants');
 const NotificationsController   = require('./notifications.controller');
@@ -87,7 +87,6 @@ async function removeBeneficiary (benID, authenticationToken) {
                data += chunk;
           });
           resp.on('end', () => {
-            console.log(data)
             resolve(JSON.parse(data))
           });
           resp.on('error', (err) => {
@@ -122,7 +121,6 @@ async function addBeneficiary (transactionDetails, transaferDetails, authenticat
                data += chunk;
           });
           resp.on('end', () => {
-            console.log(data)
             resolve(JSON.parse(data))
           });
           resp.on('error', (err) => {
@@ -182,32 +180,75 @@ async function requestTransfer(transactionDetails, transaferDetails, authenticat
   return new Promise(function(resolve, reject) {
       let data = ''
 
-      let postData = JSON.stringify({
+      let postData = {
         beneId: user.id,
         amount: transactionDetails.totalINR,
         transferId: 'rand'+ Math.floor((Math.random() * 1000000) + 1000),
         transferMode: transaferDetails.mode === 'bank' ? 'banktransfer': transaferDetails.mode
-      })
+      };
 
-       console.log("Requesting transfer...")
+      //save this transaction details in database
+      recordWithdrawl(transactionDetails, postData)
+        .then((withdrawl) => {
 
-        var post_req = https.request(getRequestOptions('requestTransfer',getAuthenticationHeader(authenticationToken)), function(resp) {
-          resp.on('data', function (chunk) {
-               data += chunk;
-          });
-          resp.on('end', () => {
-            console.log(data)
-            resolve(JSON.parse(data))
-          });
-          resp.on('error', (err) => {
-            reject(err)
-          })
-        });
+          console.log("Requesting transfer...")
 
-      post_req.write(postData);
-      post_req.end();
+            var post_req = https.request(getRequestOptions('requestTransfer',getAuthenticationHeader(authenticationToken)), function(resp) {
+              resp.on('data', function (chunk) {
+                   data += chunk;
+              });
+              resp.on('end', () => {
+                let response = JSON.parse(data)
+                // update the database
+                withdrawl.response = data.trim()
+                withdrawl.status = response.status
+                withdrawl.save()
+                  .then ((withdrawlUpdated) => {
+                    if (response.status === "SUCCESS") {
+                      settleConsumedAdsAmount(user)
+                        .then ((userAmountSettled) => {
+                          resolve(response)
+                        })
+                    } else {
+                      resolve(response)
+                    }
+                  })
+              });
+              resp.on('error', (err) => {
+                reject(err)
+              })
+            });
+
+          post_req.write(JSON.stringify(postData));
+          post_req.end();
+        })
+
   });
   
+}
+
+/*
+* function to keep track of 
+* withdrawals
+*/
+
+function recordWithdrawl (transactionDetails, transaferDetails) {
+  return Withdrawals.create({
+    payableAmount: transaferDetails.amount,
+    transferMode: transaferDetails.transferMode,
+    transferId: transaferDetails.transferId,
+    INRPerUSDRate: transactionDetails.forex,
+    siteFee: transactionDetails.siteFeeINR,
+    paymentGatewayCharges: transactionDetails.paymentGatewayChargeINR,
+    UserId: transaferDetails.beneId,
+    totalAmount: transactionDetails.amountAccumulatedINR
+  })
+  .then ((withdrawl) => {
+    return new Promise((resolve) => { resolve(withdrawl) })
+  })
+  .catch((error) => {
+    return new Promise((resolve, reject) => { reject(error) })
+  })
 }
 
 //check if beneficary bank account or paytm details have changed
@@ -219,6 +260,25 @@ function ifRemoveBeneficiary (ben, transaferDetails) {
   }
 
   return false
+}
+
+// function to reset all the consumed ad status
+// for current user
+
+function settleConsumedAdsAmount (user) {
+  return ConsumedAds.update({
+    settled: true
+  },{
+    where: {
+      UserId: user.id
+    }
+  })
+    .then ((updated) => {
+      return new Promise((resolve) => { resolve(updated) })
+    })
+    .catch((error) => {
+      return new Promise((resolve, reject) => { reject(error) })
+    })
 }
 
 function getBeneficiary (token, benId) {
@@ -263,7 +323,8 @@ const withdraw = async function (req, res) {
           if (token) {
             fetchBeneficiary(details, req.body, token, req.user, res)
           } else {
-            throw new Error ('Something went wrong while obtaining the security token.')
+            //throw new Error ('Something went wrong while obtaining the security token.')
+            return ReE(res, {success: false, message: 'Something went wrong while obtaining the security token.'}, 422);
           }
         })
     } else {
@@ -343,12 +404,13 @@ async function getTransactionDetails (user, mode = 'bank') {
       siteFeeUSD: siteFeeUSD,
       siteFeeINR: siteFeeINR,
       totalUSD: totalUSD,
-      totalINR: totalINR
-    }, mode, forex)
+      totalINR: totalINR,
+      forex: forex,
+    }, mode)
 
 }
 
-async function addPaymentGatewayCharges (transactionDetails, mode, forex) {
+async function addPaymentGatewayCharges (transactionDetails, mode) {
   try {
 
     let PGCharges = MONEY_WITHDRAWL_CONFIG.paymentGatewayCharges[mode]
@@ -359,7 +421,7 @@ async function addPaymentGatewayCharges (transactionDetails, mode, forex) {
 
     transactionDetails.totalINR -= charges
     transactionDetails.paymentGatewayChargeINR = charges
-    transactionDetails.paymentGatewayChargeUSD = roundTwoDecimalPlaces(transactionDetails.paymentGatewayChargeINR/parseFloat(forex))
+    transactionDetails.paymentGatewayChargeUSD = roundTwoDecimalPlaces(transactionDetails.paymentGatewayChargeINR/parseFloat(transactionDetails.forex))
     transactionDetails.totalUSD -= transactionDetails.paymentGatewayChargeUSD
     // transactionDetails.siteFeePercentage = roundTwoDecimalPlaces((transactionDetails.siteFeeINR * 100) / transactionDetails.amountAccumulatedINR);
 
