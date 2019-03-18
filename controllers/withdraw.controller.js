@@ -421,9 +421,9 @@ async function addPaymentGatewayCharges (transactionDetails, mode) {
 
     let temp = (transactionDetails.totalINR / 100) * PGCharges.percentage
 
-    let charges = temp > PGCharges.fixed ? temp : PGCharges.fixed;
+    let charges = roundTwoDecimalPlaces((temp > PGCharges.fixed ? temp : PGCharges.fixed));
 
-    transactionDetails.totalINR -= roundTwoDecimalPlaces(charges)
+    transactionDetails.totalINR -= charges
     transactionDetails.paymentGatewayChargeINR = charges
     transactionDetails.paymentGatewayChargeUSD = roundTwoDecimalPlaces(transactionDetails.paymentGatewayChargeINR/parseFloat(transactionDetails.forex))
     transactionDetails.totalUSD -= transactionDetails.paymentGatewayChargeUSD
