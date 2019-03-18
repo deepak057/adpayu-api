@@ -72,6 +72,35 @@ function authenticate (details, transaferDetails, user, res) {
       
 }
 
+async function removeBeneficiary (benID, authenticationToken) {
+  return new Promise(function(resolve, reject) {
+      let data = ''
+
+      let postData = JSON.stringify({
+        beneId: benID,
+      })
+
+       console.log("Removing Beneficiary...")
+
+        var post_req = https.request(getRequestOptions('removeBeneficiary',getAuthenticationHeader(authenticationToken)), function(resp) {
+          resp.on('data', function (chunk) {
+               data += chunk;
+          });
+          resp.on('end', () => {
+            console.log(data)
+            resolve(JSON.parse(data))
+          });
+          resp.on('error', (err) => {
+            reject(err)
+          })
+        });
+
+      post_req.write(postData);
+      post_req.end();
+  });
+  
+}
+
 async function addBeneficiary (transactionDetails, transaferDetails, authenticationToken, user) {
   return new Promise(function(resolve, reject) {
       let data = ''
@@ -110,9 +139,23 @@ async function addBeneficiary (transactionDetails, transaferDetails, authenticat
 async function fetchBeneficiary (transactionDetails, transaferDetails, authenticationToken, user, res) {
   try {
 
-    let err, ben;
+    let err, ben, temp;
     [err, ben] = await to(getBeneficiary(authenticationToken, user.id))
 
+    // remove the beneficiary if bank account details are different than the ones 
+    // in records of Cashfree
+    if (ben && ifRemoveBeneficiary(ben, transaferDetails)) {
+        [err, temp] = await to(removeBeneficiary(ben.data.beneId, authenticationToken))
+        if (!err && temp.status === 'SUCCESS') {
+          ben = false
+        } else {
+          console.log(err)
+          throw new Error ('Something went wrong while deleting the beneficary.')
+        }
+    }
+
+
+    // add the beneficary if it doesn't already exist
     if (!ben) {
       [err, ben] = await to(addBeneficiary(transactionDetails, transaferDetails, authenticationToken, user))
     }
@@ -167,13 +210,24 @@ async function requestTransfer(transactionDetails, transaferDetails, authenticat
   
 }
 
+//check if beneficary bank account or paytm details have changed
+function ifRemoveBeneficiary (ben, transaferDetails) {
+  if ('data' in ben) {
+    // if phone number, bank account or IFSC code seem to be changed, the beneficary should
+    // be removed so that he can be added again with new details
+    return String(ben.data.phone) !== transaferDetails.phone || ben.data.bankAccount !== transaferDetails.accountNumber || ben.data.ifsc !== transaferDetails.IFSC
+  }
+
+  return false
+}
+
 function getBeneficiary (token, benId) {
   
   return new Promise(function(resolve, reject) {
 
     let data = '';
 
-    console.log("Checking if Beneficiary already exists in Cashfree Payout API...")
+    console.log("Getting Beneficiary...")
 
     var get_req = https.request(getRequestOptions('getBeneficiary/'+benId, getAuthenticationHeader(token), 'GET'), function(resp) {
       resp.on('data', function (chunk) {
