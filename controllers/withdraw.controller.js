@@ -426,7 +426,7 @@ async function addPaymentGatewayCharges (transactionDetails, mode) {
     transactionDetails.totalINR -= charges
     transactionDetails.paymentGatewayChargeINR = charges
     transactionDetails.paymentGatewayChargeUSD = roundTwoDecimalPlaces(transactionDetails.paymentGatewayChargeINR/parseFloat(transactionDetails.forex))
-    transactionDetails.totalUSD -= transactionDetails.paymentGatewayChargeUSD
+    transactionDetails.totalUSD -= roundTwoDecimalPlaces(transactionDetails.paymentGatewayChargeUSD)
     // transactionDetails.siteFeePercentage = roundTwoDecimalPlaces((transactionDetails.siteFeeINR * 100) / transactionDetails.amountAccumulatedINR);
 
     return transactionDetails
