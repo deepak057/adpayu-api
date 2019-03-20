@@ -271,7 +271,7 @@ function ifRemoveBeneficiary (ben, transaferDetails) {
 
 function settleConsumedAdsAmount (user) {
   return ConsumedAds.update({
-    settled: false
+    settled: true
   },{
     where: {
       UserId: user.id
