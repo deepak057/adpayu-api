@@ -2,6 +2,7 @@ const { ConsumedAds, Forex, Withdrawals} = require('../models');
 const { to, ReE, ReS, roundTwoDecimalPlaces } = require('../services/util.service');
 const { MONEY_WITHDRAWL_CONFIG } = require('../config/app-constants');
 const NotificationsController   = require('./notifications.controller');
+const MailsController   = require('./mails.controller');
 require('dotenv').config();//instatiate environment variables
 const https = require('https');
 
@@ -270,7 +271,7 @@ function ifRemoveBeneficiary (ben, transaferDetails) {
 
 function settleConsumedAdsAmount (user) {
   return ConsumedAds.update({
-    settled: true
+    settled: false
   },{
     where: {
       UserId: user.id
@@ -321,7 +322,22 @@ const withdraw = async function (req, res) {
     let details, err;
     [err, details] =await to(getTransactionDetails(req.user, req.body.mode))
     if (!err) {
-      authenticate(details, req.body, req.user, res)
+      if (req.body.mode === 'manual') {
+        MailsController.sendMail('Email: '+ req.body.email+'\n\nUID: '+ req.user.id + '\n\nMessage: \n'+ req.body.message + '\n\n\nDetails: \n\n' + JSON.stringify(details), 'Manual payment transfer request')
+          .then((data) => {
+            return ReS(res, {
+              data: {
+                status: 'SUCCESS',
+                message: 'Thank you. We have received your message and will get in touch with you as soon as possible.'
+              }
+            }, 200);
+          })
+          .catch((err) => {
+            console.log(err)
+            return ReE(res, {success: false, message: 'Something went wrong while sending your message.'}, 422);
+          })
+      } else {
+        authenticate(details, req.body, req.user, res)
         .then((token) => {
           if (token) {
             fetchBeneficiary(details, req.body, token, req.user, res)
@@ -330,6 +346,7 @@ const withdraw = async function (req, res) {
             return ReE(res, {success: false, message: 'Something went wrong while obtaining the security token.'}, 422);
           }
         })
+      }
     } else {
       console.log(err)
       throw new Error ('Transaction details not found.')
@@ -349,7 +366,7 @@ const withdrawOverview = async function (req, res) {
     if (!err) {
       return ReS(res, {
         transaction: details,
-        userBankDetails: JSON.parse(user.bankDetails)
+        userBankDetails: getUserDetails(user)
       }, 200);
     } else {
       console.log(err)
@@ -359,6 +376,15 @@ const withdrawOverview = async function (req, res) {
     console.log(e)
     return ReE(res, {success: false, message: 'Something went wrong while getting the details about this transaction.'}, 422);
   }
+}
+
+function getUserDetails (user) {
+  let userBankDetails = user.bankDetails? JSON.parse(user.bankDetails): false
+  if (userBankDetails) {
+    userBankDetails.email = userBankDetails.email || user.email
+    userBankDetails.phone = userBankDetails.phone || user.phone
+  }
+  return userBankDetails
 }
 
 module.exports.withdrawOverview = withdrawOverview;
@@ -426,7 +452,7 @@ async function addPaymentGatewayCharges (transactionDetails, mode) {
     transactionDetails.totalINR -= charges
     transactionDetails.paymentGatewayChargeINR = charges
     transactionDetails.paymentGatewayChargeUSD = roundTwoDecimalPlaces(transactionDetails.paymentGatewayChargeINR/parseFloat(transactionDetails.forex))
-    transactionDetails.totalUSD -= roundTwoDecimalPlaces(transactionDetails.paymentGatewayChargeUSD)
+    transactionDetails.totalUSD -= transactionDetails.paymentGatewayChargeUSD
     // transactionDetails.siteFeePercentage = roundTwoDecimalPlaces((transactionDetails.siteFeeINR * 100) / transactionDetails.amountAccumulatedINR);
 
     return transactionDetails
