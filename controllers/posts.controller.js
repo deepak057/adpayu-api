@@ -189,7 +189,7 @@ const get = async function(req, res){
       //attributes: [[Sequelize.literal('DISTINCT'), '']],
       distinct: true,
       //attributes: [[Sequelize.literal('DISTINCT'), 'key'], 'value'],
-      order: Sequelize.literal('updatedAt DESC LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit), 
+      order: Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit), 
       
       /*
       * Get only those posts which are from user's friends, public, selft created or ads
@@ -256,6 +256,14 @@ const get = async function(req, res){
             return ReS(res, error);
           })
   }
+}
+
+function getOrderByCondition (user) {
+  /*
+  * Order by updatedAt if user has enabled RecentActivities filter
+  * else order by createdAt timestamp
+  */
+  return (user.recentActivitiesEnabled ? 'Posts.updatedAt' : 'Posts.createdAt') + ' DESC'
 }
 
 /*
@@ -357,7 +365,7 @@ const getTimelineFeed = async function(req, res){
 
   let criteria = {
       include: getDBInclude(req.user) ,
-      order: [['updatedAt', 'DESC']], 
+      order: [['createdAt', 'DESC']], 
       limit: limitNOffset.limit,
       offset: limitNOffset.offset,
       where: {}

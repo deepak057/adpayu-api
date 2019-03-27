@@ -1,8 +1,8 @@
 const { Comments, Users, Likes, Posts, Videos, Questions } = require('../models');
-const { to, ReE, ReS } = require('../services/util.service');
+const { to, ReE, ReS, getMySQLDateTime } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const { NOTIFICATIONS } = require('../config/app-constants');
-const { getCommentIncludes, getSingleComment } = require('../services/app.service');
+const { getCommentIncludes, getSingleComment, canUpdatePost } = require('../services/app.service');
 
 function getNotification(commentId, postId, type= 'text') {
   return {
@@ -36,6 +36,18 @@ const create =  function(req, res){
              // send notification
              if (req.user.id !== post.UserId) {
                NotificationsController.create(getNotification(comment.id, post.id, post.type), req.user.id, post.UserId)
+               
+              /* Update updatedAt timestamp on this post, 
+              * if it needs to be updated
+              */
+               if (canUpdatePost(post, comment)) {
+                 Posts.update({updatedAt: getMySQLDateTime()}, {where: {id: post.id}})
+               }
+               
+               /* commenting below code as it didn't work for some reason*/
+               /*post.updatedAt = getMySQLDateTime();
+               post.save() */
+
              }
 
              comment = comment.toWeb();

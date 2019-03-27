@@ -19,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
         tagline   : {type: DataTypes.STRING, defaultValue: ''},
         feedEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
         adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
+        recentActivitiesEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
         bankDetails: DataTypes.TEXT
     },{
         defaultScope: {
@@ -26,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         scopes: {
           public: {
-           attributes: { exclude: ['password', 'feedEnabled', 'adsEnabled', 'gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails'] },
+           attributes: { exclude: ['password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails'] },
           }
         },
     });

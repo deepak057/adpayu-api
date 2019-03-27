@@ -77,3 +77,7 @@ module.exports.cloneOject = function (obj) {
 module.exports.roundTwoDecimalPlaces = function (number) {
     return Math.round(number * 100) / 100
 }
+
+module.exports.getMySQLDateTime = function () {
+    return new Date().toISOString().slice(0, 19).replace('T', ' ')
+}

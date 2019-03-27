@@ -198,3 +198,14 @@ module.exports.tagsToWeb = function (tags) {
   }
   return tagsWeb
 }
+
+/*
+* function to decide wether a given post's updatedAt timestamp needs to be updated
+*/
+module.exports.canUpdatePost = function (post, comment) {
+  /*
+  * updatedAt timestamp can be updated if given comment is an Answer or if 
+  * it's a video comment
+  */
+  return post.type === 'question' || comment.videoPath
+}
