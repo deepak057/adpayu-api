@@ -13,6 +13,7 @@ const SearchController   = require('../controllers/search.controller');
 const PaymentController   = require('../controllers/payment.controller');
 const AdsController = require('../controllers/ads.controller');
 const WithdrawController = require('../controllers/withdraw.controller');
+const MailsController = require('../controllers/mails.controller');
 
 const custom 	        = require('./../middleware/custom');
 
@@ -90,6 +91,9 @@ router.post('/ad/adConsumed/:action/:postId',   passport.authenticate('jwt', {se
 /** Withdraw routes **/
 router.get('/withdraw/overview',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdrawOverview);        // R
 router.post('/withdraw',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdraw);        // C
+
+/** Mails routes **/
+router.post('/mails/sendContactMail',  MailsController.sendContactMail);        // P
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));
