@@ -2,6 +2,9 @@ const { User, Friendship, ConsumedAds }          = require('../models');
 const authService       = require('../services/auth.service');
 const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces}  = require('../services/util.service');
 const TagsController   = require('./tags.controller');
+const crypto = require('crypto');
+require('dotenv').config();//instatiate environment variables
+const MailsController   = require('./mails.controller');
 
 const create = async function(req, res){
     const body = req.body;
@@ -109,3 +112,72 @@ const login = async function(req, res){
 }
 module.exports.login = login;
 
+const sendPasswordResetLink = async function (req, res) {
+    try {
+        let email = req.body.email, url= (req.body.url || false), err;
+        User.findOne({where: {
+            email: email
+        }})
+          .then((user) => {
+            if (user) {
+                updateUserPasswordResetSecretHash(user)
+                  .then ((user) => {
+                     MailsController.sendMail(getPasswordResetMailBody(user, url), process.env.SITE_NAME+ '- Reset your account password', email)
+                      .then((m) => {
+                        return ReS(res, {
+                          message: 'Password Reset link has been sent to your email address. Please follow that link.'
+                        });
+                      })
+                      .catch ((err) => {
+                        console.log(err)
+                        throw err
+                      })
+                  })
+                  .catch((err) => {
+                    console.log(err)
+                    return ReE(res, {success: false, message: 'Soemthing went wrong while trying to save secret key.'}, 422);
+                  })   
+            } else {
+                return ReE(res, {
+                    message: 'This email is not registered with us.'
+                });
+            }
+          })
+          .catch((err) => {
+            console.log(err)
+            return ReE(res, {success: false, message: 'Soemthing went wrong while trying to check your email.'}, 422);
+          })
+
+    } catch (e) {
+        console.log(e)
+        return ReE(res, {success: false, message: 'Soemthing went wrong while trying to send Password Reset mail.'}, 422);
+    }
+}
+module.exports.sendPasswordResetLink = sendPasswordResetLink;
+
+function updateUserPasswordResetSecretHash (user) {
+  
+  return new Promise(function(resolve, reject) {
+
+      let current_date = (new Date()).valueOf().toString();
+      let random = Math.random().toString() + user.password;
+      let k = crypto.createHash('sha1').update(current_date + random).digest('hex');
+      user.passwordResetKey = k;
+      user.save()
+        .then((user) => {
+            resolve(user)
+        })
+        .catch ((err) => {
+            reject(err)
+        })
+  });
+}
+function getPasswordResetLink (user, url) {
+  if (!url) {
+    url = process.env.FRONT_END_SITE_URL_BASE + '/' + process.env.FRONT_END_SITE_URL_CHANGE_PASSWORD
+  }
+  return url + '?k='+ user.passwordResetKey
+}
+function getPasswordResetMailBody (user, url) {
+    return 'Hello ' + user.first.charAt(0).toUpperCase() +', \n\nSomeone has requested to reset your ' + process.env.SITE_NAME +' accout password. If it was you, please click the link below to continue.\n\n'+ getPasswordResetLink(user, url) + '\n\nHowever, if you did not request it, please just ignore this mail. Your account is safe and sound. \n\n\n\n Thank you! \n\n\n\n\n '+ process.env.SITE_NAME + ' Team'
+}

@@ -20,7 +20,8 @@ module.exports = (sequelize, DataTypes) => {
         feedEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
         adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
         recentActivitiesEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
-        bankDetails: DataTypes.TEXT
+        bankDetails: DataTypes.TEXT,
+        passwordResetKey: DataTypes.TEXT
     },{
         defaultScope: {
           attributes: { exclude: [] },
