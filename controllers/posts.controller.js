@@ -186,6 +186,15 @@ const get = async function(req, res){
 
     let criteria = {
       include: dbIncludes ,
+      
+      /*
+      Include comments count 
+      */
+      attributes: {
+        include: [
+          [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id)'), 'CommentsCount']
+        ]
+      },
       //attributes: [[Sequelize.literal('DISTINCT'), '']],
       distinct: true,
       //attributes: [[Sequelize.literal('DISTINCT'), 'key'], 'value'],
