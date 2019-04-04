@@ -30,6 +30,8 @@ router.get('/', function(req, res, next) {
 /** users routes **/
 router.post(    '/users',           UserController.create);   
 router.post(    '/users/sendPasswordResetLink',           UserController.sendPasswordResetLink);                                                    // C
+router.get(    '/users/getUserBySecretKey',           UserController.getUserBySecretKey);                                                    // R
+router.put(    '/users/updateAccountPassword',           UserController.updateAccountPassword);                                                    // U
 router.get(     '/users/:uid',           passport.authenticate('jwt', {session:false}), UserController.get);        // R
 router.put(     '/users',           passport.authenticate('jwt', {session:false}), UserController.update);     // U
 router.delete(  '/users',           passport.authenticate('jwt', {session:false}), UserController.remove);     // D

@@ -28,7 +28,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         scopes: {
           public: {
-           attributes: { exclude: ['password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails'] },
           }
         },
     });

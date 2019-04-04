@@ -38,7 +38,7 @@ const sendContactMail = async function(req, res){
     let email = req.body.email, message = req.body.message
 
     if (email && message) {
-      sendMail ('Email: ' + email+'\n\nMessage: '+ message, 'Contact Mail from AdpayU')
+      sendMail ('Email: ' + email+'\n\nMessage: '+ message, 'Contact Mail from '+ process.env.SITE_NAME)
         .then ((m) => {
           return ReS(res, {
             success: true,

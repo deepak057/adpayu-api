@@ -31,10 +31,42 @@ const create = async function(req, res){
 }
 module.exports.create = create;
 
-const uploadProfilePicture = async function(req, res) {
+const updateAccountPassword = async function(req, res) {
+    try {
+        let key = req.body.key || false, password = req.body.password || false
 
+        if (key && password) {
+            User.find({
+                where: {
+                    passwordResetKey: key
+                }
+            })
+              .then((user) => {
+                if (user) {
+                    user.password = password;
+                    user.passwordResetKey = '';
+                    user.save()
+                      .then ((user) => {
+                        return ReS(res, {message: 'Account password changed successfully'});
+                      })
+                } else {
+                    throw new Error ('Something went wrong while trying to reset your password.')
+                }
+              })
+              .catch ((err) => {
+                 console.log(err)
+                 return ReE(res, { message: 'Something went wrong while changing the account password.'}, 422);
+              })
+        } else {
+            throw new Error('Secret key or password not provided.')
+        }
+
+    } catch (e) {
+        console.log(e)
+        return ReE(res, { message: 'Something went wrong while changing the account password.'}, 422);
+    }
 }
-module.exports.uploadProfilePicture = uploadProfilePicture;
+module.exports.updateAccountPassword = updateAccountPassword;
 
 const get = async function(req, res){
     let user, err, friendship;
@@ -51,6 +83,33 @@ const get = async function(req, res){
     return ReS(res, {user:user, friendship: friendship});
 }
 module.exports.get = get;
+
+const getUserBySecretKey = async function(req, res){
+    try {
+        let key = req.query.key || false;
+        User.scope('public').findOne({where: {
+            passwordResetKey: key
+        }})
+          .then ((user) => {
+            if (user) {
+                return ReS(res, {user:user});
+            } else {
+                return ReE(res, {message: 'Invalid or expired link'});
+            }
+          })
+          .catch ((err) => {
+            throw err
+          })
+
+    } catch (e) {
+        console.log(e);
+        return ReE(res, {message: 'Something went wrong while verifying the key.'}, 422);
+
+    }
+
+}
+
+module.exports.getUserBySecretKey = getUserBySecretKey;
 
 const update = async function(req, res){
     let err, user, data
@@ -73,7 +132,7 @@ const update = async function(req, res){
 
     [err, user] = await to(user.save());
     if(err){
-        if(err.message=='Validation error') err = 'The email address or phone number is already in use';
+        if(err.message=='Validation error') err = 'The email address is already in use';
         return ReE(res, err);
     }
     return ReS(res, {user: user});
@@ -156,7 +215,6 @@ const sendPasswordResetLink = async function (req, res) {
 module.exports.sendPasswordResetLink = sendPasswordResetLink;
 
 function updateUserPasswordResetSecretHash (user) {
-  
   return new Promise(function(resolve, reject) {
 
       let current_date = (new Date()).valueOf().toString();
