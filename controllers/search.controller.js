@@ -1,6 +1,6 @@
 const { Posts, User } = require('../models');
 const { to, ReE, ReS, isEmptyObject, getLimitOffset } = require('../services/util.service');
-const { getUIDs, getDBInclude, toWeb} = require('../services/app.service');
+const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject} = require('../services/app.service');
 const Sequelize = require('sequelize');
 
 const Op = Sequelize.Op;
@@ -90,16 +90,15 @@ const get = async function(req, res){
        * friends or self
        */
 
-        Posts.findAll({
+       let criteria = getPostCriteriaObject(req.user);
 
-          /*
-          * A hack to use Limit and Offset as we are querying through other tables
-          * in which case, limit and offset parameters cause mySQL errors
-          */
-          order: Sequelize.literal('createdAt DESC LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit), 
-          /*limit: limitNOffset.limit,
-          offset: limitNOffset.offset,*/
-          where: {      
+      /*
+      * A hack to use Limit and Offset as we are querying through other tables
+      * in which case, limit and offset parameters cause mySQL errors
+      */
+       criteria.order = Sequelize.literal('createdAt DESC LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
+
+       criteria.where = {      
             [Op.and]: [
               {
                 AdOptionId: {[Op.eq]: null},
@@ -118,9 +117,9 @@ const get = async function(req, res){
                 [Op.or]: getContentCondition (searchType, keyword)
               }
             ]
-          },
-          include: getDBInclude(req.user)
-        })
+          };
+
+        Posts.findAll(criteria)
           .then((posts) => {
             return ReS(res, {posts: toWeb(posts, req.user)});
           })

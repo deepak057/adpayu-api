@@ -48,7 +48,7 @@ module.exports.getCommentIncludes = function () {
 ** Get default DB Include models
 */
 
-module.exports.getDBInclude = function(user, tagIds = []) {
+function getDBInclude(user, tagIds = []) {
   let tags = {
     model: Tags,
   }
@@ -106,11 +106,30 @@ module.exports.getDBInclude = function(user, tagIds = []) {
 
     return_.push(tags)
     return_.push(adOption)
-    return_.push({model: Comments, include: getCommentIncludes()})
+    /*return_.push({model: Comments})*/
 
     return return_;
 }
+module.exports.getDBInclude = getDBInclude;
 
+
+function getPostCriteriaObject (user, tagIds = []) {
+  return {
+      include: getDBInclude(user, tagIds) ,
+      
+      /*
+      Include comments count 
+      */
+      attributes: {
+        include: [
+          [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id)'), 'CommentsCount']
+        ]
+      },
+        
+    }
+}
+
+module.exports.getPostCriteriaObject = getPostCriteriaObject;
 
 /**
 ** Convert the posts and include Likes
@@ -146,6 +165,7 @@ function getWebPost (post, user) {
   return post_web;
 }
 
+
 function getPostComments (post, user) {
   let comments_web = [];
 
@@ -155,6 +175,16 @@ function getPostComments (post, user) {
 
     return comments_web;
 
+}
+
+module.exports.formatComments = function (comments, user) {
+  let comments_web = [];
+
+    for (let i in comments){
+      comments_web.push(getSingleComment(comments[i], user))
+    }
+
+    return comments_web;
 }
 
 function getSingleComment (commentObj, user) {

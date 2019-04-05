@@ -53,6 +53,7 @@ router.put('/tags/follow/:tagId',           passport.authenticate('jwt', {sessio
 router.delete('/tags/unfollow/:tagId',           passport.authenticate('jwt', {session:false}), TagsController.unfollow);        // R
 
 /** Comments routes**/
+router.get('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.get);        // R
 router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C
 router.delete('/comments/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // D
 router.get('/getComment/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.getComment);        // R

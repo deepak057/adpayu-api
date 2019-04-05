@@ -2,7 +2,7 @@ const { Comments, Users, Likes, Posts, Videos, Questions } = require('../models'
 const { to, ReE, ReS, getMySQLDateTime } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const { NOTIFICATIONS } = require('../config/app-constants');
-const { getCommentIncludes, getSingleComment, canUpdatePost } = require('../services/app.service');
+const { getCommentIncludes, getSingleComment, canUpdatePost, formatComments } = require('../services/app.service');
 
 function getNotification(commentId, postId, type= 'text') {
   return {
@@ -14,6 +14,32 @@ function getNotification(commentId, postId, type= 'text') {
     })
   }
 }
+
+const get =  function(req, res){
+  try {
+    let postId = req.params.postId || false, user = req.user;
+    if (postId) {
+      Comments.findAll({where: {
+        PostId: postId
+      }, include: getCommentIncludes()})
+        .then((comments) => {
+          if (comments) {
+            comments = formatComments(comments, user)
+          } else {
+            comments = []
+          }
+          return ReS(res, {comments: comments});
+        })
+    } else {
+      throw new Error('PostId is not provided')
+    }
+  } catch (e) {
+      console.log(e)
+      return ReE(res, {error: 'Something went wrong while trying to load comments/answers for given post.'}, 422);
+  }
+}
+
+module.exports.get = get;
 
 const create =  function(req, res){
 

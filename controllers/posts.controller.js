@@ -1,6 +1,6 @@
 const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders } = require('../models');
 const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset } = require('../services/util.service');
-const { getUIDs, getDBInclude, toWeb } = require('../services/app.service');
+const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 
@@ -181,30 +181,17 @@ const get = async function(req, res){
           },
       ]
 
-      //ad location wise ad filtering search criteria
-      condition.push(getAdLocationSearchCriteria(user))
+    //ad location wise ad filtering search criteria
+    condition.push(getAdLocationSearchCriteria(user))
 
-    let criteria = {
-      include: dbIncludes ,
+    let criteria = getPostCriteriaObject(user);
       
-      /*
-      Include comments count 
-      */
-      attributes: {
-        include: [
-          [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id)'), 'CommentsCount']
-        ]
-      },
-      //attributes: [[Sequelize.literal('DISTINCT'), '']],
-      distinct: true,
-      //attributes: [[Sequelize.literal('DISTINCT'), 'key'], 'value'],
-      order: Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit), 
+    criteria.order = Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);
       
       /*
       * Get only those posts which are from user's friends, public, selft created or ads
       */
         
-    };
 
     if(tag === 'all')  {
 
@@ -372,13 +359,12 @@ const getTimelineFeed = async function(req, res){
 
   let limitNOffset = getLimitOffset(page);
 
-  let criteria = {
-      include: getDBInclude(req.user) ,
-      order: [['createdAt', 'DESC']], 
-      limit: limitNOffset.limit,
-      offset: limitNOffset.offset,
-      where: {}
-  }    
+  let criteria = getPostCriteriaObject(req.user);
+
+  criteria.order = [['createdAt', 'DESC']];
+  criteria.limit = limitNOffset.limit;
+  criteria.offset = limitNOffset.offset;
+  criteria.where = {};
 
   if (profileUserId === req.user.id) {
      criteria.where = {
@@ -426,7 +412,10 @@ const getPostById = function(req, res){
     let postId = req.params.postId || false
 
     if(postId) {
-      Posts.findOne({include: getDBInclude(req.user), where: {id: postId}})
+      let criteria = getPostCriteriaObject(req.user);
+      criteria.where = {id: postId};
+      
+      Posts.findOne(criteria)
       .then((post) => {
             return ReS(res, toWeb(post, req.user), 201);
       })
