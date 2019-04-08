@@ -410,10 +410,20 @@ module.exports.getTimelineFeed = getTimelineFeed;
 
 const getPostById = function(req, res){
     let postId = req.params.postId || false
+    let checkOwner = req.query.checkOwner || false
 
     if(postId) {
       let criteria = getPostCriteriaObject(req.user);
       criteria.where = {id: postId};
+
+      /*
+      ** In case of post editin, return data
+      ** only if current post was created
+      ** by current user
+      */
+      if (checkOwner === 'true') {
+        criteria.where.UserId = req.user.id;
+      }
       
       Posts.findOne(criteria)
       .then((post) => {
@@ -430,16 +440,60 @@ const getPostById = function(req, res){
 module.exports.getPostById = getPostById;
 
 const update = async function(req, res){
-    let err, company, data;
-    company = req.company;
-    data = req.body;
-    company.set(data);
+    try {
+      let post = req.body;
+      Posts.find({where: {
+        id: post.id,
+        UserId: req.user.id
+      }})
+        .then ((postRecord) => {
+          if (post) {
+            if (post.type === 'text'){
+              postRecord.content = post.content;
+              // maks sure post updated time
+              // remains same so that this post
+              // doesn't count in recent posts
+              postRecord.updatedAt = post.updatedAt;
+              postRecord.save()
+                .then((updatedPostRecord) => {
+                  return ReS(res, {message: 'Status updated successfully'});
+                })
+            } else if (post.type === 'question') {
+              Questions.update({
+                question: post.Question.question,
+                description: post.Question.description
+              }, {
+                where: {
+                  id: postRecord.QuestionId,
+                  UserId: req.user.id
+                }
+              })
+                .then((updatedPostRecord) => {
+                  return ReS(res, {message: 'Question updated successfully'});
+                })
+            } else {
+              Videos.update({
+                title: post.Video.title,
+                description: post.Video.description
+              }, {
+                where: {
+                  id: postRecord.VideoId,
+                  UserId: req.user.id
+                }
+              })
+                .then((updatedPostRecord) => {
+                  return ReS(res, {message: 'Video updated successfully'});
+                })
+            }
 
-    [err, company] = await to(company.save());
-    if(err){
-        return ReE(res, err);
+          } else {
+            throw new Error ('Post not found')
+          }
+        })
+    } catch (e) {
+      console.log(e)
+      return ReE(res, {'error': 'Something went wrong while trying to save this post'}, 422);
     }
-    return ReS(res, {company:company.toWeb()});
 }
 module.exports.update = update;
 
