@@ -25,10 +25,11 @@ const uploadImage = async function(req, res){
           Images.create({path: name})
           .then((image) => {
             image.setUser(req.user);
-            return ReS(res, image, 201);
+            return ReS(res, image);
           })
           .catch((err) => {
-            return ReE(res, err);
+            console.log(err);
+            return ReE(res, {error: 'Something went wrong while trying to upload the image.'});
           }) 
       }
     });
@@ -55,7 +56,7 @@ const uploadVideo = async function(req, res){
 
       else {
 
-        return ReS(res, {path: name}, 201);
+        return ReS(res, {path: name});
       }
 
     });
