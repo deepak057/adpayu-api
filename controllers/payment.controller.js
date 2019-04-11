@@ -92,7 +92,7 @@ const getToken = async function(req, res){
             //URL to the service that will 
             //receive response from payment gateway 
             //with status of the transaction
-            params.notifyUrl = 'http://' + req.headers.host + '/v1/payment/processResponse';
+            params.notifyUrl = 'https://' + req.headers.host + '/v1/payment/processResponse';
 
             console.log('\n\n\n'+params.notifyUrl+'\n\n\n')
 
