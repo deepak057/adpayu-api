@@ -61,7 +61,7 @@ const getToken = async function(req, res){
 			let orderId = order.id;
 
 			//adding OrderId as query parameter to the Return URL
-			let returnUrl = req.query.returnUrl + '?orderId='+orderId;
+			let returnUrl = req.query.returnUrl + '/?orderId='+orderId;
 			
 			/*
 			* create the whole query string based
@@ -93,6 +93,8 @@ const getToken = async function(req, res){
             //receive response from payment gateway 
             //with status of the transaction
             params.notifyUrl = 'http://' + req.headers.host + '/v1/payment/processResponse';
+
+            console.log('\n\n\n'+params.notifyUrl+'\n\n\n')
 
 	      	return ReS(res, {
 	           params: params
