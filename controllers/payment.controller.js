@@ -61,7 +61,7 @@ const getToken = async function(req, res){
 			let orderId = order.id;
 
 			//adding OrderId as query parameter to the Return URL
-			let returnUrl = req.query.returnUrl + '/?orderId='+orderId;
+			let returnUrl = req.query.returnUrl + '?orderId='+orderId;
 			
 			/*
 			* create the whole query string based
