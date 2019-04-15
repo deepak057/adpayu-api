@@ -24,6 +24,7 @@ ADS.defaultPricing = {
 }
 
 ADS.processingFeePercentage = 3
+ADS.maxAdsToBePushedToTop = 2
 
 module.exports.ADS = ADS;
 

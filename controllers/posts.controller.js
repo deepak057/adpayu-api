@@ -3,6 +3,7 @@ const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset } = require('../servi
 const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
+const { ADS } = require('../config/app-constants');
 
 
 const create = async function(req, res){
@@ -302,7 +303,7 @@ function adsToBePushedToTheTop(user) {
               getAdLocationSearchCriteria (user)
             ]
           }
-          criteria.order = Sequelize.literal('Posts.createdAt DESC limit 2');
+          criteria.order = Sequelize.literal('Posts.createdAt DESC limit ' + ADS.maxAdsToBePushedToTop);
           Posts.findAll(criteria)
             .then((posts) => {
               if (posts) {
