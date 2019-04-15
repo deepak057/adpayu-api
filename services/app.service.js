@@ -1,4 +1,5 @@
 const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
+const { isEmptyObject } = require('./util.service');
 /*
 * Function to get the array of only UIDs
 * extracted from the given array of User
@@ -48,7 +49,7 @@ module.exports.getCommentIncludes = function () {
 ** Get default DB Include models
 */
 
-function getDBInclude(user, tagIds = []) {
+function getDBInclude(user, tagIds = [], pushModel = {}) {
   let tags = {
     model: Tags,
   }
@@ -107,6 +108,10 @@ function getDBInclude(user, tagIds = []) {
     return_.push(tags)
     return_.push(adOption)
     /*return_.push({model: Comments})*/
+
+    if(!isEmptyObject(pushModel)) {
+      return_.push(pushModel)
+    }
 
     return return_;
 }

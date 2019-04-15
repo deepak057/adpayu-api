@@ -28,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
         this.Video = this.belongsTo(models.Videos, {onDelete: 'CASCADE'});
         this.Comments = this.belongsToMany(models.Comments, {through: 'PostComments', onDelete: 'CASCADE'});
         this.ConsumedAds = this.hasMany(models.ConsumedAds, { onDelete: 'CASCADE'});
+        this.PushedAds = this.hasMany(models.PushedAds, { onDelete: 'CASCADE'});
     };
    
 

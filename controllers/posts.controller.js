@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders, PushedAds } = require('../models');
 const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject } = require('../services/app.service');
 const Sequelize = require('sequelize');
@@ -13,7 +13,7 @@ const create = async function(req, res){
 
     /*
     * delete the ID parameter just in case 
-    * it was sent by from the client side
+    * it was sent from the client side
     */
     if('id' in post_info) {
       delete post_info.id
@@ -211,7 +211,7 @@ const get = async function(req, res){
 
           Posts.findAll(criteria)
            .then((posts) => {
-              return ReS(res, {posts: toWeb(posts, user)});
+              return sendFeed(user, posts, res, page)
             })
            .catch ((error) => {
              return ReS(res, error);
@@ -241,7 +241,7 @@ const get = async function(req, res){
 
             Posts.findAll(criteria)
              .then(posts => {
-                return ReS(res, {posts: toWeb(posts, user)});
+                return sendFeed(user, posts, res, page)
              })
              .catch ((error) => {
                return ReS(res, error);
@@ -253,6 +253,91 @@ const get = async function(req, res){
           })
   }
 }
+
+/*
+** this method adds Top Posts or Ads to the top
+* of the feed of given user
+*/
+
+function sendFeed (user, posts, res, page =1 ) {
+  if (page == 1) {
+    adsToBePushedToTheTop(user)
+      .then((adPosts) => {
+        if (adPosts) {
+          for (let i in adPosts) {
+            // add a custom value to the each results object
+            // which will indicate that these posts
+            // need to be pushed to the top in user's feed
+            // on the client side
+            adPosts[i].setDataValue('PushToTop', true)
+            
+            //push the posts to the top of the feed
+            posts.unshift(adPosts[i])
+          }
+        }
+        return ReS(res, {posts: toWeb(posts, user)});
+      })
+  } else {
+    return ReS(res, {posts: toWeb(posts, user)});
+  }
+}
+
+
+/*
+* fuction to return unseen ad posts
+* for the given user which will be
+* pushed to the top of the feed
+*/
+function adsToBePushedToTheTop(user) {
+  
+    return new Promise(function(resolve, reject) { 
+
+        try {
+          let criteria = getPostCriteriaObject (user);
+          criteria.where = {
+            [op.and]: [
+              {
+                'id': Sequelize.literal(' Posts.id NOT IN (select PostId from PushedAds where UserId = '+ user.id+')')
+              },
+              getAdLocationSearchCriteria (user)
+            ]
+          }
+          criteria.order = Sequelize.literal('Posts.createdAt DESC limit 2');
+          Posts.findAll(criteria)
+            .then((posts) => {
+              if (posts) {
+                updatePushedAds(posts, user)
+                resolve (posts)
+              } else {
+                resolve(false)
+              }
+            })
+        } catch (e) {
+          console.log(e)
+          reject(e)
+        }
+
+    });
+  
+}
+
+/*
+* function to updated PushedAds model
+*/
+
+function updatePushedAds (posts, user) {
+  let data = []
+  for (let i in posts) {
+    data.push({
+      PostId: posts[i].id,
+      UserId: user.id
+    })
+  PushedAds.bulkCreate(data)
+    .then((pushedAds) => {
+    })  
+  }
+}
+
 
 function getOrderByCondition (user) {
   /*
@@ -309,7 +394,7 @@ function getWhereCondition (user, condition) {
 * function to return AdOption database search criteria
 * to filter ads based on user's location
 * User will always see global ads and location based
-* ads if he has provided his country in Profile page
+* ads if he has provided his country on Profile page
 * 
 */
 
