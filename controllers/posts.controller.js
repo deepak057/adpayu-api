@@ -261,7 +261,7 @@ const get = async function(req, res){
 */
 
 function sendFeed (user, posts, res, page =1 ) {
-  if (page == 1) {
+  if (page == 1 && user.adsEnabled) {
     adsToBePushedToTheTop(user)
       .then((adPosts) => {
         if (adPosts) {
