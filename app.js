@@ -70,7 +70,9 @@ if(CONFIG.app==='dev'){
     // models.sequelize.sync({ force: true });//deletes all tables then recreates them useful for testing and development purposes
 }
 // CORS
-app.use(cors());
+app.use(cors({
+  origin: CONFIG.CORS_WHITELIST
+}));
 
 app.use('/v1', v1);
 
