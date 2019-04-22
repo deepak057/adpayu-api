@@ -6,14 +6,15 @@ const MailsController   = require('./mails.controller');
 require('dotenv').config();//instatiate environment variables
 const https = require('https');
 
+const test_payment = process.env.PAYMENT_MODE === 'TEST';
+
+console.log('\n\n\n\n'+test_payment+'\n\n\n\n')
+
 const APIConfig = {
-  /* test */
-  baseURL: 'payout-gamma.cashfree.com',
-  /* production */
-  //baseURL: 'https://payout-api.cashfree.com', 
+  baseURL: test_payment ? 'payout-gamma.cashfree.com' : 'payout-api.cashfree.com', 
   secrets: {
-    id: process.env.CASHFREE_PAYOUT_CLIENT_ID,
-    secret: process.env.CASHFREE_PAYOUT_CLIENT_SECRET
+    id: test_payment ? process.env.TEST_CASHFREE_PAYOUT_CLIENT_ID : process.env.CASHFREE_PAYOUT_CLIENT_ID,
+    secret: test_payment ? process.env.TEST_CASHFREE_PAYOUT_CLIENT_SECRET : process.env.CASHFREE_PAYOUT_CLIENT_SECRET
   }
 }
 

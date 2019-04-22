@@ -54,8 +54,8 @@ const getToken = async function(req, res){
 	        order.setUser(req.user);
 
 		    //get CashFree payment gateway's secret credentials
-			let appId = process.env.CASHFREE_APP_ID;
-			let appSecret = process.env.CASHFREE_SECRET_KEY;
+			let appId = process.env.PAYMENT_MODE === 'TEST' ? process.env.TEST_CASHFREE_APP_ID : process.env.CASHFREE_APP_ID;
+			let appSecret = process.env.PAYMENT_MODE === 'TEST' ? process.env.TEST_CASHFREE_SECRET_KEY : process.env.CASHFREE_SECRET_KEY;
 
 			//OrderId
 			let orderId = order.id;
