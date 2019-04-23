@@ -49,8 +49,8 @@ let MONEY_WITHDRAWL_CONFIG = {
       percentage: 1
     },
     manual: {
-      fixed: 5,
-      percentage: 1
+      fixed: 9,
+      percentage: 1.2
     }
   }
 }
