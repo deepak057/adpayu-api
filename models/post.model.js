@@ -4,6 +4,8 @@ const bcrypt_p 			= require('bcrypt-promise');
 const jwt           	= require('jsonwebtoken');
 const {TE, to}          = require('../services/util.service');
 const CONFIG            = require('../config/config');
+const Sequelize = require('sequelize');
+const op = Sequelize.Op;
 
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Posts', {
@@ -13,7 +15,17 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.BOOLEAN,
             defaultValue: false,
             allowNull: false
-        }
+        },
+        visible: {type: DataTypes.BOOLEAN, defaultValue: true},
+    }, {
+
+        defaultScope: {
+          where: {
+            visible: {
+                [op.eq]: true
+            }
+          }
+        },
     });
 
     Model.associate = function(models){
