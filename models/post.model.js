@@ -10,7 +10,7 @@ const op = Sequelize.Op;
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Posts', {
         type     : DataTypes.STRING,
-        content  : DataTypes.STRING,
+        content  : DataTypes.TEXT,
         public: {
             type: DataTypes.BOOLEAN,
             defaultValue: false,
