@@ -1,5 +1,5 @@
-const { ConsumedAds, Posts, AdOptions, AdArchives, Orders, AdStats } = require('../models');
-const { to, ReE, ReS } = require('../services/util.service');
+const { ConsumedAds, Posts, AdOptions, AdArchives, Orders, AdStats, Forex } = require('../models');
+const { to, ReE, ReS, roundTwoDecimalPlaces } = require('../services/util.service');
 const { ADS } = require('../config/app-constants');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -8,8 +8,19 @@ const { NOTIFICATIONS } = require('../config/app-constants');
 
 const defaultOptions = async function(req, res){
 	try {
+
+		let err, forex, pricing; 
+
+		[err, forex] = await to(Forex.getUSD2INR());
+        if(err) return ReE(res, err, 422);
+
+        pricing = ADS.defaultPricing;
+        pricing.CPIINR = roundTwoDecimalPlaces(pricing.defaultCPI * forex)
+        pricing.CPCINR = roundTwoDecimalPlaces(pricing.defaultCPC * forex)
+        pricing.CPVINR = roundTwoDecimalPlaces(pricing.defaultCPV * forex)
+
 		return ReS(res, {
-	             options: ADS.defaultPricing
+	             options: pricing
 	    	   }, 200);
 
 	} catch (err) {

@@ -19,7 +19,7 @@ let ADS = {}
 ADS.defaultPricing = {
   defaultCPI: 0.0071,
   defaultCPC: 0.028,
-  defaultCPV: 0.21,
+  defaultCPV: 0.085,
   defaultImpressionTarget: 500
 }
 

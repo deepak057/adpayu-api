@@ -89,7 +89,7 @@ router.post('/payment/processResponse',  PaymentController.processResponse);    
 router.get('/payment/checkOrderStatus/:orderId',   passport.authenticate('jwt', {session:false}),  PaymentController.checkOrderStatus);        // R
 
 /** Ads routes**/
-router.get('/ad/defaultOptions',   passport.authenticate('jwt', {session:false}),  AdsController.defaultOptions);        // R
+router.get('/ad/defaultOptions',  AdsController.defaultOptions);        // R
 router.post('/ad/adConsumed/:action/:postId',   passport.authenticate('jwt', {session:false}),  AdsController.adConsumed);        // C
 
 /** Withdraw routes **/
