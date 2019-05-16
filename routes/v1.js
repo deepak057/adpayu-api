@@ -14,6 +14,7 @@ const PaymentController   = require('../controllers/payment.controller');
 const AdsController = require('../controllers/ads.controller');
 const WithdrawController = require('../controllers/withdraw.controller');
 const MailsController = require('../controllers/mails.controller');
+const GeneralController = require('../controllers/general.controller');
 
 const custom 	        = require('./../middleware/custom');
 
@@ -98,6 +99,9 @@ router.post('/withdraw',   passport.authenticate('jwt', {session:false}),  Withd
 
 /** Mails routes **/
 router.post('/mails/sendContactMail',  MailsController.sendContactMail);        // P
+
+/** General routes **/
+router.get('/general/get', passport.authenticate('jwt', {session:false}), GeneralController.get);        // R
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));
