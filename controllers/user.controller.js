@@ -70,7 +70,7 @@ module.exports.updateAccountPassword = updateAccountPassword;
 
 const get = async function(req, res){
     let user, err, friendship;
-    if(req.params.uid) {
+    if(req.params.uid && parseInt(req.params.uid) !== req.user.id) {
       [err, user] = await to (User.scope('public').findOne({ where: {id: req.params.uid}}))
       if(err) return ReE(res, err, 422);
       [err, friendship] = await to (Friendship.getFriendship(req.user.id, req.params.uid))
