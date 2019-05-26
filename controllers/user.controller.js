@@ -237,5 +237,5 @@ function getPasswordResetLink (user, url) {
   return url + '?k='+ user.passwordResetKey
 }
 function getPasswordResetMailBody (user, url) {
-    return 'Hello ' + user.first.charAt(0).toUpperCase()+ user.first.slice(1) +', \n\nSomeone has requested to reset your ' + process.env.SITE_NAME +' accout password. If it was you, please click the link below to continue.\n\n'+ getPasswordResetLink(user, url) + '\n\nHowever, if you did not request it, please just ignore this mail. Your account is safe and sound. \n\n\n\n Thank you! \n\n\n\n\n '+ process.env.SITE_NAME + ' Team'
+    return 'Hello ' + user.first.charAt(0).toUpperCase()+ user.first.slice(1) +', \n\nSomeone has requested to reset your ' + process.env.SITE_NAME +' account password. If it was you, please click the link below to continue.\n\n'+ getPasswordResetLink(user, url) + '\n\nHowever, if you did not request it, please just ignore this mail. Your account is safe and sound. \n\n\n\n Thank you! \n\n\n\n\n '+ process.env.SITE_NAME + ' Team'
 }
