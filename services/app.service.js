@@ -165,7 +165,7 @@ function getWebPost (post, user) {
 
   //add some custom properties 
   post_web.show = true
-  post_web.showComments = true
+  post_web.showComments = false
   
   return post_web;
 }
