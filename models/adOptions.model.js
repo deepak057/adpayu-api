@@ -17,7 +17,9 @@ module.exports = (sequelize, DataTypes) => {
         adLink: DataTypes.STRING,
         adLinkLabel: DataTypes.STRING,
         adCountries: DataTypes.TEXT,
-        adArea: DataTypes.STRING
+        adLat: DataTypes.STRING,
+        adLng: DataTypes.STRING,
+        adRadius: DataTypes.STRING
     });
 
     Model.associate = function(models){

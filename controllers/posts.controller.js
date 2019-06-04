@@ -405,9 +405,34 @@ function getWhereCondition (user, condition) {
 
 function getAdLocationSearchCriteria (user) {
 
-  let AdOptionCondition;
+  let AdOptionCondition, orCondition, userLocation;
 
       if(user.location) {
+        orCondition = [
+          {
+            '$AdOption.adCountries$': Sequelize.literal(' FIND_IN_SET("'+user.location+'",AdOption.adCountries)')
+          },
+          {
+            '$AdOption.adCountries$': { [op.eq]: ''},
+            '$AdOption.adLat$': { [op.eq]: ''},
+            '$AdOption.adLng$': { [op.eq]: ''},
+            '$AdOption.adRadius$': { [op.eq]: ''}
+          }
+        ];
+
+        /*
+        * if user has specified their location cordinates (lat and lng)
+        * then below SQL query uses Haversine formula for finding out
+        * if given user's location lies in the Post Area Circle (if specified in post)
+        */
+
+        if (user.locationCords) {
+          userLocation = JSON.parse(user.locationCords)
+          orCondition.push({
+            '$AdOption.adLat': Sequelize.literal('(AdOption.adCountries = "" AND AdOption.adLat IS NOT NULL AND AdOption.adLng IS NOT NULL AND AdOption.adRadius IS NOT NULL AND ( 6371000 * acos( cos( radians(AdOption.adLat) ) * cos( radians( ' + userLocation.lat + ' ) ) * cos( radians( ' + userLocation.lng + ' ) - radians(AdOption.adLng) ) + sin( radians(AdOption.adLat) ) * sin(radians(' + userLocation.lat + ')) ) ) <= AdOption.adRadius)')
+          })
+        }
+
         AdOptionCondition = {
           [op.and]: [
 
@@ -417,14 +442,7 @@ function getAdLocationSearchCriteria (user) {
             },
 
             {
-              [op.or]: [
-                {
-                  '$AdOption.adCountries$': Sequelize.literal(' FIND_IN_SET("'+user.location+'",AdOption.adCountries)')
-                },
-                {
-                  '$AdOption.adCountries$': { [op.eq]: ''},
-                }
-              ]
+              [op.or]: orCondition
             }
 
           ]
