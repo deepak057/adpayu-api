@@ -157,6 +157,10 @@ function getAdOptions (adOptions) {
 
 module.exports.create = create;
 
+/*
+** Method to get the posts for the UserFeed
+*/
+
 const get = async function(req, res){
     let friends;
 
