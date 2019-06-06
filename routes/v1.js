@@ -101,7 +101,8 @@ router.post('/withdraw',   passport.authenticate('jwt', {session:false}),  Withd
 router.post('/mails/sendContactMail',  MailsController.sendContactMail);        // P
 
 /** General routes **/
-router.get('/general/get', passport.authenticate('jwt', {session:false}), GeneralController.get);        // R
+router.post('/general/fakeCommentsLike/:commentId', passport.authenticate('jwt', {session:false}), GeneralController.fakeCommentsLike);        // C
+router.post('/general/fakePostLike/:postId', passport.authenticate('jwt', {session:false}), GeneralController.fakePostLike);        // C
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));
