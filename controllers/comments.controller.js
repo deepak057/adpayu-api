@@ -3,6 +3,7 @@ const { to, ReE, ReS, getMySQLDateTime } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const { NOTIFICATIONS } = require('../config/app-constants');
 const { getCommentIncludes, getSingleComment, canUpdatePost, formatComments } = require('../services/app.service');
+const Sequelize = require('sequelize');
 
 function getNotification(commentId, postId, type= 'text') {
   return {
@@ -15,13 +16,27 @@ function getNotification(commentId, postId, type= 'text') {
   }
 }
 
+function getCommentCriteriaObject (user, where = false) {
+  let r_ = {
+    include: getCommentIncludes(),
+    attributes: {
+      include: [
+        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount'],
+        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id AND Likes.UserId = '+ user.id +')'), 'HasLiked']
+      ]
+    },
+  }
+  if (where) {
+    r_.where =  where
+  }
+  return r_;
+}
+
 const get =  function(req, res){
   try {
     let postId = req.params.postId || false, user = req.user;
     if (postId) {
-      Comments.findAll({where: {
-        PostId: postId
-      }, include: getCommentIncludes()})
+      Comments.findAll(getCommentCriteriaObject (user, {PostId: postId}))
         .then((comments) => {
           if (comments) {
             comments = formatComments(comments, user)
@@ -121,8 +136,8 @@ module.exports.remove = remove;
 const getComment = async function(req, res){
   try {
     let commentId = req.params.commentId, comment, err, post;
-
-     [err, comment] = await to(Comments.find({where: {id: commentId},include: getCommentIncludes()}));
+    
+     [err, comment] = await to(Comments.find(getCommentCriteriaObject(req.user, {id: commentId})));
      if(err) {
         console.log(err)
         throw new Error('error occured trying to get the comment')

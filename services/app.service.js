@@ -1,12 +1,14 @@
 const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
 const { isEmptyObject } = require('./util.service');
+const Sequelize = require('sequelize');
+const op = Sequelize.Op;
+
 /*
 * Function to get the array of only UIDs
 * extracted from the given array of User
 * objects
 */
-const Sequelize = require('sequelize');
-const op = Sequelize.Op;
+
 
 module.exports.getUIDs = function(users, currentUser = false) {
   let uids= []
@@ -36,7 +38,14 @@ return [
     model: User.scope('public')
   },
   {
-    model: Likes
+    model: Likes,
+    //including an a fake condition
+    // to prevent selecting all the 
+    // associated Records to save 
+    where: {
+      id: 'dummy'
+    },
+    required: false
   }
 ]
 }
@@ -91,6 +100,13 @@ function getDBInclude(user, tagIds = [], pushModel = {}) {
           },
           {
             model: Likes,
+            //including an a fake condition
+            // to prevent selecting all the 
+            // associated Records to save 
+            where: {
+              id: 'dummy'
+            },
+            required: false
           },
           {
             model: Videos,
@@ -127,7 +143,9 @@ function getPostCriteriaObject (user, tagIds = []) {
       */
       attributes: {
         include: [
-          [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id)'), 'CommentsCount']
+          [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id)'), 'CommentsCount'],
+          [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id)'), 'LikesCount'],
+          [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id AND Likes.UserId = '+ user.id +')'), 'HasLiked']
         ]
       },
         
