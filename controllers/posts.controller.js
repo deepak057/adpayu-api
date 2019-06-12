@@ -180,11 +180,11 @@ const get = async function(req, res){
        return ReE(res, err, 422);
      }
 
-     let condition = [
-          {
+     let friendsPostsCondition =  {
             UserId: getUIDs(friends, req.user)
-          },
-      ]
+     };
+
+     let condition = []
 
     //ad location wise ad filtering search criteria
     condition.push(getAdLocationSearchCriteria(user))
@@ -200,6 +200,7 @@ const get = async function(req, res){
 
     if(tag === 'all')  {
 
+
       // get the tags of current user and create an array containing Tag Ids
       user.getTags()
         .then ((userTags) => {
@@ -209,6 +210,8 @@ const get = async function(req, res){
               tagsId.push(userTags[i].id)
             }
           }
+
+          condition.push(friendsPostsCondition);
 
           condition.push({public: { [op.eq]: true},'$Tags.id$': tagsId});
 
@@ -233,9 +236,16 @@ const get = async function(req, res){
 
     }  else {
 
+
         Tags.findOne({where: {name: tag}})
           .then ((Dbtag) => {
             
+            friendsPostsCondition =  {
+                UserId: getUIDs(friends, req.user),
+                '$Tags.id$': [Dbtag.id]
+            };
+
+            condition.push(friendsPostsCondition);
             // update the db include array by passing it TagIds of the tag that
             // has been requested
             //criteria.include = getDBInclude(user, [Dbtag.id]);
