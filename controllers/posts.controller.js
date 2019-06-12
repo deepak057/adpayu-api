@@ -180,10 +180,16 @@ const get = async function(req, res){
        return ReE(res, err, 422);
      }
 
+     let UIDCondition = getUIDs(friends, req.user);
+
+     /* Condition for shwoing posts 
+     ** from friends and self
+     */
      let friendsPostsCondition =  {
-            UserId: getUIDs(friends, req.user)
+            UserId: UIDCondition
      };
 
+     // Array that will contain all the conditions
      let condition = []
 
     //ad location wise ad filtering search criteria
@@ -211,10 +217,14 @@ const get = async function(req, res){
             }
           }
 
+          // push friends conditions i.e. get posts that are from friends or self
           condition.push(friendsPostsCondition);
 
+          // push public Posts condition. i.e. get public posts in the tags that 
+          // current user follows
           condition.push({public: { [op.eq]: true},'$Tags.id$': tagsId});
 
+          // club all the conditions
           criteria.where = getWhereCondition (user, condition)
 
           Posts.findAll(criteria)
@@ -240,8 +250,12 @@ const get = async function(req, res){
         Tags.findOne({where: {name: tag}})
           .then ((Dbtag) => {
             
+            /* Friends posts condition i.e. get those posts 
+            * that are from friends or self and belong to 
+            * given tag
+            */
             friendsPostsCondition =  {
-                UserId: getUIDs(friends, req.user),
+                UserId: UIDCondition,
                 '$Tags.id$': [Dbtag.id]
             };
 
@@ -251,6 +265,8 @@ const get = async function(req, res){
             //criteria.include = getDBInclude(user, [Dbtag.id]);
 
             //condition.push({public: { [op.eq]: true}});
+            
+            // get only those posts that are public and belong to current/given tag
             condition.push({public: { [op.eq]: true},'$Tags.id$': [Dbtag.id]});
 
             criteria.where = getWhereCondition (user, condition)
