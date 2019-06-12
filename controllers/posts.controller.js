@@ -238,9 +238,10 @@ const get = async function(req, res){
             
             // update the db include array by passing it TagIds of the tag that
             // has been requested
-            criteria.include = getDBInclude(user, [Dbtag.id]);
+            //criteria.include = getDBInclude(user, [Dbtag.id]);
 
-            condition.push({public: { [op.eq]: true}});
+            //condition.push({public: { [op.eq]: true}});
+            condition.push({public: { [op.eq]: true},'$Tags.id$': [Dbtag.id]});
 
             criteria.where = getWhereCondition (user, condition)
 
