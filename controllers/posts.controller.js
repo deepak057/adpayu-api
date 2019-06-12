@@ -637,7 +637,9 @@ const remove = async function(req, res){
       let postId = req.params.postId;
       Posts.find({where: {id: postId, UserId: req.user.id}})
         .then((post) => {
-          post.destroy()
+          // soft delete the post by just updating Deleted flag
+          post.deleted = true;
+          post.save()
             .then(() => {
               const NotificationsController   = require('./notifications.controller');
               NotificationsController.removePostNotifications(postId); //remove all the notifications record associated with this post

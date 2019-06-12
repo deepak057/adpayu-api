@@ -17,12 +17,16 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false
         },
         visible: {type: DataTypes.BOOLEAN, defaultValue: true},
+        deleted: {type: DataTypes.BOOLEAN, defaultValue: false},
     }, {
 
         defaultScope: {
           where: {
             visible: {
                 [op.eq]: true
+            },
+            deleted: {
+                [op.eq]: false
             }
           }
         },
