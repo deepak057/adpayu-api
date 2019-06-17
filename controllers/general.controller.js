@@ -1,6 +1,6 @@
 const { Likes, User, Comments, Posts } = require('../models');
 const { to, ReE, ReS } = require('../services/util.service');
-
+const { captureVideoPoster } = require('../services/app.service');
 
 const fakeCommentsLike =  async function(req, res){
     let commentId = req.params.commentId, err, user = req.user, comment, n = req.query.n || 100, likes = [];
@@ -59,3 +59,33 @@ const fakePostLike =  async function(req, res){
 }
 
 module.exports.fakePostLike = fakePostLike;
+
+
+const captureScreenshots =  async function(req, res){
+    const appRoot = require('app-root-path');
+
+    // List all files in a directory in Node.js recursively in a synchronous fashion
+     var walkSync = function(dir, filelist) {
+            var path = path || require('path');
+            var fs = fs || require('fs'),
+                files = fs.readdirSync(dir);
+            filelist = filelist || [];
+            files.forEach(function(file) {
+                if (fs.statSync(path.join(dir, file)).isDirectory()) {
+                    filelist = walkSync(path.join(dir, file), filelist);
+                }
+                else {
+                    
+                  if(file.split('.').pop() === 'mp4') {
+                    captureVideoPoster(file)
+                  }
+                }
+            });
+            return filelist;
+        };
+
+        console.log(walkSync(appRoot+'/uploads/'))
+
+}
+
+module.exports.captureScreenshots = captureScreenshots;

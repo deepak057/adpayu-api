@@ -262,3 +262,27 @@ module.exports.canUpdatePost = function (post, comment) {
   */
   return post.type === 'question' || comment.videoPath
 }
+
+
+function captureVideoPoster (videoFileName) {
+  const appRoot = require('app-root-path');
+  let ffmpeg = require('fluent-ffmpeg');
+  let videoPath = appRoot+'/uploads/'+ videoFileName
+  // replace the extension of given video file with ".png"
+  let posterImageName = videoFileName.substr(0, videoFileName.lastIndexOf(".")) + ".png";
+  ffmpeg(videoPath)
+    .on('end', function() {
+      console.log('Screenshot taken');
+    })
+    .on('error', function(err) {
+      console.error(err);
+    })
+    .screenshots({
+      timestamps: [.5],
+      folder: appRoot+'/uploads/thumbs',
+      filename: posterImageName
+    });
+
+}
+
+module.exports.captureVideoPoster = captureVideoPoster;

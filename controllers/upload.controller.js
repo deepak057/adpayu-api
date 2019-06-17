@@ -1,9 +1,7 @@
-const { Images, Posts, User } = require('../models');
-const { to, ReE, ReS, isEmptyObject, uniqeFileName } = require('../services/util.service');
-const Sequelize = require('sequelize');
+const { Images} = require('../models');
+const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
+const { captureVideoPoster } = require('../services/app.service');
 const appRoot = require('app-root-path');
-
-const Op = Sequelize.Op;
 
 
 const uploadImage = async function(req, res){
@@ -37,26 +35,6 @@ const uploadImage = async function(req, res){
 }
 
 module.exports.uploadImage = uploadImage;
-
-function captureVideoPoster (videoFileName) {
-  let ffmpeg = require('fluent-ffmpeg');
-  let videoPath = appRoot+'/uploads/'+ videoFileName
-  // replace the extension of given video file with ".png"
-  let posterImageName = videoFileName.substr(0, videoFileName.lastIndexOf(".")) + ".png";
-  ffmpeg(videoPath)
-    .on('end', function() {
-      console.log('Screenshot taken');
-    })
-    .on('error', function(err) {
-      console.error(err);
-    })
-    .screenshots({
-      timestamps: [.5],
-      folder: appRoot+'/uploads/thumbs',
-      filename: posterImageName
-    });
-
-}
 
 const uploadVideo = async function(req, res){
   if (Object.keys(req.files).length == 0) {
