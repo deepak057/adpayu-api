@@ -266,11 +266,16 @@ module.exports.canUpdatePost = function (post, comment) {
 
 function captureVideoPoster (videoFileName) {
   const appRoot = require('app-root-path');
+  const fs = require('fs');
   let ffmpeg = require('fluent-ffmpeg');
-  let videoPath = appRoot+'/uploads/'+ videoFileName
+  let videoPath = appRoot+'/uploads/'+ videoFileName;
+  let screenshotFolder = appRoot+'/uploads/thumbs';
   // replace the extension of given video file with ".png"
   let posterImageName = videoFileName.substr(0, videoFileName.lastIndexOf(".")) + ".png";
-  ffmpeg(videoPath)
+
+  // create the screenshot only if it doesn't already exist
+  if (!fs.existsSync(screenshotFolder + '/' + posterImageName)) {
+    ffmpeg(videoPath)
     .on('end', function() {
       console.log('Screenshot taken');
     })
@@ -278,10 +283,11 @@ function captureVideoPoster (videoFileName) {
       console.error(err);
     })
     .screenshots({
-      timestamps: [.5],
-      folder: appRoot+'/uploads/thumbs',
+      timestamps: [1],
+      folder: screenshotFolder,
       filename: posterImageName
     });
+  }
 
 }
 

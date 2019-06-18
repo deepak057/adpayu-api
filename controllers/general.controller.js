@@ -62,30 +62,35 @@ module.exports.fakePostLike = fakePostLike;
 
 
 const captureScreenshots =  async function(req, res){
-    const appRoot = require('app-root-path');
+    if (req.user.id === 1) {
 
-    // List all files in a directory in Node.js recursively in a synchronous fashion
-     var walkSync = function(dir, filelist) {
-            var path = path || require('path');
-            var fs = fs || require('fs'),
-                files = fs.readdirSync(dir);
-            filelist = filelist || [];
-            files.forEach(function(file) {
-                if (fs.statSync(path.join(dir, file)).isDirectory()) {
-                    filelist = walkSync(path.join(dir, file), filelist);
-                }
-                else {
-                    
-                  if(file.split('.').pop() === 'mp4') {
-                    captureVideoPoster(file)
+      const appRoot = require('app-root-path');
+
+      // List all files in a directory in Node.js recursively in a synchronous fashion
+       var walkSync = function(dir, filelist) {
+              var path = path || require('path');
+              var fs = fs || require('fs'),
+                  files = fs.readdirSync(dir);
+              filelist = filelist || [];
+              files.forEach(function(file) {
+                  if (fs.statSync(path.join(dir, file)).isDirectory()) {
+                      filelist = walkSync(path.join(dir, file), filelist);
                   }
-                }
-            });
-            return filelist;
-        };
+                  else {
+                      
+                    if(file.split('.').pop() === 'mp4') {
+                      captureVideoPoster(file)
+                    }
+                  }
+              });
+              return filelist;
+          };
 
-        console.log(walkSync(appRoot+'/uploads/'))
-
+          walkSync(appRoot+'/uploads/');
+          return ReS(res, {message:'Screenshots are being taken.'}, 200);
+    } else {
+      return ReE(res, {message:'Unathorized user'}, 401);
+    }
 }
 
 module.exports.captureScreenshots = captureScreenshots;
