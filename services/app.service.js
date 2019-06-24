@@ -114,7 +114,7 @@ function getDBInclude(user, tagIds = [], pushModel = {}) {
           {
             model: ConsumedAds,
             where: {
-              UserId: user.id
+              UserId: user.id,
             },
             required: false,
           }
@@ -145,7 +145,8 @@ function getPostCriteriaObject (user, tagIds = []) {
         include: [
           [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id)'), 'CommentsCount'],
           [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id)'), 'LikesCount'],
-          [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id AND Likes.UserId = '+ user.id +')'), 'HasLiked']
+          [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'],
+          //[Sequelize.literal('(SELECT * FROM ConsumedAds WHERE ConsumedAds.PostId = Posts.id AND ConsumedAds.UserId = '+ user.id +')'), 'ConsumedAds']
         ]
       },
         

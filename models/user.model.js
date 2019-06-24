@@ -4,6 +4,8 @@ const bcrypt_p 			= require('bcrypt-promise');
 const jwt           	= require('jsonwebtoken');
 const {TE, to}          = require('../services/util.service');
 const CONFIG            = require('../config/config');
+const Sequelize = require('sequelize');
+const op = Sequelize.Op;
 
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('User', {
@@ -23,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
         bankDetails: DataTypes.TEXT,
         passwordResetKey: DataTypes.TEXT,
         locationCords: {type: DataTypes.STRING, defaultValue: ''},
+        visible: {type: DataTypes.BOOLEAN, defaultValue: true}
     },{
         defaultScope: {
           attributes: { exclude: [] },
@@ -30,6 +33,13 @@ module.exports = (sequelize, DataTypes) => {
         scopes: {
           public: {
            attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords'] },
+          },
+          visible: {
+            where: {
+              visible: {
+                [op.eq]: true
+              }
+            }
           }
         },
     });

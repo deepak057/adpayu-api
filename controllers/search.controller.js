@@ -47,7 +47,7 @@ const get = async function(req, res){
           return ReE(res, err, 422);
         }
 
-        User.scope('public').findAll({
+        User.scope('public', 'visible').findAll({
           limit: limitNOffset.limit,
           offset: limitNOffset.offset,
           order: [['createdAt', 'DESC']],
