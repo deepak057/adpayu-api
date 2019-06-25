@@ -97,10 +97,9 @@ module.exports.captureScreenshots = captureScreenshots;
 
 const putDefaultTagInAllPosts =  async function(req, res){
     if (req.user.id === 1) {
-      let defaultTagId = 1;
-      let defaultTag;
+      let defaultTagName = 'general', defaultTag;
 
-       [err, defaultTag] = await to(Tags.find({where: {id: defaultTagId}}));
+       [err, defaultTag] = await to(Tags.find({where: {name: defaultTagName}}));
        if(err) return ReE(res, err, 422);
 
       Posts.findAll({
@@ -116,7 +115,7 @@ const putDefaultTagInAllPosts =  async function(req, res){
               if (posts[i].Tags) {
                 let defaultTagFound = false
                 for(let j in posts[i].Tags) {
-                  if (posts[i].Tags[j].id === defaultTagId) {
+                  if (posts[i].Tags[j].id === defaultTag.id) {
                     defaultTagFound = true
                   }
                 }
