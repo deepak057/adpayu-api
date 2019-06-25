@@ -1,4 +1,4 @@
-const { Likes, User, Comments, Posts } = require('../models');
+const { Likes, User, Comments, Posts, Tags } = require('../models');
 const { to, ReE, ReS } = require('../services/util.service');
 const { captureVideoPoster } = require('../services/app.service');
 
@@ -94,3 +94,45 @@ const captureScreenshots =  async function(req, res){
 }
 
 module.exports.captureScreenshots = captureScreenshots;
+
+const putDefaultTagInAllPosts =  async function(req, res){
+    if (req.user.id === 1) {
+      let defaultTagId = 1;
+      let defaultTag;
+
+       [err, defaultTag] = await to(Tags.find({where: {id: defaultTagId}}));
+       if(err) return ReE(res, err, 422);
+
+      Posts.findAll({
+        include: [
+          {
+            model: Tags
+          }
+        ]
+      })
+        .then((posts) => {
+
+            for(let i in posts) {
+              if (posts[i].Tags) {
+                let defaultTagFound = false
+                for(let j in posts[i].Tags) {
+                  if (posts[i].Tags[j].id === defaultTagId) {
+                    defaultTagFound = true
+                  }
+                }
+                if (!defaultTagFound) {
+                  posts[i].addTags(defaultTag)
+                }
+              }
+            }
+
+            return ReS(res, {message:'Default tag is being added to all the posts.'}, 200);
+
+        })
+      
+    } else {
+      return ReE(res, {message:'Unathorized user'}, 401);
+    }
+}
+
+module.exports.putDefaultTagInAllPosts = putDefaultTagInAllPosts;

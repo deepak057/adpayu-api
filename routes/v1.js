@@ -104,6 +104,7 @@ router.post('/mails/sendContactMail',  MailsController.sendContactMail);        
 router.post('/general/fakeCommentsLike/:commentId', passport.authenticate('jwt', {session:false}), GeneralController.fakeCommentsLike);        // C
 router.post('/general/fakePostLike/:postId', passport.authenticate('jwt', {session:false}), GeneralController.fakePostLike);        // C
 router.post('/general/captureScreenshots', passport.authenticate('jwt', {session:false}), GeneralController.captureScreenshots);        // C
+router.post('/general/putDefaultTagInAllPosts', passport.authenticate('jwt', {session:false}), GeneralController.putDefaultTagInAllPosts);        // C
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));
