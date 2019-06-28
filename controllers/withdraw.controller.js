@@ -186,7 +186,8 @@ async function requestTransfer(transactionDetails, transaferDetails, authenticat
         beneId: user.id,
         amount: transactionDetails.totalINR,
         transferId: 'rand'+ Math.floor((Math.random() * 1000000) + 1000),
-        transferMode: transaferDetails.mode === 'bank' ? 'banktransfer': transaferDetails.mode
+        transferMode: transaferDetails.mode === 'bank' ? 'banktransfer': transaferDetails.mode,
+        remarks: 'Payout from '+ process.env.SITE_NAME
       };
 
       //save this transaction details in database
