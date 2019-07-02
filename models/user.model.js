@@ -25,7 +25,8 @@ module.exports = (sequelize, DataTypes) => {
         bankDetails: DataTypes.TEXT,
         passwordResetKey: DataTypes.TEXT,
         locationCords: {type: DataTypes.STRING, defaultValue: ''},
-        visible: {type: DataTypes.BOOLEAN, defaultValue: true}
+        visible: {type: DataTypes.BOOLEAN, defaultValue: true},
+        systemCreatedUser: {type: DataTypes.BOOLEAN, defaultValue: false}
     },{
         defaultScope: {
           attributes: { exclude: [] },
