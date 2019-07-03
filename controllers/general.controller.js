@@ -186,13 +186,13 @@ const importNames =  async function(req, res){
            return result;
         },
         getEmail: function (name) {
+          const uniqid = require('uniqid');
           let n = (name.first + name.last).replace(" ", "");
           let suffix = "." + this.makeid(8) + ".svanq";
           let email = (n + suffix + '@gmail.com').toLowerCase();
           if (this.validateEmail(email)) {
             return email
           } else {
-            const uniqid = require('uniqid');
             return  this.makeid(10) + "." + uniqid() + ".svanq@gmail.com";  
           }
 

@@ -33,7 +33,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         scopes: {
           public: {
-           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser'] },
           },
           visible: {
             where: {
