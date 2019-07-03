@@ -242,7 +242,7 @@ const importNames =  async function(req, res){
           authService.createUser(user)
             .then ((userObj) => {
                //associate this user with default tag
-              TagsController.associateWithDefaultTag(userObj);
+              //TagsController.associateWithDefaultTag(userObj);
 
             })
 
