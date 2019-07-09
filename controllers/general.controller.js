@@ -1,5 +1,5 @@
 const { Likes, User, Comments, Posts, Tags } = require('../models');
-const { to, ReE, ReS } = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
 const { captureVideoPoster } = require('../services/app.service');
 
 const fakeCommentsLike =  async function(req, res){
@@ -144,7 +144,7 @@ const importNames =  async function(req, res){
       const fs = require('fs');
       const authService       = require('../services/auth.service');
       const TagsController   = require('./tags.controller');
-      let CSVPath = appRoot + '/uploads/Indian-Female-Names.csv'
+      let CSVPath = appRoot + '/uploads/csv-zusammenfuehren.de_77c89p8g.csv'
       
       let helpers = {
         surNames: ["Acharya", "Asan", "Abbott", "Ahuja", "Arora", "Adiga", "Ahluwalia", "Anand", "Banerjee", "Bhat", "Bhattathiri", "Bhattacharya", "Bandyopadhyay", "Chattopadhyay", "Chopra: ", "Chaturvedi", "Chandra", "Chakyar", "Devar", "Dholia", "Dhar", "Deshmukh", "Desai", "Dhawan", "Dhirwan", "Dubashi", "Dwivedi", "Embranthiri", "Emani", "Gandhi", "Gill", "Iyengar", "Iyer", "Jha", "Jain", "Joshi", "Jindal", "Kakkar", "Kapoor", "Kaniyar", "Khanna", "See Also", "Khatri", "Kaviraj", "Kori", "Kocchar", "Lal", "Mahajan", "Mahto", "Nayar", "Nagarajan", "Nai", "Odda", "Pamireddy", "Qassab", "Rai", "Sachdev", "Trivedi: ", "Undirmare", "Velama", "Varma", "Telaga", "Venkatesh", "Vellala", "Verma", "Waghdare", "Warsi", "Yadav", "Zacharias", "Zaveri", "Zutshi", "Acharya", "Agarwal", "Agate", "Aggarwal", "Agrawal", "Ahluwalia", "Ahuja", "Amble", "Anand", "Andra", "Anne", "Apte", "Arora", "Arya", "Atwal", "Aurora", "Babu", "Badal", "Badami", "Bahl", "Bahri", "Bail", "Bains", "Bajaj", "Bajwa", "Bakshi", "Bal", "Bala", "Bala", "Balakrishnan", "Balan", "Balasubramanian", "Balay", "Bali", "Bandi", "Banerjee", "Banik", "Bansal", "Barad", "Barad", "Baral", "Baria", "Barman", "Basak", "Bassi", "Basu", "Bath", "Batra", "Batta", "Bava", "Bawa", "Bedi", "Behl", "Ben", "Bera", "Bhagat", "Bhakta", "Bhalla", "Bhandari", "Bhardwaj", "Bhargava", "Bhasin", "Bhat", "Bhatia", "Bhatnagar", "Bhatt", "Bhattacharyya", "Bhatti", "Bhavsar", "Bir", "Biswas", "Boase", "Bobal", "Bora", "Bora", "Borah", "Borde", "Borra", "Bose", "Brahmbhatt", "Brar", "Buch", "Buch", "Bumb", "Butala", "Chacko", "Chad", "Chada", "Chadha", "Chahal", "Chakrabarti", "Chakraborty", "Chana", "Chand", "Chanda", "Chander", "Chandra", "Chandran", "Char", "Chatterjee", "Chaudhari", "Chaudhary", "Chaudhry", "Chaudhuri", "Chaudry", "Chauhan", "Chawla", "Cheema", "Cherian", "Chhabra", "Chokshi", "Chopra", "Choudhary", "Choudhry", "Choudhury", "Chowdhury", "Comar", "Contractor", "D’Alia", "Dada", "Dalal", "Dani", "Dar", "Dara", "Dara", "Das", "Dasgupta", "Dash", "Dass", "Date", "Datta", "Dave", "Dayal", "De", "Deep", "Deo", "Deol", "Desai", "Deshmukh", "Deshpande", "Devan", "Devi", "Dewan", "Dey", "Dhaliwal", "Dhar", "Dhar", "Dhawan", "Dhillon", "Dhingra", "Din", "Divan", "Dixit", "Doctor", "Dora", "Doshi", "Dua", "Dube", "Dubey", "Dugal", "Dugar", "Dugar", "Dutt", "Dutta", "Dyal", "Edwin", "Gaba", "Gade", "Gala", "Gandhi", "Ganesan", "Ganesh", "Ganguly", "Gara", "Garde", "Garg", "Gera", "Ghose", "Ghosh", "Gill", "Goda", "Goel", "Gokhale", "Gola", "Gole", "Golla", "Gopal", "Goswami", "Gour", "Goyal", "Grewal", "Grover", "Guha", "Gulati", "Gupta", "Halder", "Handa", "Hans", "Hari", "Hayer", "Hayre", "Hegde", "Hora", "Issac", "Iyengar", "Iyer", "Jaggi", "Jain", "Jani", "Jayaraman", "Jha", "Jhaveri", "Johal", "Joshi", "Kadakia", "Kade", "Kakar", "Kala", "Kala", "Kala", "Kale", "Kalita", "Kalla", "Kamdar", "Kanda", "Kannan", "Kant", "Kapadia", "Kapoor", "Kapur", "Kar", "Kara", "Karan", "Kari", "Karnik", "Karpe", "Kashyap", "Kata", "Kaul", "Kaur", "Keer", "Keer", "Khalsa", "Khanna", "Khare", "Khatri", "Khosla", "Khurana", "Kibe", "Kohli", "Konda", "Korpal", "Koshy", "Kota", "Kothari", "Krish", "Krishna", "Krishnamurthy", "Krishnan", "Kulkarni", "Kumar", "Kumer", "Kunda", "Kurian", "Kuruvilla", "Lad", "Lad", "Lal", "Lala", "Lall", "Lalla", "Lanka", "Lata", "Loke", "Loyal", "Luthra", "Madan", "Madan", "Magar", "Mahajan", "Mahal", "Maharaj", "Majumdar", "Malhotra", "Mall", "Mallick", "Mammen", "Mand", "Manda", "Mandal", "Mander", "Mane", "Mangal", "Mangat", "Mani", "Mani", "Mann", "Mannan", "Manne", "Master", "Mishra", "Purohit", "Raj", "Raja", "Rajagopal", "Rajagopalan", "Rajan", "Raju", "Ram", "Rama", "Ramachandran", "Ramakrishnan", "Raman", "Ramanathan", "Ramaswamy", "Ramesh", "Rana", "Randhawa", "Ranganathan", "Rao", "Rastogi", "Ratta", "Rattan", "Ratti", "Rau", "Raval", "Ravel", "Ravi", "Ray", "Reddy", "Rege", "Rout", "Roy", "Sabharwal", "Sachar", "Sachdev", "Sachdeva", "Sagar", "Saha", "Sahni", "Sahota", "Saini", "Salvi", "Sama", "Sami", "Sampath", "Samra", "Sandal", "Sandhu", "Sane", "Sangha", "Sanghvi", "Sani", "Sankar", "Sankaran", "Sant", "Saraf", "Saran", "Sarin", "Sarkar", "Sarma", "Sarna", "Sarraf", "Sastry", "Sathe", "Savant", "Sawhney", "Saxena", "Sehgal", "Sekhon", "Sem", "Sen", "Sengupta", "Seshadri", "Seth", "Sethi", "Setty", "Sha", "Shah", "Shan", "Shankar", "Shanker", "Sharaf", "Sharma", "Shenoy", "Shere", "Sheth", "Shetty", "Shroff", "Shukla", "Sibal", "Sidhu", "Singh", "Singhal", "Sinha", "Sodhi", "Solanki", "Som", "Soman", "Soni", "Sood", "Sridhar", "Srinivas", "Srinivasan", "Srivastava", "Subramaniam", "Subramanian", "Sule", "Sundaram", "Sunder", "Sur", "Sura", "Suresh", "Suri", "Swaminathan", "Swamy", "Tailor", "Tak", "Talwar", "Tandon", "Taneja", "Tank", "Tara", "Tata", "Tella", "Thaker", "Thakkar", "Thakur", "Thaman", "Tiwari", "Toor", "Tripathi", "Trivedi", "Upadhyay", "Uppal", "Vaidya", "Vala", "Varghese", "Varkey", "Varma", "Varty", "Varughese", "Vasa", "Venkataraman", "Venkatesh", "Verma", "Vig", "Virk", "Viswanathan", "Vohra", "Vora", "Vyas", "Wable", "Wadhwa", "Wagle", "Wali", "Wali", "Walia", "Walla", "Warrior", "Wason", "Yadav", "Yogi", "Yohannan", "Zacharia", "Zachariah"],
@@ -255,13 +255,84 @@ const importNames =  async function(req, res){
         console.log('CSV file successfully processed');
       });
 
-
-      // return ReS(res, {message:'Default tag is being added to all the posts.'}, 200);
-        
-    
-      // return ReE(res, {message:'Unathorized user'}, 401);
-    }    
+    } else {
+      return ReE(res, {message:'Unathorized user'}, 401);
+    }
 }
 
 
 module.exports.importNames = importNames;
+
+const putRandomProfilePics =  async function(req, res){
+      if (req.user.id === 1) {
+        const https = require('https');
+        const fs = require('fs');
+        const appRoot = require('app-root-path');
+        const request = require('request');
+        let gender = req.query.gender || 'female';
+        let limit = req.query.limit || 500;
+        let data='';
+
+        let httpOptions = {
+          host: 'randomuser.me',
+          path: '/api/?results='+limit+'&gender='+gender,
+          method: 'GET',
+        }
+
+        let get_req = https.request(httpOptions, function(resp) {
+        resp.on('data', function (chunk) {
+             data += chunk;
+        });
+          resp.on('end', () => {
+            let json = JSON.parse(data)
+            if (json.results.length) {
+                User.findAll({
+                    where: {
+                    systemCreatedUser: true, 
+                    pic: '',
+                    gender: gender,
+                  },
+                })
+                  .then((users) => {
+                    if (users) {
+                      for (let i in users) {
+                          let randomuser = json.results[i];
+                          if (randomuser) {
+                              let filename = uniqeFileName(randomuser.picture.large, users[i]);
+                              let picPath = appRoot+'/uploads/'+filename;
+                              request.head(randomuser.picture.large, function(err, res, body){
+                                request(randomuser.picture.large).pipe(fs.createWriteStream(picPath)).on('close', function () {
+                                  console.log('Pic downloaded....' + picPath)
+                                  users[i].pic = filename;
+                                  users[i].save()
+                                    .then ((user) => {
+                                        console.log("New pic for user "+ user.id + " is "+ user.pic);
+                                    })
+                                })
+                              });
+                          }
+                         
+                      }
+                      return ReS(res, {message:'Profile pictures are being added.'});
+                    }
+                  })
+            }
+          })
+          resp.on('error', (err) => {
+            console.log(err)
+          })
+        });
+
+        get_req.write('');
+        get_req.end();
+
+        
+
+      } else {
+        return ReE(res, {message:'Unathorized user'}, 401);
+    }
+
+}
+
+module.exports.putRandomProfilePics = putRandomProfilePics;
+

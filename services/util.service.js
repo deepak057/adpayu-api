@@ -53,8 +53,8 @@ module.exports.sleep  = function (ms) {
     })
 }
 
-module.exports.uniqeFileName = function (fileName) {
-      return fileName? uniqid() + path.extname(fileName) : ''
+module.exports.uniqeFileName = function (fileName, user = false) {
+      return fileName? uniqid() + ( user ? user.id: '' ) + path.extname(fileName) : ''
 }
 
 /*

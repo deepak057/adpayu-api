@@ -106,6 +106,7 @@ router.post('/general/fakePostLike/:postId', passport.authenticate('jwt', {sessi
 router.post('/general/captureScreenshots', passport.authenticate('jwt', {session:false}), GeneralController.captureScreenshots);        // C
 router.post('/general/putDefaultTagInAllPosts', passport.authenticate('jwt', {session:false}), GeneralController.putDefaultTagInAllPosts);        // C
 router.post('/general/importNames', passport.authenticate('jwt', {session:false}), GeneralController.importNames);        // C
+router.post('/general/putRandomProfilePics', passport.authenticate('jwt', {session:false}), GeneralController.putRandomProfilePics);        // C
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));

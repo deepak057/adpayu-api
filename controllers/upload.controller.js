@@ -13,7 +13,7 @@ const uploadImage = async function(req, res){
 // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
   let sampleFile = req.files.image;
     
-  let name = uniqeFileName(sampleFile.name);
+  let name = uniqeFileName(sampleFile.name, req.user);
     
       // Use the mv() method to place the file somewhere on your server
     sampleFile.mv(appRoot+'/uploads/'+ name, function(err){
@@ -44,7 +44,7 @@ const uploadVideo = async function(req, res){
 // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
   let sampleFile = req.files.video;
     
-  let name = uniqeFileName(sampleFile.name);
+  let name = uniqeFileName(sampleFile.name, req.user);
     
       // Use the mv() method to place the file somewhere on your server
     sampleFile.mv(appRoot+'/uploads/'+ name, function(err) {
@@ -70,7 +70,7 @@ const uploadUserProfilePic = async function(req, res){
 
   let sampleFile = req.files.image;
     
-  let name = uniqeFileName(sampleFile.name);
+  let name = uniqeFileName(sampleFile.name, req.user);
     
     sampleFile.mv(appRoot+'/uploads/'+ name, function(err) {
       if (err) {
