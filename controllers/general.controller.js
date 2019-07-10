@@ -1,6 +1,8 @@
 const { Likes, User, Comments, Posts, Tags, Videos } = require('../models');
 const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
-const { captureVideoPoster } = require('../services/app.service');
+const { captureVideoPoster, optimizeVideoFile } = require('../services/app.service');
+const Sequelize = require('sequelize');
+const op = Sequelize.Op;
 
 const fakeCommentsLike =  async function(req, res){
     let commentId = req.params.commentId, err, user = req.user, comment, n = req.query.n || 100, likes = [];
@@ -336,6 +338,11 @@ const putRandomProfilePics =  async function(req, res){
 
 module.exports.putRandomProfilePics = putRandomProfilePics;
 
+/*
+* this method recursivly picks up un-optimized Video files
+* for optimizing them and when no un-optimized Video files 
+* are found it starts to recursivly optimize Video Comment files
+*/
 const optimizeVideos =  async function(){
 
   Videos.find({
@@ -346,39 +353,25 @@ const optimizeVideos =  async function(){
   })
     .then ((video) => {
       if (video) {
-        const appRoot = require('app-root-path');
-        const ffmpeg = require('fluent-ffmpeg');
-        const fs = require('fs');
-        let source = appRoot + '/uploads/' + video.path;
-        let copy = appRoot + '/uploads/original/' + video.path;
-
-        // destination.txt will be created or overwritten by default.
-        fs.copyFile(source, copy, (err) => {
-          if (err) {
-            throw err;
-          } else {
-            ffmpeg(copy)
-              .on('start', function(commandLine) {
-                  console.log('Spawned Ffmpeg with command: ' + commandLine);
-              })
-            //.output()
-            .on('end', function() {
-                 // fs.unlink(copy, function () {
-                    video.optimized = true;
-                    video.save()
-                      .then((video) => {
-                        console.log("Optimization completed for Video (" + video.path + ") with Id " + video.id);
-                    })
-                 // })
-            })
-          .save(source);
-          console.log("Video (" + video.path + ") with Id " + video.id + " is being optimized....");
-          }
-        })
+        optimizeVideoFile (video)
       } else {
-        console.log("No videos to optimize.")
+        Comments.find({
+          where: {
+            videoPath: {
+              [op.ne]: ''
+            },
+            videoOptimized: false
+          },
+          limit: 1
+        })
+          .then((videoComment) => {
+            if (videoComment) {
+              optimizeVideoFile(videoComment, 'videoComment');
+            } else {
+              console.log("No videos to optimize.")
+            }
+          })
       }
     })
 }
-
 module.exports.optimizeVideos = optimizeVideos;

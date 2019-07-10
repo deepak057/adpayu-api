@@ -293,3 +293,44 @@ function captureVideoPoster (videoFileName) {
 }
 
 module.exports.captureVideoPoster = captureVideoPoster;
+
+function optimizeVideoFile (dbObj, type = 'video') {
+  const appRoot = require('app-root-path');
+  const ffmpeg = require('fluent-ffmpeg');
+  const fs = require('fs');
+  let fileName = type === 'video' ? dbObj.path : dbObj.videoPath; 
+  let source = appRoot + '/uploads/' + fileName;
+  let copy = appRoot + '/uploads/original/' + fileName;
+
+  // destination.txt will be created or overwritten by default.
+  fs.copyFile(source, copy, (err) => {
+    if (err) {
+      throw err;
+    } else {
+      ffmpeg(copy)
+        .on('start', function(commandLine) {
+            console.log('Spawned Ffmpeg with command: ' + commandLine);
+        })
+      //.output()
+      .on('end', function() {
+           // fs.unlink(copy, function () {
+              
+              if (type === 'video') {
+                dbObj.optimized = true;
+              } else {
+                dbObj.videoOptimized = true;
+              }
+
+              dbObj.save()
+                .then((video) => {
+                  console.log("Optimization completed for Video (" + fileName + ")");
+              })
+           // })
+      })
+    .save(source);
+    console.log("Video (" + fileName + ") is being optimized....");
+    }
+  })
+}
+
+module.exports.optimizeVideoFile = optimizeVideoFile;

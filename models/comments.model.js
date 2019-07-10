@@ -9,8 +9,8 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Comments', {
         type     : DataTypes.STRING,
         comment: DataTypes.TEXT,
-        videoPath: {type: DataTypes.STRING, defaultValue: ''}
-
+        videoPath: {type: DataTypes.STRING, defaultValue: ''},
+        videoOptimized: {type: DataTypes.BOOLEAN, defaultValue: false}
     });
 
     Model.associate = function(models){
