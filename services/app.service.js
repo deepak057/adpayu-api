@@ -327,8 +327,8 @@ function optimizeVideoFile (dbObj, type = 'video') {
               })
            // })
       })
-    .save(source);
-    console.log("Video (" + fileName + ") is being optimized....");
+      .save(source);
+      console.log("Video (" + fileName + ") is being optimized....");
     }
   })
 }
