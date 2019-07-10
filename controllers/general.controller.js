@@ -345,9 +345,14 @@ module.exports.putRandomProfilePics = putRandomProfilePics;
 */
 const optimizeVideos =  async function(){
 
+  let maxFailedAttempts = 3;
+
   Videos.find({
     where: {
-      optimized: false
+      optimized: false,
+      failedProcessingAttempts: {
+        [op.lte]: maxFailedAttempts
+      }
     },
     limit: 1
   })
@@ -360,7 +365,10 @@ const optimizeVideos =  async function(){
             videoPath: {
               [op.ne]: ''
             },
-            videoOptimized: false
+            videoOptimized: false,
+            failedProcessingAttempts: {
+              [op.lte]: maxFailedAttempts
+            }
           },
           limit: 1
         })

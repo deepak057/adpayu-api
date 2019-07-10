@@ -301,36 +301,54 @@ function optimizeVideoFile (dbObj, type = 'video') {
   let fileName = type === 'video' ? dbObj.path : dbObj.videoPath; 
   let source = appRoot + '/uploads/' + fileName;
   let copy = appRoot + '/uploads/original/' + fileName;
-
-  // destination.txt will be created or overwritten by default.
-  fs.copyFile(source, copy, (err) => {
-    if (err) {
-      throw err;
-    } else {
-      ffmpeg(copy)
-        .on('start', function(commandLine) {
-            console.log('Spawned Ffmpeg with command: ' + commandLine);
-        })
-      //.output()
-      .on('end', function() {
-           // fs.unlink(copy, function () {
-              
-              if (type === 'video') {
-                dbObj.optimized = true;
-              } else {
-                dbObj.videoOptimized = true;
-              }
-
-              dbObj.save()
-                .then((video) => {
-                  console.log("Optimization completed for Video (" + fileName + ")");
-              })
-           // })
+  let updateFailedAttempt = function (obj) {
+    obj.failedProcessingAttempts += 1;
+    obj.save()
+      .then ((obj) => {
+        console.log("Failed attempt at video optimisation recorded in database.")
       })
-      .save(source);
-      console.log("Video (" + fileName + ") is being optimized....");
-    }
-  })
+  }
+
+  try {
+
+    fs.copyFile(source, copy, (err) => {
+      if (err) {
+        updateFailedAttempt(dbObj);
+        //throw err;
+      } else {
+        ffmpeg(copy)
+          .on('start', function(commandLine) {
+              console.log('Spawned Ffmpeg with command: ' + commandLine);
+          })
+          .on('error', function(err, stdout, stderr) {
+            console.log('Cannot process video: ' + err.message);
+            updateFailedAttempt(dbObj);
+            // throw err
+          })
+          .on('end', function() {
+             // fs.unlink(copy, function () {
+                
+                if (type === 'video') {
+                  dbObj.optimized = true;
+                } else {
+                  dbObj.videoOptimized = true;
+                }
+
+                dbObj.save()
+                  .then((video) => {
+                    console.log("Optimization completed for Video (" + fileName + ")");
+                })
+             // })
+          })
+          .save(source);
+          console.log("Video (" + fileName + ") is being optimized....");
+      }
+    })
+
+  } catch (e) {
+      updateFailedAttempt (dbObj);
+      console.log("Error occured during video processing" + e);
+  }  
 }
 
 module.exports.optimizeVideoFile = optimizeVideoFile;

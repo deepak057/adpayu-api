@@ -10,7 +10,8 @@ module.exports = (sequelize, DataTypes) => {
         title     : DataTypes.STRING,
         description: DataTypes.TEXT,
         path: DataTypes.STRING,
-        optimized: {type: DataTypes.BOOLEAN, defaultValue: false}
+        optimized: {type: DataTypes.BOOLEAN, defaultValue: false},
+        failedProcessingAttempts: {type: DataTypes.INTEGER, defaultValue: 0}
     });
 
     Model.associate = function(models){
