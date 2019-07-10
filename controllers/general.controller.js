@@ -1,4 +1,4 @@
-const { Likes, User, Comments, Posts, Tags } = require('../models');
+const { Likes, User, Comments, Posts, Tags, Videos } = require('../models');
 const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
 const { captureVideoPoster } = require('../services/app.service');
 
@@ -336,3 +336,49 @@ const putRandomProfilePics =  async function(req, res){
 
 module.exports.putRandomProfilePics = putRandomProfilePics;
 
+const optimizeVideos =  async function(){
+
+  Videos.find({
+    where: {
+      optimized: false
+    },
+    limit: 1
+  })
+    .then ((video) => {
+      if (video) {
+        const appRoot = require('app-root-path');
+        const ffmpeg = require('fluent-ffmpeg');
+        const fs = require('fs');
+        let source = appRoot + '/uploads/' + video.path;
+        let copy = appRoot + '/uploads/original/' + video.path;
+
+        // destination.txt will be created or overwritten by default.
+        fs.copyFile(source, copy, (err) => {
+          if (err) {
+            throw err;
+          } else {
+            ffmpeg(copy)
+              .on('start', function(commandLine) {
+                  console.log('Spawned Ffmpeg with command: ' + commandLine);
+              })
+            //.output()
+            .on('end', function() {
+                 // fs.unlink(copy, function () {
+                    video.optimized = true;
+                    video.save()
+                      .then((video) => {
+                        console.log("Optimization completed for Video (" + video.path + ") with Id " + video.id);
+                    })
+                 // })
+            })
+          .save(source);
+          console.log("Video (" + video.path + ") with Id " + video.id + " is being optimized....");
+          }
+        })
+      } else {
+        console.log("No videos to optimize.")
+      }
+    })
+}
+
+module.exports.optimizeVideos = optimizeVideos;

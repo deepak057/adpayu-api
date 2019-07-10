@@ -9,8 +9,8 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Videos', {
         title     : DataTypes.STRING,
         description: DataTypes.TEXT,
-        path: DataTypes.STRING
-
+        path: DataTypes.STRING,
+        optimized: {type: DataTypes.BOOLEAN, defaultValue: false}
     });
 
     Model.associate = function(models){

@@ -36,6 +36,15 @@ function updateForexRates () {
 }
 
 /*
+* function for video optimzation
+*/
+
+function optimizeVideos () {
+    const GeneralController   = require('./controllers/general.controller');
+    GeneralController.optimizeVideos()
+}
+
+/*
 * function to create default tag in database
 */
 
@@ -110,5 +119,11 @@ process.on('unhandledRejection', error => {
 //cron job running once in 12 hours and stores 
 // USD to INR forex rate in database    
 cron.schedule("0 0 */12 * * *", function() {
-  updateForexRates()
+  updateForexRates();
+});
+
+//cron job running once in 10 minutes for 
+// optimizing the videos   
+cron.schedule("0 */10 * * * *", function() {
+  optimizeVideos();
 });
