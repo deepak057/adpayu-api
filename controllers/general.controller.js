@@ -5,21 +5,25 @@ const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 
 const fakeCommentsLike =  async function(req, res){
-    let commentId = req.params.commentId, err, user = req.user, comment, n = req.query.n || 100, likes = [];
+    let commentId = req.params.commentId, err, user = req.user, comment, n = parseInt(req.query.n || 100 ), likes = [], users = [];
   	if (user.id === 1) {
-  	  [err, comment] = await to(Comments.findOne({where: {id: commentId}}));	
-  	
+
+      [err, comment] = await to(Comments.findOne({where: {id: commentId}}));  
+
+      //get n random and system created users
+      [err, users] = await to(User.findAll({where: {systemCreatedUser: true}, order: Sequelize.literal('rand()'), limit: n}));  
+
   	  for (let i = 0; i < n; i++) {
-  		likes.push({
-  			UserId: user.id,
-  			CommentId: comment.id
-  		})
+    		likes.push({
+    			UserId: users[i].id,
+    			CommentId: comment.id
+    		})
   	  }
 
   	  Likes.bulkCreate(likes)
         .then((likes) => {
         	for(let i in likes) {
-                user.addLikes(likes[i]);
+                users[i].addLikes(likes[i]);
                 comment.addLikes(likes[i]);
         	}
             return ReS(res, {message:'Likes made successfully'}, 200);
@@ -34,21 +38,25 @@ const fakeCommentsLike =  async function(req, res){
 module.exports.fakeCommentsLike = fakeCommentsLike;
 
 const fakePostLike =  async function(req, res){
-    let postId = req.params.postId, err, user = req.user, post, n = req.query.n || 100, likes = [];
+    let postId = req.params.postId, err, user = req.user, post, n = parseInt(req.query.n || 100), likes = [], users = [];
   	if (user.id === 1) {
-  	  [err, post] = await to(Posts.findOne({where: {id: postId}}));	
-  	
+  	  
+      [err, post] = await to(Posts.findOne({where: {id: postId}}));	
+  	 
+      //get n random and system created users
+      [err, users] = await to(User.findAll({where: {systemCreatedUser: true}, order: Sequelize.literal('rand()'), limit: n}));  
+
   	  for (let i = 0; i < n; i++) {
-  		likes.push({
-  			UserId: user.id,
-  			PostId: post.id
-  		})
+    		likes.push({
+    			UserId: users[i].id,
+    			PostId: post.id
+    		})
   	  }
 
   	  Likes.bulkCreate(likes)
         .then((likes) => {
         	for(let i in likes) { 
-             user.addLikes(likes[i]);
+             users[i].addLikes(likes[i]);
              post.addLikes(likes[i]);
         	}
             return ReS(res, {message:'Likes made successfully'}, 200);
