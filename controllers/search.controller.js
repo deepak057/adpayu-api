@@ -60,7 +60,10 @@ const get = async function(req, res){
               },
               {
                 last: {[Op.like]: '%' +keyword+'%'}
-              }
+              },
+              Sequelize.where(Sequelize.fn("concat", Sequelize.col("first"), ' ', Sequelize.col("last")), {
+                  [Op.like]:  '%' + keyword + '%'
+              })
             ]
           }
         })
