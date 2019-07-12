@@ -64,10 +64,16 @@ const create =  function(req, res){
 
     let comment;
 
+    let filterComment = function (commentObj) {
+      // remove blank paragraphs 
+      commentObj.comment = commentObj.comment.trim().replace(new RegExp('<p><br></p>', 'g'), '');
+      return commentObj
+    }
+
      Posts.findOne({where: {id: postId}})
       .then((post) => {
          
-        Comments.create(req.body)
+        Comments.create(filterComment(req.body))
           .then((comment) => {
              comment.setPost(post);
              comment.setUser(user);
