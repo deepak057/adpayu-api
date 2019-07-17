@@ -1,5 +1,5 @@
 const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders, PushedAds } = require('../models');
-const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset } = require('../services/util.service');
+const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset, removeBlankParagraphs } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -20,6 +20,12 @@ const create = async function(req, res){
       delete post_info.id
     }
 
+    // filter the Post text
+    if (post_info.content) {
+      post_info.content = removeBlankParagraphs(post_info.content.trim())
+    }
+
+    // create the post
     [err, post] = await to(Posts.create(post_info));
     if(err) return ReE(res, err, 422);
 

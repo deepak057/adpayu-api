@@ -81,3 +81,7 @@ module.exports.roundTwoDecimalPlaces = function (number) {
 module.exports.getMySQLDateTime = function () {
     return new Date().toISOString().slice(0, 19).replace('T', ' ')
 }
+
+module.exports.removeBlankParagraphs = function (str) {
+  return str.replace(new RegExp('<p><br></p>', 'g'), '')  
+}

@@ -1,5 +1,5 @@
 const { Comments, Users, Likes, Posts, Videos, Questions } = require('../models');
-const { to, ReE, ReS, getMySQLDateTime } = require('../services/util.service');
+const { to, ReE, ReS, getMySQLDateTime, removeBlankParagraphs } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const { NOTIFICATIONS } = require('../config/app-constants');
 const { getCommentIncludes, getSingleComment, canUpdatePost, formatComments } = require('../services/app.service');
@@ -66,7 +66,7 @@ const create =  function(req, res){
 
     let filterComment = function (commentObj) {
       // remove blank paragraphs 
-      commentObj.comment = commentObj.comment.trim().replace(new RegExp('<p><br></p>', 'g'), '');
+      commentObj.comment = removeBlankParagraphs(commentObj.comment.trim());
       return commentObj
     }
 
