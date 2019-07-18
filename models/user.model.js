@@ -26,14 +26,15 @@ module.exports = (sequelize, DataTypes) => {
         passwordResetKey: DataTypes.TEXT,
         locationCords: {type: DataTypes.STRING, defaultValue: ''},
         visible: {type: DataTypes.BOOLEAN, defaultValue: true},
-        systemCreatedUser: {type: DataTypes.BOOLEAN, defaultValue: false}
+        systemCreatedUser: {type: DataTypes.BOOLEAN, defaultValue: false},
+        pageTitleCollapsed: {type: DataTypes.BOOLEAN, defaultValue: false}
     },{
         defaultScope: {
           attributes: { exclude: [] },
         },
         scopes: {
           public: {
-           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed'] },
           },
           visible: {
             where: {
