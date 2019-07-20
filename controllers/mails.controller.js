@@ -3,7 +3,7 @@ require('dotenv').config();//instatiate environment variables
 
 const nodemailer = require('nodemailer');
 
-const sendMail = async function (content, subject, to) {
+const sendMail = async function (content, subject, to = false) {
   return new Promise(function(resolve, reject) {
     var transporter = nodemailer.createTransport({
       service: 'gmail',

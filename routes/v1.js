@@ -69,6 +69,7 @@ router.delete('/like/comment/:commentId',           passport.authenticate('jwt',
 router.post('/upload/image/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadImage);        // C
 router.post('/upload/video/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadVideo);      // C
 router.post('/upload/profilePicture/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadUserProfilePic);        // C
+router.post('/upload/accountIdentityDocs/',   passport.authenticate('jwt', {session:false}),  UploadController.accountIdentityDocs);        // C
 
 /** Freinds routes**/
 router.get('/friends/',   passport.authenticate('jwt', {session:false}),  FriendsController.get);        // G

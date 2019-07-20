@@ -87,3 +87,41 @@ const uploadUserProfilePic = async function(req, res){
 }
 
 module.exports.uploadUserProfilePic = uploadUserProfilePic;
+
+const accountIdentityDocs = async function(req, res){
+  if (Object.keys(req.files).length == 0) {
+    return res.status(400).send('No files were uploaded.');
+   }
+
+  let totalFiles = req.body.files_length;
+
+  let filesNames = [];
+
+  let user = req.user;
+
+  for (let i = 0; i < totalFiles; i++) {
+
+    let sampleFile = req.files['files_'+i];
+    
+    let name = uniqeFileName(sampleFile.name, user);
+     
+    filesNames.push(name);
+
+    sampleFile.mv(appRoot+'/uploads/docs/'+ name, function(err) {
+      if (err) {
+        return ReE(res, err);
+      } else {
+          if (i == (totalFiles - 1)) {
+            user.accountStatus = 'pending';
+            user.identityDocs = JSON.stringify(filesNames);
+            user.save()
+              .then ((user) => {
+                return ReS(res, {message: 'Success', user: user}, 200);
+              })
+          }
+      }
+    });
+  }
+}
+
+module.exports.accountIdentityDocs = accountIdentityDocs;

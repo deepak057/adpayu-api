@@ -27,14 +27,17 @@ module.exports = (sequelize, DataTypes) => {
         locationCords: {type: DataTypes.STRING, defaultValue: ''},
         visible: {type: DataTypes.BOOLEAN, defaultValue: true},
         systemCreatedUser: {type: DataTypes.BOOLEAN, defaultValue: false},
-        pageTitleCollapsed: {type: DataTypes.BOOLEAN, defaultValue: false}
+        pageTitleCollapsed: {type: DataTypes.BOOLEAN, defaultValue: false},
+        accountStatus: {type: DataTypes.ENUM, values: ['unverified', 'verified', 'pending'], defaultValue: 'unverified'},
+        identityDocs  : {type: DataTypes.STRING, defaultValue: ''},
+
     },{
         defaultScope: {
           attributes: { exclude: [] },
         },
         scopes: {
           public: {
-           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs'] },
           },
           visible: {
             where: {
