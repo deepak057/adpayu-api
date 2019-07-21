@@ -3,7 +3,7 @@ require('dotenv').config();//instatiate environment variables
 
 const nodemailer = require('nodemailer');
 
-const sendMail = async function (content, subject, to = false) {
+const sendMail = async function (content, subject, to = false, otherAdminsInLoop = true, attachments = []) {
   return new Promise(function(resolve, reject) {
     var transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -18,6 +18,14 @@ const sendMail = async function (content, subject, to = false) {
       subject: subject,
       text: content
     };
+
+    if (otherAdminsInLoop) {
+      mailOptions.cc = process.env.OTHER_ADMIN_MAILS
+    }
+
+    if (attachments.length) {
+      mailOptions.attachments = attachments;
+    }
 
     transporter.sendMail(mailOptions, function(error, info){
       if (error) {
