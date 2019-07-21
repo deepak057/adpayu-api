@@ -111,8 +111,8 @@ const accountIdentityDocs = async function(req, res){
 
   let hostUrl = req.protocol + '://' + req.headers.host
 
-  let accountStatusUpdateLink = function (action = 'approve') {
-    return hostUrl + "/v1/user/updateAccountStatus/" + user.id + "?action=" + action + "&key=" + process.env.SITE_ADMIN_KEY 
+  let accountStatusUpdateLink = function (action = 'verified') {
+    return hostUrl + "/v1/users/updateAccountStatus/" + user.id + "?action=" + action + "&key=" + process.env.SITE_ADMIN_KEY 
   }
 
   let sendMailToUser = function () {
@@ -137,7 +137,7 @@ const accountIdentityDocs = async function(req, res){
 
     let subject = process.env.SITE_NAME + "- " + user.first + " " + user.last + " uploaded identity verification documents";
 
-    let content = "Dear Admin, \n\nPlease find below the details: \n\nName: " + user.first + " " + user.last+ "\nUser Id: " + user.id + "\nEmail: "+ user.email + "\nUploaded Document(s): \n" + attachmentsString + "\n\nPlease click the link below to confirm verification: \n"+  accountStatusUpdateLink() +" \n\nOr\n\nClick the link below to disapprove the verification: \n" + accountStatusUpdateLink('reject');
+    let content = "Dear Admin, \n\nPlease find below the details: \n\nName: " + user.first + " " + user.last+ "\nUser Id: " + user.id + "\nEmail: "+ user.email + "\nUploaded Document(s): \n" + attachmentsString + "\n\nPlease click the link below to confirm verification: \n"+  accountStatusUpdateLink() +" \n\nOr\n\nClick the link below to disapprove the verification: \n" + accountStatusUpdateLink('unverified');
 
     MailsController.sendMail(content, subject, false, true, attachments)
       .then((info) => {

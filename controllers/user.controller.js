@@ -214,6 +214,50 @@ const sendPasswordResetLink = async function (req, res) {
 }
 module.exports.sendPasswordResetLink = sendPasswordResetLink;
 
+const updateAccountStatus = async function (req, res) {
+  if (req.query.key && req.query.key === process.env.SITE_ADMIN_KEY && req.query.action && ['verified', 'unverified', 'pending'].includes(req.query.action)) {
+    let userId = req.params.userId;
+    let action = req.query.action;
+    let sendMailToUser = function (user) {
+      let subject = process.env.SITE_NAME + "- ";
+      let content = 'Dear ' + user.first + ",\n\n";
+      if (action === 'verified') {
+          subject += 'Congratulations, your identity is verified'
+          content += 'Your account is successfully verified. \n\nWe are glad to inform you that you can now withdraw money from your ' + process.env.SITE_NAME + ' account.\n\nPlease feel free to contact us if you have any questions or still face any difficulties withdrawing money. \n\nP.S. Make sure to refresh the site or re-open the mobile app if you are still not able to withdraw the money.';
+      } else if (action === 'unverified') {
+        subject += 'Account not verified';
+        content += 'We reviewd your documents but unfortuantly, we are not able to verify your indentity.\n\nIt could be due to any of following reasons- \n\n1. The name on your document and the name on your ' + process.env.SITE_NAME + ' account do not match.\n2. The document is invalid or ambiguous.\n3. The same document has already been uploaded by someone else.\n\n\nPlease take the appropriate actions to fix the issue and then re-upload the documents on ' + process.env.SITE_NAME + ' for review.\n\nWe will be very happy to help you if you have any questions or queries, please feel free to contact us.';
+      }
+      if (action !== 'pending') {
+        content += '\n\n\n\nSincerely,\n\nTeam '+ process.env.SITE_NAME;
+        MailsController.sendMail(content, subject, user.email, false)  
+      }
+    };
+
+    User.find({where: {
+      id: parseInt(userId)
+    }})
+      .then((user) => {
+        user.accountStatus = action;
+        user.save()
+          .then((user) => {
+            sendMailToUser(user);
+            return ReS(res, {
+              message: 'Success',
+              'Account Status': user.accountStatus
+            }, 200);
+          })
+      })
+      .catch((err) => {
+        return ReE(res, {message: 'Something went wrong.'}, 404);
+      })
+  } else {
+    return ReE(res, {message: 'You are not authorized or bad link followed.'}, 401);
+  }
+}
+
+module.exports.updateAccountStatus = updateAccountStatus;
+
 function updateUserPasswordResetSecretHash (user) {
   return new Promise(function(resolve, reject) {
 

@@ -37,6 +37,7 @@ router.get(     '/users/:uid',           passport.authenticate('jwt', {session:f
 router.put(     '/users',           passport.authenticate('jwt', {session:false}), UserController.update);     // U
 router.delete(  '/users',           passport.authenticate('jwt', {session:false}), UserController.remove);     // D
 router.post(    '/users/login',     UserController.login);
+router.get(    '/users/updateAccountStatus/:userId',     UserController.updateAccountStatus); 
 
 /** Posts routes **/
 router.post('/posts',           passport.authenticate('jwt', {session:false}), PostsController.create);        // C
