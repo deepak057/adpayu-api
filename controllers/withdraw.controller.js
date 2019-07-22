@@ -322,6 +322,9 @@ function getBeneficiary (token, benId) {
 const withdraw = async function (req, res) {
   try {
     let details, err;
+    if (req.user.accountStatus !== 'verified') {
+      throw new Error ('Your account is not verified.')
+    }
     [err, details] =await to(getTransactionDetails(req.user, req.body.mode))
     if (!err) {
       if (req.body.mode === 'manual') {
