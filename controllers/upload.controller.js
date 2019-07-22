@@ -2,6 +2,7 @@ const { Images} = require('../models');
 const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
 const { captureVideoPoster } = require('../services/app.service');
 const appRoot = require('app-root-path');
+const S3Controller   = require('./s3.controller');
 
 
 const uploadImage = async function(req, res){
@@ -14,12 +15,15 @@ const uploadImage = async function(req, res){
   let sampleFile = req.files.image;
     
   let name = uniqeFileName(sampleFile.name, req.user);
+
+  let filePath = appRoot+'/uploads/'+ name;
     
       // Use the mv() method to place the file somewhere on your server
-    sampleFile.mv(appRoot+'/uploads/'+ name, function(err){
+    sampleFile.mv(filePath, function(err){
       if (err) {
         return res.status(500).send(err);
       } else {
+          S3Controller.uploadToS3(filePath);
           Images.create({path: name})
           .then((image) => {
             image.setUser(req.user);
@@ -45,14 +49,17 @@ const uploadVideo = async function(req, res){
   let sampleFile = req.files.video;
     
   let name = uniqeFileName(sampleFile.name, req.user);
-    
+  
+  let filePath = appRoot+'/uploads/'+ name;
+
       // Use the mv() method to place the file somewhere on your server
-    sampleFile.mv(appRoot+'/uploads/'+ name, function(err) {
+    sampleFile.mv(filePath, function(err) {
       if (err) {
         return ReE(res, err);
       }
 
       else {
+        S3Controller.uploadToS3(filePath);
         captureVideoPoster (name);
         return ReS(res, {path: name});
       }
@@ -71,11 +78,15 @@ const uploadUserProfilePic = async function(req, res){
   let sampleFile = req.files.image;
     
   let name = uniqeFileName(sampleFile.name, req.user);
-    
-    sampleFile.mv(appRoot+'/uploads/'+ name, function(err) {
+   
+  let filePath = appRoot+'/uploads/'+ name;
+
+    sampleFile.mv(filePath, function(err) {
       if (err) {
         return ReE(res, err);
       } else {
+        S3Controller.uploadToS3(filePath);
+        S3Controller.uploadToS3Glacier(filePath);
         req.user.pic = name
         req.user.save()
           .then(function () {

@@ -6,8 +6,10 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "@aws-sdk/client-glacier-node": "0.1.0-preview.2",
     "app-root-path": "^2.1.0",
     "await-to-js": "^2.0.1",
+    "aws-sdk": "^2.496.0",
     "bcrypt": "^1.0.3",
     "bcrypt-promise": "^2.0.0",
     "body-parser": "~1.18.2",
