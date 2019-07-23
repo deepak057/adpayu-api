@@ -266,30 +266,41 @@ module.exports.canUpdatePost = function (post, comment) {
 
 
 function captureVideoPoster (videoFileName) {
-  const appRoot = require('app-root-path');
-  const fs = require('fs');
-  let ffmpeg = require('fluent-ffmpeg');
-  let videoPath = appRoot+'/uploads/'+ videoFileName;
-  let screenshotFolder = appRoot+'/uploads/thumbs';
-  // replace the extension of given video file with ".png"
-  let posterImageName = videoFileName.substr(0, videoFileName.lastIndexOf(".")) + ".png";
+  return new Promise(function(resolve, reject) {
+    try {
+      const appRoot = require('app-root-path');
+      const S3Controller   = require('../controllers/s3.controller');
+      const fs = require('fs');
+      let ffmpeg = require('fluent-ffmpeg');
+      let videoPath = appRoot+'/uploads/'+ videoFileName;
+      let screenshotFolder = appRoot+'/uploads/thumbs';
+      // replace the extension of given video file with ".png"
+      let posterImageName = videoFileName.substr(0, videoFileName.lastIndexOf(".")) + ".png";
 
-  // create the screenshot only if it doesn't already exist
-  if (!fs.existsSync(screenshotFolder + '/' + posterImageName)) {
-    ffmpeg(videoPath)
-    .on('end', function() {
-      console.log('Screenshot taken');
-    })
-    .on('error', function(err) {
-      console.error(err);
-    })
-    .screenshots({
-      timestamps: [1],
-      folder: screenshotFolder,
-      filename: posterImageName
-    });
-  }
-
+      // create the screenshot only if it doesn't already exist
+      if (!fs.existsSync(screenshotFolder + '/' + posterImageName)) {
+        ffmpeg(videoPath)
+        .on('end', function() {
+          console.log('Screenshot taken');
+          S3Controller.uploadToS3(screenshotFolder + '/' + posterImageName, 'thumbs/')
+            .then((data) => {
+              resolve(data)
+            })
+        })
+        .on('error', function(err) {
+          console.error(err);
+          reject(err)
+        })
+        .screenshots({
+          timestamps: [1],
+          folder: screenshotFolder,
+          filename: posterImageName
+        });
+      }
+    } catch (e) {
+      reject(e)
+    }
+  });
 }
 
 module.exports.captureVideoPoster = captureVideoPoster;

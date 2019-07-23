@@ -23,16 +23,18 @@ const uploadImage = async function(req, res){
       if (err) {
         return res.status(500).send(err);
       } else {
-          S3Controller.uploadToS3(filePath);
-          Images.create({path: name})
-          .then((image) => {
-            image.setUser(req.user);
-            return ReS(res, image);
-          })
-          .catch((err) => {
-            console.log(err);
-            return ReE(res, {error: 'Something went wrong while trying to upload the image.'});
-          }) 
+          S3Controller.uploadToS3(filePath)
+            .then((data) => {
+              Images.create({path: name})
+                .then((image) => {
+                  image.setUser(req.user);
+                  return ReS(res, image);
+                })
+                .catch((err) => {
+                  console.log(err);
+                  return ReE(res, {error: 'Something went wrong while trying to upload the image.'});
+                })
+            }) 
       }
     });
 
@@ -55,17 +57,23 @@ const uploadVideo = async function(req, res){
       // Use the mv() method to place the file somewhere on your server
     sampleFile.mv(filePath, function(err) {
       if (err) {
-        return ReE(res, err);
+        console.log(err);
+        return ReE(res, {'message': 'Something went wrong.'});
       }
-
       else {
-        S3Controller.uploadToS3(filePath);
-        captureVideoPoster (name);
-        return ReS(res, {path: name});
+        S3Controller.uploadToS3(filePath)
+          .then((data) => {
+            captureVideoPoster (name)
+              .then((data) => {
+                return ReS(res, {path: name});
+              })
+          })
+          .catch((err) => {
+            console.log(err);
+            return ReE(res, {'message': 'Something went wrong.'});
+          })
       }
-
     });
-
 }
 
 module.exports.uploadVideo = uploadVideo;
@@ -85,16 +93,16 @@ const uploadUserProfilePic = async function(req, res){
       if (err) {
         return ReE(res, err);
       } else {
-        S3Controller.uploadToS3(filePath);
-        S3Controller.uploadToS3Glacier(filePath);
-        req.user.pic = name
-        req.user.save()
-          .then(function () {
-            return ReS(res, {user: req.user}, 201);
+        S3Controller.uploadToS3(filePath)
+          .then((data) => {
+            req.user.pic = name
+            req.user.save()
+              .then(function () {
+                return ReS(res, {user: req.user}, 201);
+              })
           })
       }
     });
-
 }
 
 module.exports.uploadUserProfilePic = uploadUserProfilePic;
