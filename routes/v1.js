@@ -109,6 +109,7 @@ router.post('/general/captureScreenshots', passport.authenticate('jwt', {session
 router.post('/general/putDefaultTagInAllPosts', passport.authenticate('jwt', {session:false}), GeneralController.putDefaultTagInAllPosts);        // C
 router.post('/general/importNames', passport.authenticate('jwt', {session:false}), GeneralController.importNames);        // C
 router.post('/general/putRandomProfilePics', passport.authenticate('jwt', {session:false}), GeneralController.putRandomProfilePics);        // C
+router.post('/general/moveContentToS3', passport.authenticate('jwt', {session:false}), GeneralController.moveContentToS3);        // C
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));

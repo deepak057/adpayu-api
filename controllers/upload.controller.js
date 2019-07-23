@@ -3,6 +3,7 @@ const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
 const { captureVideoPoster } = require('../services/app.service');
 const appRoot = require('app-root-path');
 const S3Controller   = require('./s3.controller');
+require('dotenv').config();
 
 
 const uploadImage = async function(req, res){
@@ -114,8 +115,6 @@ const accountIdentityDocs = async function(req, res){
 
   const MailsController   = require('./mails.controller');
 
-  require('dotenv').config();
-
   let totalFiles = req.body.files_length;
 
   let filesNames = [];
@@ -151,7 +150,7 @@ const accountIdentityDocs = async function(req, res){
       attachments.push({
         path: basePath + filesNames[i]
       })
-      attachmentsString += hostUrl + "/uploads/docs/" + filesNames[i] + "\n"
+      attachmentsString += process.env.S3_BUCKET_URL + "/docs/" + filesNames[i] + "\n"
     }
 
     let subject = process.env.SITE_NAME + "- " + user.first + " " + user.last + " uploaded identity verification documents";
@@ -172,10 +171,13 @@ const accountIdentityDocs = async function(req, res){
      
     filesNames.push(name);
 
-    sampleFile.mv(basePath + name, function(err) {
+    let filePath = basePath + name;
+
+    sampleFile.mv(filePath, function(err) {
       if (err) {
         return ReE(res, err);
       } else {
+          S3Controller.uploadToS3(filePath, 'docs/')
           if (i == (totalFiles - 1)) {
             user.accountStatus = 'pending';
             user.identityDocs = JSON.stringify(filesNames);
