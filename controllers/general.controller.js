@@ -394,33 +394,39 @@ module.exports.optimizeVideos = optimizeVideos;
 
 const moveContentToS3 = async function (req, res) {
 
-  const appRoot = require('app-root-path');
-  var level = require('level')
-  , s3sync = require('s3-sync-aws')
-  , readdirp = require('readdirp')
- 
-  // To cache the S3 HEAD results and speed up the
-  // upload process. Usage is optional.
-  var db = level(appRoot + '/uploads/cache')
+  if (req.user.id === 1) {
+    const appRoot = require('app-root-path');
+    var level = require('level')
+    , s3sync = require('s3-sync-aws')
+    , readdirp = require('readdirp')
+    , dir = req.query.dir || '';
    
-  var files = readdirp(appRoot+ '/uploads/', {
-      root: appRoot+ '/uploads/'
-    , directoryFilter: ['!.git', '!cache']
-  })
-   
-  // Takes the same options arguments as `aws-sdk`,
-  // plus some additional options listed above
-  var uploader = s3sync(db, {
-      key: process.env.AWS_ACCESS_KEY
-    , secret: process.env.AWS_SECRET
-    , bucket: process.env.AWS_S3_BUCKET_NAME
-    , concurrency: 16
-    , prefix : '' //optional prefix to files on S3
-  }).on('data', function(file) {
-    console.log(file.fullPath + ' -> ' + file.url)
-  })
-   
-  files.pipe(uploader)
+    // To cache the S3 HEAD results and speed up the
+    // upload process. Usage is optional.
+    var db = level(appRoot + '/uploads/cache')
+     
+    var files = readdirp(appRoot+ '/uploads/' + dir, {
+        root: appRoot+ '/uploads/'
+      , directoryFilter: ['!.git', '!cache']
+    })
+     
+    // Takes the same options arguments as `aws-sdk`,
+    // plus some additional options listed above
+    var uploader = s3sync(db, {
+        key: process.env.AWS_ACCESS_KEY
+      , secret: process.env.AWS_SECRET
+      , bucket: process.env.AWS_S3_BUCKET_NAME
+      , concurrency: 16
+      , prefix : dir
+    }).on('data', function(file) {
+      console.log(file.fullPath + ' -> ' + file.url)
+    })
+     
+    files.pipe(uploader);
+    return ReS(res, {message: 'Content is being sync with S3 bucket.'});
+  } else {
+    return ReE(res, {message:'Unathorized user'}, 401);
+  }
 }
 
 module.exports.moveContentToS3 = moveContentToS3;
