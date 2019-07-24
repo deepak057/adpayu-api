@@ -2,6 +2,9 @@ const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, Image
 const { isEmptyObject } = require('./util.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
+const S3Controller   = require('../controllers/s3.controller');
+const appRoot = require('app-root-path');
+const fs = require('fs');
 
 /*
 * Function to get the array of only UIDs
@@ -268,9 +271,6 @@ module.exports.canUpdatePost = function (post, comment) {
 function captureVideoPoster (videoFileName) {
   return new Promise(function(resolve, reject) {
     try {
-      const appRoot = require('app-root-path');
-      const S3Controller   = require('../controllers/s3.controller');
-      const fs = require('fs');
       let ffmpeg = require('fluent-ffmpeg');
       let videoPath = appRoot+'/uploads/'+ videoFileName;
       let screenshotFolder = appRoot+'/uploads/thumbs';
@@ -306,9 +306,7 @@ function captureVideoPoster (videoFileName) {
 module.exports.captureVideoPoster = captureVideoPoster;
 
 function optimizeVideoFile (dbObj, type = 'video') {
-  const appRoot = require('app-root-path');
   const ffmpeg = require('fluent-ffmpeg');
-  const fs = require('fs');
   let fileName = type === 'video' ? dbObj.path : dbObj.videoPath; 
   let source = appRoot + '/uploads/' + fileName;
   let copy = appRoot + '/uploads/original/' + fileName;
@@ -337,19 +335,24 @@ function optimizeVideoFile (dbObj, type = 'video') {
             // throw err
           })
           .on('end', function() {
-             // fs.unlink(copy, function () {
-                
-                if (type === 'video') {
-                  dbObj.optimized = true;
-                } else {
-                  dbObj.videoOptimized = true;
-                }
+             S3Controller.uploadToS3(source)
+               .then((data) => {
+                  S3Controller.uploadToS3(copy, 'original/')
+                    .then( (data2) => {
 
-                dbObj.save()
-                  .then((video) => {
-                    console.log("Optimization completed for Video (" + fileName + ")");
+                        if (type === 'video') {
+                          dbObj.optimized = true;
+                        } else {
+                          dbObj.videoOptimized = true;
+                        }
+
+                        dbObj.save()
+                          .then((video) => {
+                            console.log("Optimization completed for Video (" + fileName + ")");
+                          })
+
+                    })
                 })
-             // })
           })
           .save(source);
           console.log("Video (" + fileName + ") is being optimized....");

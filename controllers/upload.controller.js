@@ -3,6 +3,7 @@ const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
 const { captureVideoPoster } = require('../services/app.service');
 const appRoot = require('app-root-path');
 const S3Controller   = require('./s3.controller');
+const fs = require('fs');
 require('dotenv').config();
 
 
@@ -62,7 +63,7 @@ const uploadVideo = async function(req, res){
         return ReE(res, {'message': 'Something went wrong.'});
       }
       else {
-        S3Controller.uploadToS3(filePath)
+        S3Controller.uploadToS3(filePath, '', false)
           .then((data) => {
             captureVideoPoster (name)
               .then((data) => {
@@ -145,22 +146,32 @@ const accountIdentityDocs = async function(req, res){
   }
 
   let sendMailToAdmin = function () {
-    
-    for (let i in filesNames) {
-      attachments.push({
-        path: basePath + filesNames[i]
-      })
-      attachmentsString += process.env.S3_BUCKET_URL + "/docs/" + filesNames[i] + "\n"
-    }
+    return new Promise(function(resolve, reject) { 
 
-    let subject = process.env.SITE_NAME + "- " + user.first + " " + user.last + " uploaded identity verification documents";
+      for (let i in filesNames) {
+        attachments.push({
+          path: basePath + filesNames[i]
+        })
+        attachmentsString += process.env.S3_BUCKET_URL + "/docs/" + filesNames[i] + "\n"
+      }
 
-    let content = "Dear Admin, \n\nPlease find below the details: \n\nName: " + user.first + " " + user.last+ "\nUser Id: " + user.id + "\nEmail: "+ user.email + "\nUploaded Document(s): \n" + attachmentsString + "\n\nPlease click the link below to confirm verification: \n"+  accountStatusUpdateLink() +" \n\nOr\n\nClick the link below to disapprove the verification: \n" + accountStatusUpdateLink('unverified');
+      let subject = process.env.SITE_NAME + "- " + user.first + " " + user.last + " uploaded identity verification documents";
 
-    MailsController.sendMail(content, subject, false, true, attachments)
-      .then((info) => {
-        console.log("Identity verification mails with documents sent to admin- " + info)
-      })
+      let content = "Dear Admin, \n\nPlease find below the details: \n\nName: " + user.first + " " + user.last+ "\nUser Id: " + user.id + "\nEmail: "+ user.email + "\nUploaded Document(s): \n" + attachmentsString + "\n\nPlease click the link below to confirm verification: \n"+  accountStatusUpdateLink() +" \n\nOr\n\nClick the link below to disapprove the verification: \n" + accountStatusUpdateLink('unverified');
+
+      MailsController.sendMail(content, subject, false, true, attachments)
+        .then((info) => {
+          console.log("Identity verification mails with documents sent to admin- " + info)
+          for(let i in filesNames) {
+            fs.unlink(basePath + filesNames[i])
+          }
+          resolve(info)
+        })
+        .catch((e) => {
+          reject(e)
+        })
+    });
+
   }
 
   for (let i = 0; i < totalFiles; i++) {
@@ -177,13 +188,13 @@ const accountIdentityDocs = async function(req, res){
       if (err) {
         return ReE(res, err);
       } else {
-          S3Controller.uploadToS3(filePath, 'docs/')
+          S3Controller.uploadToS3(filePath, 'docs/', false)
           if (i == (totalFiles - 1)) {
             user.accountStatus = 'pending';
             user.identityDocs = JSON.stringify(filesNames);
             user.save()
               .then ((user) => {
-                sendMailToAdmin();
+                sendMailToAdmin()
                 sendMailToUser ();
                 return ReS(res, {message: 'Success', user: user}, 200);
               })

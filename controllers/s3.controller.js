@@ -13,32 +13,45 @@ AWS.config.update({
 });
 
 
-const uploadToS3 = function (filePath, folder = '') {
+const uploadToS3 = function (filePath, folder = '', deleteFile = true) {
 	
 	return new Promise(function(resolve, reject) {
-		var s3 = new AWS.S3();
+		try {
 
-		//configuring parameters
-		var params = {
-		  Bucket: process.env.AWS_S3_BUCKET_NAME,
-		  Body : fs.createReadStream(filePath),
-		  Key : folder + path.basename(filePath)
-		};
+			var s3 = new AWS.S3();
 
-		s3.upload(params, function (err, data) {
-	  		//handle error
-		  if (err) {
-		    console.log("Error", err);
-		    reject(err)
-		  }
+			//configuring parameters
+			var params = {
+			  Bucket: process.env.AWS_S3_BUCKET_NAME,
+			  Body : fs.createReadStream(filePath),
+			  Key : folder + path.basename(filePath)
+			};
 
-		  //success
-		  if (data) {
-		    console.log("Uploaded in:", data.Location);
-		    resolve(data);
-		  }
+			s3.upload(params, function (err, data) {
+		  		//handle error
+			  if (err) {
+			    console.log("Error", err);
+			    reject(err)
+			  }
 
-		});
+			  //success
+			  if (data) {
+			  	if(deleteFile) {
+			  		const fs = require('fs');
+			  		fs.unlink(filePath, function() {
+			  			console.log('Uploaded to S3, Original file deleted.')
+			  		});	
+			  	}
+			    console.log("Uploaded in:", data.Location);
+			    resolve(data);
+			  }
+
+			});
+
+		} catch (e) {
+			reject(e)
+		}
+		
 	});
 	
 }
