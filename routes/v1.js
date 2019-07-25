@@ -71,6 +71,7 @@ router.post('/upload/image/',   passport.authenticate('jwt', {session:false}),  
 router.post('/upload/video/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadVideo);      // C
 router.post('/upload/profilePicture/',   passport.authenticate('jwt', {session:false}),  UploadController.uploadUserProfilePic);        // C
 router.post('/upload/accountIdentityDocs/',   passport.authenticate('jwt', {session:false}),  UploadController.accountIdentityDocs);        // C
+router.delete('/upload/removeFiles/',   passport.authenticate('jwt', {session:false}),  UploadController.removeFiles);        // D
 
 /** Freinds routes**/
 router.get('/friends/',   passport.authenticate('jwt', {session:false}),  FriendsController.get);        // G

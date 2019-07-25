@@ -58,6 +58,44 @@ const uploadToS3 = function (filePath, folder = '', deleteFile = true) {
 
 module.exports.uploadToS3 = uploadToS3;
 
+const deleteS3Object = function (fileName, folder = '') {
+	
+	return new Promise(function(resolve, reject) {
+		try {
+
+			var s3 = new AWS.S3();
+
+			//configuring parameters
+			var params = {
+			  Bucket: process.env.AWS_S3_BUCKET_NAME,
+			  Key : folder + fileName
+			};
+
+			s3.deleteObject(params, function (err, data) {
+		  	  //handle error
+			  if (err) {
+			    console.log("Error", err);
+			    reject(err)
+			  }
+
+			  //success
+			  else {
+			    console.log("S3 object (" + fileName + ") deleted");
+			    resolve(data);
+			  }
+
+			});
+
+		} catch (e) {
+			reject(e)
+		}
+		
+	});
+	
+}
+
+module.exports.deleteS3Object = deleteS3Object;
+
 const uploadToS3Glacier = function (filePath, folder = '') {
 	
 	return new Promise(function(resolve, reject) {

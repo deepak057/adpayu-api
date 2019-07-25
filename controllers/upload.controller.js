@@ -205,3 +205,26 @@ const accountIdentityDocs = async function(req, res){
 }
 
 module.exports.accountIdentityDocs = accountIdentityDocs;
+
+const removeFiles = async function (req, res) {
+  try {
+    let files = req.body.files;
+    if (files) {
+      Images.destroy({where: {
+        path: files,
+        UserId: req.user.id
+      }})
+        .then(() => {
+          for (let i in files) {
+            S3Controller.deleteS3Object(files[i]);  
+          }
+          return ReS(res, {message: 'Files being deleted'}, 200);
+        })
+    }
+  } catch (e) {
+    console.log(e);
+    return ReE(res, {message: 'Something went wrong'});
+  }
+}
+
+module.exports.removeFiles = removeFiles;
