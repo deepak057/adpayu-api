@@ -97,10 +97,15 @@ const uploadUserProfilePic = async function(req, res){
       } else {
         S3Controller.uploadToS3(filePath)
           .then((data) => {
-            req.user.pic = name
-            req.user.save()
+            let user = req.user;
+            // delete old profile pic
+            if (user.pic) {
+              S3Controller.deleteS3Object(user.pic)
+            }
+            user.pic = name
+            user.save()
               .then(function () {
-                return ReS(res, {user: req.user}, 201);
+                return ReS(res, {user: user}, 200);
               })
           })
       }
@@ -209,17 +214,29 @@ module.exports.accountIdentityDocs = accountIdentityDocs;
 const removeFiles = async function (req, res) {
   try {
     let files = req.body.files;
+    let fileType = req.body.type || 'image';
+    let deleteS3Files = function (folder = '') {
+      for (let i in files) {
+        let fileName = folder === 'thumbs/' ? files[i].split('.').slice(0, -1).join('.')+ ".png" : files[i]
+        let localFile = appRoot + '/uploads/' + folder + fileName;
+        // remove local video file
+        if (fs.existsSync(localFile)) {
+          fs.unlink(localFile)
+        }
+        S3Controller.deleteS3Object(fileName, folder);  
+      }
+    }
     if (files) {
-      Images.destroy({where: {
-        path: files,
-        UserId: req.user.id
-      }})
-        .then(() => {
-          for (let i in files) {
-            S3Controller.deleteS3Object(files[i]);  
-          }
-          return ReS(res, {message: 'Files being deleted'}, 200);
-        })
+      deleteS3Files()
+      if (fileType === 'image') {
+        Images.destroy({where: {
+          path: files,
+          UserId: req.user.id
+        }})
+      } else if (fileType === 'video') {
+        deleteS3Files('thumbs/')
+      }  
+      return ReS(res, {message: 'Files being deleted'}, 200);
     }
   } catch (e) {
     console.log(e);
