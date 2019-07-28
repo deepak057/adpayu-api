@@ -12,20 +12,20 @@ AWS.config.update({
 	secretAccessKey: process.env.AWS_SECRET
 });
 
+function getParameters (buffer = false, file = false) {
+    //configuring parameters
+	let r_ = {
+	  Bucket: process.env.AWS_S3_BUCKET_NAME,
+	  Body : fs.createReadStream(filePath),
+	  Key : folder + path.basename(filePath)
+	}
+}
 
-const uploadToS3 = function (filePath, folder = '', deleteFile = true) {
-	
+function upload (params, filePath = false, deleteFile = true) {
 	return new Promise(function(resolve, reject) {
 		try {
 
 			var s3 = new AWS.S3();
-
-			//configuring parameters
-			var params = {
-			  Bucket: process.env.AWS_S3_BUCKET_NAME,
-			  Body : fs.createReadStream(filePath),
-			  Key : folder + path.basename(filePath)
-			};
 
 			s3.upload(params, function (err, data) {
 		  		//handle error
@@ -36,8 +36,7 @@ const uploadToS3 = function (filePath, folder = '', deleteFile = true) {
 
 			  //success
 			  if (data) {
-			  	if(deleteFile) {
-			  		const fs = require('fs');
+			  	if(filePath && deleteFile) {
 			  		fs.unlink(filePath, function() {
 			  			console.log('Uploaded to S3, Original file deleted.')
 			  		});	
@@ -54,6 +53,31 @@ const uploadToS3 = function (filePath, folder = '', deleteFile = true) {
 		
 	});
 	
+}
+
+const uploadBufferToS3 = function (buffer, fileName, folder = '') {
+	//configuring parameters
+	let params = {
+	  Bucket: process.env.AWS_S3_BUCKET_NAME,
+	  Body : buffer,
+	  Key : folder + fileName
+	};
+
+	return upload(params, false);
+}
+
+module.exports.uploadBufferToS3 = uploadBufferToS3;
+
+const uploadToS3 = function (filePath, folder = '', deleteFile = true) {
+	
+	//configuring parameters
+	let params = {
+	  Bucket: process.env.AWS_S3_BUCKET_NAME,
+	  Body : fs.createReadStream(filePath),
+	  Key : folder + path.basename(filePath)
+	};
+
+	return upload(params, filePath, deleteFile);
 }
 
 module.exports.uploadToS3 = uploadToS3;

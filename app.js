@@ -54,6 +54,19 @@ function createDefaultTag () {
   TagsController.createDefaultTag()
 }
 
+/*
+* function to take the mysql db backup and then send the backup 
+* file to S3 bucket
+* the function is called in by Cron job in regular intervals
+*/
+
+function dbBackup () {
+  console.log("Starting to take Database backup");
+  const dbbackupController   = require('./controllers/dbbackup.controller');
+  dbbackupController.backupDb()
+}
+
+
 //Log Env
 console.log("Environment:", CONFIG.app)
 //DATABASE
@@ -126,4 +139,9 @@ cron.schedule("0 0 */12 * * *", function() {
 // optimizing the videos   
 cron.schedule("0 */10 * * * *", function() {
   optimizeVideos();
+});
+// cron job for taking database backup every hour
+//"0 0 */1 * * *"
+cron.schedule("0 */1 * * * *", function() {
+  dbBackup();
 });

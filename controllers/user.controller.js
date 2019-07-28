@@ -69,18 +69,23 @@ const updateAccountPassword = async function(req, res) {
 module.exports.updateAccountPassword = updateAccountPassword;
 
 const get = async function(req, res){
-    let user, err, friendship;
-    if(req.params.uid && parseInt(req.params.uid) !== req.user.id) {
-      [err, user] = await to (User.scope('public').findOne({ where: {id: req.params.uid}}))
-      if(err) return ReE(res, err, 422);
-      [err, friendship] = await to (Friendship.getFriendship(req.user.id, req.params.uid))
-      if(err) return ReE(res, err, 422);
+    try{
+      let user, err, friendship;
+      if(req.params.uid && parseInt(req.params.uid) !== req.user.id) {
+        [err, user] = await to (User.scope('public').findOne({ where: {id: req.params.uid}}))
+        if(err) return ReE(res, err, 422);
+        [err, friendship] = await to (Friendship.getFriendship(req.user.id, req.params.uid))
+        if(err) return ReE(res, err, 422);
 
-    } else {
-      user = req.user
+      } else {
+        user = req.user
+      }
+      return ReS(res, {user:user, friendship: friendship}); 
+    } catch (e) {
+      console.log(e);
+      return ReE(res, {message: 'Something went wrong'}, 422);
     }
 
-    return ReS(res, {user:user, friendship: friendship});
 }
 module.exports.get = get;
 
