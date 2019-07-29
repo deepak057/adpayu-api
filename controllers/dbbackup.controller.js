@@ -1,18 +1,27 @@
-const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
-const appRoot = require('app-root-path');
 const CONFIG  = require('../config/config');
 const S3Controller   = require('./s3.controller');
-const fs = require('fs');
+const moment = require("moment");
 const childProcess = require('child_process');
-require('dotenv').config();
 
 const backupDb = async function() {
-	 var dumpCommand = 'mysqldump -u' + CONFIG.db_user + ' -p' + CONFIG.db_password + ' ' + CONFIG.db_name;
-     childProcess.exec(dumpCommand, (error, stdout, stderr)=> {
-        var bufferData = Buffer.from(stdout, 'utf8');
-        S3Controller.uploadBufferToS3(bufferData, 'backup.sql', 'backup/db/')
-          console.log("Backup uploaded")
-     });
+	 try {
+	 	let dumpCommand = 'mysqldump -u' + CONFIG.db_user + ' -p' + CONFIG.db_password + ' ' + CONFIG.db_name;
+	     let backupFolder = 'backup/db/';
+	     let backupfFileName = function () {
+	     	let today = new Date();
+	    	let year = today.getFullYear();
+	    	let month = today.getMonth()+1;
+	    	return year + "/" + month + "/" + CONFIG.db_name + '-' + moment().format('YYYY-MM-DD-HH-mm-ss') + '.sql';
+	     }
+	     childProcess.exec(dumpCommand, (error, stdout, stderr)=> {
+	        S3Controller.uploadBufferToS3(Buffer.from(stdout, 'utf8'), backupfFileName(), backupFolder)
+	          console.log("Backup uploaded")
+	     });
+	 } catch (e) {
+	 	console.log("Something went wrong while backing up the DB");
+	 	console.log(e)
+	 }
+	 
 }
 
 module.exports.backupDb = backupDb;

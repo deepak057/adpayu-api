@@ -142,6 +142,6 @@ cron.schedule("0 */10 * * * *", function() {
 });
 // cron job for taking database backup every hour
 //"0 0 */1 * * *"
-cron.schedule("0 */1 * * * *", function() {
+cron.schedule("0 0 */1 * * *", function() {
   dbBackup();
 });
