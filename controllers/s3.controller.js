@@ -82,6 +82,41 @@ const uploadToS3 = function (filePath, folder = '', deleteFile = true) {
 
 module.exports.uploadToS3 = uploadToS3;
 
+const copyS3Object = function (copySource, copyDestination) {
+	return new Promise(function(resolve, reject) {
+		try {
+
+			var s3 = new AWS.S3();
+
+			//configuring parameters
+			var params = {
+			  Bucket: process.env.AWS_S3_BUCKET_NAME,
+			  CopySource: process.env.AWS_S3_BUCKET_NAME + '/' + copySource,
+			  Key : copyDestination
+			};
+
+			s3.copyObject(params, function (err, data) {
+		  	  //handle error
+			  if (err) {
+			    console.log("Error", err);
+			    reject(err)
+			  }
+
+			  //success
+			  else {
+			    console.log("S3 object (" + copySource + ") copied to " + copyDestination);
+			    resolve(data);
+			  }
+
+			});
+
+		} catch (e) {
+			reject(e)
+		}
+		
+	});
+}
+
 const deleteS3Object = function (fileName, folder = '') {
 	
 	return new Promise(function(resolve, reject) {
@@ -95,20 +130,26 @@ const deleteS3Object = function (fileName, folder = '') {
 			  Key : folder + fileName
 			};
 
-			s3.deleteObject(params, function (err, data) {
-		  	  //handle error
-			  if (err) {
-			    console.log("Error", err);
-			    reject(err)
-			  }
+			// copy the object to Trash folder before deleting
+			copyS3Object(folder + fileName, 'trash/' + fileName)
+			  .then ((data) => {
 
-			  //success
-			  else {
-			    console.log("S3 object (" + fileName + ") deleted");
-			    resolve(data);
-			  }
+			  	s3.deleteObject(params, function (err, data) {
+			  	  //handle error
+				  if (err) {
+				    console.log("Error", err);
+				    reject(err)
+				  }
 
-			});
+				  //success
+				  else {
+				    console.log("S3 object (" + fileName + ") deleted");
+				    resolve(data);
+				  }
+
+				});
+
+			  })
 
 		} catch (e) {
 			reject(e)
