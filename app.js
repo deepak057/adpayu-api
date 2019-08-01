@@ -61,7 +61,7 @@ function createDefaultTag () {
 */
 
 function dbBackup () {
-  console.log("Starting to take Database backup");
+  console.log("Taking Database backup");
   const dbbackupController   = require('./controllers/dbbackup.controller');
   dbbackupController.backupDb()
 }
