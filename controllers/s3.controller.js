@@ -124,10 +124,12 @@ const deleteS3Object = function (fileName, folder = 'public/') {
 	return new Promise(function(resolve, reject) {
 		try {
 
-			var s3 = new AWS.S3();
+			let s3 = new AWS.S3();
 
+			folder = folder || 'public/';
+			
 			//configuring parameters
-			var params = {
+			let params = {
 			  Bucket: process.env.AWS_S3_BUCKET_NAME,
 			  Key : folder + fileName
 			};
