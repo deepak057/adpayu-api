@@ -55,7 +55,7 @@ function upload (params, filePath = false, deleteFile = true) {
 	
 }
 
-const uploadBufferToS3 = function (buffer, fileName, folder = '') {
+const uploadBufferToS3 = function (buffer, fileName, folder = 'public/') {
 	//configuring parameters
 	let params = {
 	  Bucket: process.env.AWS_S3_BUCKET_NAME,
@@ -68,7 +68,7 @@ const uploadBufferToS3 = function (buffer, fileName, folder = '') {
 
 module.exports.uploadBufferToS3 = uploadBufferToS3;
 
-const uploadToS3 = function (filePath, folder = '', deleteFile = true) {
+const uploadToS3 = function (filePath, folder = 'public/', deleteFile = true) {
 	
 	//configuring parameters
 	let params = {

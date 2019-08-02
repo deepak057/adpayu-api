@@ -641,6 +641,14 @@ module.exports.update = update;
 const remove = async function(req, res){
     try {
       let postId = req.params.postId;
+      let deletePostMedia = function (post) {
+        if(post.videoId) {
+          Videos.find({
+            where: {
+            }
+          })
+        }
+      };
       Posts.find({where: {id: postId, UserId: req.user.id}})
         .then((post) => {
           // soft delete the post by just updating Deleted flag
