@@ -119,7 +119,7 @@ const copyS3Object = function (copySource, copyDestination) {
 	});
 }
 
-const deleteS3Object = function (fileName, folder = '') {
+const deleteS3Object = function (fileName, folder = 'public/') {
 	
 	return new Promise(function(resolve, reject) {
 		try {
