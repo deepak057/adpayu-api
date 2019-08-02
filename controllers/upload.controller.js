@@ -146,7 +146,7 @@ const accountIdentityDocs = async function(req, res){
 
     MailsController.sendMail(content, subject, user.email, false)
       .then((info) => {
-        console.log("Accknomwdgemt mail sent to the user who uploaded the identity verification documents.")
+        console.log("Acknowledgement mail sent to the user who uploaded the identity verification documents.")
       })
   }
 
@@ -217,7 +217,7 @@ const removeFiles = async function (req, res) {
     let fileType = req.body.type || 'image';
     let deleteS3Files = function (folder = '') {
       for (let i in files) {
-        let fileName = folder === 'thumbs/' ? files[i].split('.').slice(0, -1).join('.')+ ".png" : files[i]
+        let fileName = folder === 'public/thumbs/' ? files[i].split('.').slice(0, -1).join('.')+ ".png" : files[i]
         let localFile = appRoot + '/uploads/' + folder + fileName;
         // remove local video file
         if (fs.existsSync(localFile)) {
@@ -234,7 +234,7 @@ const removeFiles = async function (req, res) {
           UserId: req.user.id
         }})
       } else if (fileType === 'video') {
-        deleteS3Files('thumbs/')
+        deleteS3Files('public/thumbs/')
       }  
       return ReS(res, {message: 'Files being deleted'}, 200);
     }

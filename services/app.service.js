@@ -282,7 +282,7 @@ function captureVideoPoster (videoFileName) {
         ffmpeg(videoPath)
         .on('end', function() {
           console.log('Screenshot taken');
-          S3Controller.uploadToS3(screenshotFolder + '/' + posterImageName, 'thumbs/')
+          S3Controller.uploadToS3(screenshotFolder + '/' + posterImageName, 'public/thumbs/')
             .then((data) => {
               resolve(data)
             })

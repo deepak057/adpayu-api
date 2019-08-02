@@ -70,6 +70,8 @@ module.exports.uploadBufferToS3 = uploadBufferToS3;
 
 const uploadToS3 = function (filePath, folder = 'public/', deleteFile = true) {
 	
+	folder = folder || 'public/';
+
 	//configuring parameters
 	let params = {
 	  Bucket: process.env.AWS_S3_BUCKET_NAME,
