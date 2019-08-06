@@ -1,5 +1,5 @@
 const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders, PushedAds } = require('../models');
-const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset, removeBlankParagraphs } = require('../services/util.service');
+const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset, removeBlankParagraphs, videoToPNG } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -640,21 +640,38 @@ module.exports.update = update;
 
 const remove = async function(req, res){
     try {
+      const S3Controller   = require('./s3.controller');
       let postId = req.params.postId;
       let deletePostMedia = function (post) {
-        if(post.videoId) {
-          Videos.find({
-            where: {
-            }
-          })
+        if(post.Video) {
+          S3Controller.deleteVideo(post.Video.path);
+        } 
+        if (post.Images) {
+          for (let i in post.Images) {
+            S3Controller.deleteS3Object(post.Images[i].path)
+          }
         }
       };
-      Posts.find({where: {id: postId, UserId: req.user.id}})
+      let criteria = {
+        where: {
+          id: postId, UserId: req.user.id
+        },
+        include: [
+          {
+            model: Videos
+          },
+          {
+            model: Images
+          }
+        ]
+      }
+      Posts.find(criteria)
         .then((post) => {
           // soft delete the post by just updating Deleted flag
           post.deleted = true;
           post.save()
             .then(() => {
+              deletePostMedia(post)
               const NotificationsController   = require('./notifications.controller');
               NotificationsController.removePostNotifications(postId); //remove all the notifications record associated with this post
               return ReS(res, {success: true, message: 'Post successfully deleted'}, 201);

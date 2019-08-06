@@ -85,3 +85,7 @@ module.exports.getMySQLDateTime = function () {
 module.exports.removeBlankParagraphs = function (str) {
   return str.replace(new RegExp('<p><br></p>', 'g'), '')  
 }
+
+module.exports.videoToPNG = function (videoFileName) {
+    return videoFileName.split('.').slice(0, -1).join('.')+ ".png"
+}

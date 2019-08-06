@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 //const { GlacierClient } = require('@aws-sdk/client-glacier-node/GlacierClient');
 //const { UploadArchiveCommand } = require('@aws-sdk/client-glacier-node/UploadArchiveCommand');
+const { videoToPNG } = require('../services/util.service');
 
 
 //configuring the AWS environment
@@ -118,6 +119,13 @@ const copyS3Object = function (copySource, copyDestination) {
 		
 	});
 }
+
+const deleteVideo = function (videoFile) {
+	deleteS3Object(videoFile);
+	deleteS3Object(videoToPNG(videoFile), 'public/thumbs/');
+}
+
+module.exports.deleteVideo = deleteVideo;
 
 const deleteS3Object = function (fileName, folder = 'public/') {
 	

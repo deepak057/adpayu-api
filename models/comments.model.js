@@ -4,6 +4,8 @@ const bcrypt_p          = require('bcrypt-promise');
 const jwt               = require('jsonwebtoken');
 const {TE, to}          = require('../services/util.service');
 const CONFIG            = require('../config/config');
+const Sequelize = require('sequelize');
+const op = Sequelize.Op;
 
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Comments', {
@@ -11,8 +13,17 @@ module.exports = (sequelize, DataTypes) => {
         comment: DataTypes.TEXT,
         videoPath: {type: DataTypes.STRING, defaultValue: ''},
         videoOptimized: {type: DataTypes.BOOLEAN, defaultValue: false},
-        failedProcessingAttempts: {type: DataTypes.INTEGER, defaultValue: 0}
-    });
+        failedProcessingAttempts: {type: DataTypes.INTEGER, defaultValue: 0},
+        deleted: {type: DataTypes.BOOLEAN, defaultValue: false},
+    }, {
+         defaultScope: {
+            where: {
+              deleted: {
+                [op.eq]: false
+              }
+            }
+         } 
+       });
 
     Model.associate = function(models){
         this.Post = this.belongsTo(models.Posts, {onDelete: 'CASCADE'});

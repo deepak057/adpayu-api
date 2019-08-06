@@ -126,11 +126,17 @@ const remove = async function(req, res){
       [err, post] = await to(Posts.findOne({where: {id: comment.PostId}}));
       if(err) return ReE(res, 'error occured trying to delete the comment');
       
-      comment.destroy();
-
-      NotificationsController.remove(getNotification(commentId, post.id, post.type), user.id)
-
-      return ReS(res, {message:'Comment deleted'}, 200);
+      comment.deleted = true;
+      comment.save()
+        .then((comment) => {
+          if(comment.videoPath) {
+            const S3Controller   = require('./s3.controller');
+            S3Controller.deleteVideo(comment.videoPath)
+          }
+          NotificationsController.remove(getNotification(commentId, post.id, post.type), user.id)
+          return ReS(res, {message:'Comment deleted'}, 200);
+        })
+      
     } catch (e) {
       console.log(e);
       return ReE(res, 'error occured trying to delete the comment', 204);

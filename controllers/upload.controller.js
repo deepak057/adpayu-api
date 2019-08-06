@@ -1,5 +1,5 @@
 const { Images} = require('../models');
-const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName, videoToPNG } = require('../services/util.service');
 const { captureVideoPoster } = require('../services/app.service');
 const appRoot = require('app-root-path');
 const S3Controller   = require('./s3.controller');
@@ -217,7 +217,7 @@ const removeFiles = async function (req, res) {
     let fileType = req.body.type || 'image';
     let deleteS3Files = function (folder = '') {
       for (let i in files) {
-        let fileName = folder === 'public/thumbs/' ? files[i].split('.').slice(0, -1).join('.')+ ".png" : files[i]
+        let fileName = folder === 'public/thumbs/' ? videoToPNG(files[i]) : files[i]
         let localFile = appRoot + '/uploads/' + folder + fileName;
         // remove local video file
         if (fs.existsSync(localFile)) {

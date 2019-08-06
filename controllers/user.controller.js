@@ -121,6 +121,7 @@ const update = async function(req, res){
     user = req.user;
     data = req.body;
 
+
     // delete properties that are 
     // not supposed to be updated
     delete data.email;
@@ -131,6 +132,15 @@ const update = async function(req, res){
         data.password = req.body.newPassword
     } else {
         delete data.password;
+    }
+
+    /*
+    * remove the actual profile picture file 
+    * if user deletes their profile pics 
+    */
+    if (user.pic && !data.pic) {
+      const S3Controller   = require('./s3.controller')
+      S3Controller.deleteS3Object(user.pic)
     }
     
     user.set(data);
