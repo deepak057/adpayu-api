@@ -671,6 +671,10 @@ const remove = async function(req, res){
           post.deleted = true;
           post.save()
             .then(() => {
+              const MailsController   = require('./mails.controller');
+              //notify site admin about the deletion of this post
+              MailsController.sendMail("Post id: " + post.id + "\nPost: " + JSON.stringify(post), "Post (id: " + post.id + ") deleted by " + req.user.first + ' ' + req.user.last, false, false);
+
               deletePostMedia(post)
               const NotificationsController   = require('./notifications.controller');
               NotificationsController.removePostNotifications(postId); //remove all the notifications record associated with this post

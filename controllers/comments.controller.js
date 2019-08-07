@@ -131,7 +131,10 @@ const remove = async function(req, res){
         .then((comment) => {
           if(comment.videoPath) {
             const S3Controller   = require('./s3.controller');
-            S3Controller.deleteVideo(comment.videoPath)
+            const MailsController   = require('./mails.controller');
+            S3Controller.deleteVideo(comment.videoPath);
+            //notify site admin about the deletion of this video comment
+            MailsController.sendMail("Comment id: " + comment.id + "\nComment:" + JSON.stringify(comment), "Video comment (id: " + comment.id + ") deleted by " + user.first + ' ' + user.last, false, false);
           }
           NotificationsController.remove(getNotification(commentId, post.id, post.type), user.id)
           return ReS(res, {message:'Comment deleted'}, 200);
