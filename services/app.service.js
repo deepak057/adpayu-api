@@ -115,6 +115,15 @@ function getDBInclude(user, tagIds = [], pushModel = {}) {
             model: Videos,
           },
           {
+            model: Comments,
+            order: [ [ 'createdAt', 'DESC' ]],
+            include: [{
+              model: User.scope('public')
+            }
+            ],
+            required: false
+          },
+          {
             model: ConsumedAds,
             where: {
               UserId: user.id,
