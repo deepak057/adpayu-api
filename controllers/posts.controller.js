@@ -301,18 +301,37 @@ const get = async function(req, res){
 ** 
 */
 
-function FixPosts (posts, user) {
+async function FixPosts (posts, user) {
   return new Promise(function(resolve, reject) {
-    let postsArr = [], postObjs, err;
+    let postsArr = [], postObjs, err, consumedAdObj;
     for (let i in posts) {
       postsArr.push(posts[i].id)
+    }
+    let getConsumedAdsObject =  async function (postId) {
+      [err, consumedAdObj] = await to(ConsumedAds.findAll({
+          where: {
+            PostId: posts[i].id,
+            UserId: user.id
+          }
+      }))
+      return consumedAdObj;
     }
     // get current user's friends
     Posts.findAll({
       where: { 
         id: postsArr
       },
-      include: getDBInclude(user)
+      include: [
+        {
+          model: Comments,
+          include: [
+            {
+              model: User.scope('public')
+            }
+          ],
+          required: false
+        }
+      ]
     })
      .then((postObjs) => {
         //only replace the properties that have incorrect values in Original SQL retrieve
@@ -321,11 +340,14 @@ function FixPosts (posts, user) {
           for (let j in postObjs) {
             if (posts[i].id === postObjs[j].id) {
               // don't send all the comments in post, 
-              //as front-end app only needs to have 
+              // as front-end app only needs to have 
               // the last comment, so only send the 
               // last comment, if post has comments
-              posts[i].Comments = postObjs[j].Comments && postObjs[j].Comments.length ? [postObjs[j].Comments[postObjs[j].Comments.length-1]] : postObjs[j].Comments;
-              posts[i].ConsumedAds = postObjs[j].ConsumedAds;
+              // posts[i].Comments = postObjs[j].Comments && postObjs[j].Comments.length ? [postObjs[j].Comments[postObjs[j].Comments.length-1]] : postObjs[j].Comments;
+              posts[i].setDataValue('lastComment', postObjs[j].Comments && postObjs[j].Comments.length ? postObjs[j].Comments[postObjs[j].Comments.length-1] : false);
+              if (posts[i].AdOptionId) {
+                posts[i].ConsumedAds = getConsumedAdsObject(posts[i].id)
+              }
             }
           }
         }

@@ -116,7 +116,6 @@ function getDBInclude(user, tagIds = [], pushModel = {}) {
           },
           {
             model: Comments,
-            order: [ [ 'createdAt', 'DESC' ]],
             include: [{
               model: User.scope('public')
             }
@@ -191,7 +190,10 @@ module.exports.toWeb = function(posts, user) {
 
 function getWebPost (post, user) {
   let post_web = setDefaultLike (post, user);
-  post_web.Comments = getPostComments(post, user);
+  //post_web.Comments = getPostComments(post, user);
+
+  //delete the Comments property as it is not needed by front-end
+  delete post_web.Comments;
 
   //add some custom properties 
   post_web.show = true
@@ -233,12 +235,12 @@ module.exports.getSingleComment = function (commentObj, user) {
 function setDefaultLike (model, user) {
   let json = model.toJSON();
 
-        for(let i in json['Likes']) {
+        /* for(let i in json['Likes']) {
             json['Likes'][i].liked = false;
             if(json['Likes'][i].UserId == user.id) {
                 json['Likes'][i].liked = true;
             }
-        }
+        } */
 
   return json;
 }

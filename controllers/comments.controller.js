@@ -50,7 +50,7 @@ const get =  function(req, res){
     }
   } catch (e) {
       console.log(e)
-      return ReE(res, {error: 'Something went wrong while trying to load comments/answers for given post.'}, 422);
+      return ReE(res, {error: 'Something went wrong while trying to load comments/answers for given post.'});
   }
 }
 
