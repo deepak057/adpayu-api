@@ -303,21 +303,10 @@ const get = async function(req, res){
 
 async function FixPosts (posts, user) {
   return new Promise(function(resolve, reject) {
-    let postsArr = [], postObjs, err, consumedAdObj;
+    let postsArr = [], postObjs;
     for (let i in posts) {
       postsArr.push(posts[i].id)
     }
-    let getConsumedAdsObject =  async function (postId) {
-      [err, consumedAdObj] = await to(ConsumedAds.findAll({
-          where: {
-            PostId: postId,
-            UserId: user.id
-          }
-      }))
-      console.log(consumedAdObj)
-      return consumedAdObj;
-    }
-    // get current user's friends
     Posts.findAll({
       where: { 
         id: postsArr
@@ -334,14 +323,8 @@ async function FixPosts (posts, user) {
               // as front-end app only needs to have 
               // the last comment, so only send the 
               // last comment, if post has comments
-              // posts[i].Comments = postObjs[j].Comments && postObjs[j].Comments.length ? [postObjs[j].Comments[postObjs[j].Comments.length-1]] : postObjs[j].Comments;
               posts[i].setDataValue('lastComment', postObjs[j].Comments && postObjs[j].Comments.length ? postObjs[j].Comments[postObjs[j].Comments.length-1] : false);
-              if (posts[i].AdOptionId) {
-                //console.log('I am here \n\n\n\n')
-                //console.log(getConsumedAdsObject(posts[i].id))
-                posts[i].setDataValue('ConsumedAds', postObjs[j].ConsumedAds)
-                //posts[i].ConsumedAds = 
-              }
+              posts[i].setDataValue('ConsumedAds', postObjs[j].ConsumedAds)
             }
           }
         }
