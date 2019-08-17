@@ -314,6 +314,7 @@ async function FixPosts (posts, user) {
             UserId: user.id
           }
       }))
+      console.log(consumedAdObj)
       return consumedAdObj;
     }
     // get current user's friends
@@ -321,17 +322,7 @@ async function FixPosts (posts, user) {
       where: { 
         id: postsArr
       },
-      include: [
-        {
-          model: Comments,
-          include: [
-            {
-              model: User.scope('public')
-            }
-          ],
-          required: false
-        }
-      ]
+      include: getDBInclude(user)
     })
      .then((postObjs) => {
         //only replace the properties that have incorrect values in Original SQL retrieve
@@ -346,7 +337,10 @@ async function FixPosts (posts, user) {
               // posts[i].Comments = postObjs[j].Comments && postObjs[j].Comments.length ? [postObjs[j].Comments[postObjs[j].Comments.length-1]] : postObjs[j].Comments;
               posts[i].setDataValue('lastComment', postObjs[j].Comments && postObjs[j].Comments.length ? postObjs[j].Comments[postObjs[j].Comments.length-1] : false);
               if (posts[i].AdOptionId) {
-                posts[i].ConsumedAds = getConsumedAdsObject(posts[i].id)
+                //console.log('I am here \n\n\n\n')
+                //console.log(getConsumedAdsObject(posts[i].id))
+                posts[i].setDataValue('ConsumedAds', postObjs[j].ConsumedAds)
+                //posts[i].ConsumedAds = 
               }
             }
           }
