@@ -293,12 +293,61 @@ const get = async function(req, res){
 }
 
 /*
+** This method is another layer in feed interpretation and 
+** manipulation. Since the default SQL retreive has issues, this method 
+** is needed to do following-
+**   1) Fixes the Adstats object in posts so that it doesn't have incorrect stats values
+**   2) Adds lastComment field in posts
+** 
+*/
+
+function FixPosts (posts, user) {
+  return new Promise(function(resolve, reject) {
+    let postsArr = [], postObjs, err;
+    for (let i in posts) {
+      postsArr.push(posts[i].id)
+    }
+    // get current user's friends
+    Posts.findAll({
+      where: { 
+        id: postsArr
+      },
+      include: getDBInclude(user)
+    })
+     .then((postObjs) => {
+        //only replace the properties that have incorrect values in Original SQL retrieve
+        // at the time, replace the original Comments and ConsumedAds
+        for (let i in posts) {
+          for (let j in postObjs) {
+            if (posts[i].id === postObjs[j].id) {
+              // don't send all the comments in post, 
+              //as front-end app only needs to have 
+              // the last comment, so only send the 
+              // last comment, if post has comments
+              posts[i].Comments = postObjs[j].Comments && postObjs[j].Comments.length ? [postObjs[j].Comments[postObjs[j].Comments.length-1]] : postObjs[j].Comments;
+              posts[i].ConsumedAds = postObjs[j].ConsumedAds;
+            }
+          }
+        }
+        resolve(posts)
+     })
+     .catch ((err) => {
+        reject(err)
+     })
+  
+  })
+
+}
+
+
+/*
 ** this method adds Top Posts or Ads to the top
 * of the feed of given user
 */
 
-function sendFeed (user, posts, res, page =1 ) {
-  if (page == 1 && user.adsEnabled) {
+async function sendFeed (user, posts, res, page =1 ) {
+  try {
+    if (page == 1 && user.adsEnabled) {
     adsToBePushedToTheTop(user)
       .then((adPosts) => {
         if (adPosts) {
@@ -313,11 +362,24 @@ function sendFeed (user, posts, res, page =1 ) {
             posts.unshift(adPosts[i])
           }
         }
-        return ReS(res, {posts: toWeb(posts, user)});
+        FixPosts(posts, user)
+          .then((posts) => {
+            return ReS(res, {posts: toWeb(posts, user)});
+          })
+        
       })
-  } else {
-    return ReS(res, {posts: toWeb(posts, user)});
+    } else {
+      FixPosts(posts, user)
+        .then((posts) => {
+          return ReS(res, {posts: toWeb(posts, user)});
+        })
+          
+    }
+  } catch (e) {
+    console.log(e)
+    return ReE(res, {message: 'Something went wrong.'});
   }
+  
 }
 
 
