@@ -310,7 +310,7 @@ async function FixPosts (posts, user) {
     let getConsumedAdsObject =  async function (postId) {
       [err, consumedAdObj] = await to(ConsumedAds.findAll({
           where: {
-            PostId: posts[i].id,
+            PostId: postId,
             UserId: user.id
           }
       }))
