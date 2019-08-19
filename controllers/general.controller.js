@@ -430,3 +430,104 @@ const moveContentToS3 = async function (req, res) {
 }
 
 module.exports.moveContentToS3 = moveContentToS3;
+
+
+/*
+* this function changes the existing post-comment association
+* and associate the given post with the given Post
+*/
+
+const changeCommentAssociation = async function (req, res) {
+    if (req.user.id === 1) {
+      try {
+        let commentId = req.params.commentId;
+        let newPostId = req.query.postId;
+        Comments.find({
+          where: {
+            id: commentId
+          }
+        })
+          .then((comment) => {
+            Posts.find({
+              where: {
+                id: comment.PostId
+              }
+            })
+              .then((oldPost) => {
+                oldPost.removeComments(comment);
+                Posts.find({
+                  where: {
+                    id: newPostId
+                  }
+                })
+                  .then((newPost) => {
+                    comment.PostId = newPostId;
+                    comment.save()
+                      .then((comment) => {
+                        newPost.addComments(comment);
+                        return ReS(res, {message: 'Comment '+ commentId + ' is now associated with Post '+ newPostId});
+                      })
+
+                  })
+              })
+            
+            post.removeComment(comment);
+            comment
+          })
+            
+      } catch (e) {
+        console.log(e)
+        return ReE(res, {message:'Something went wrong.'});
+      }
+    } else {
+      return ReE(res, {message:'Unathorized user'}, 401);
+    }
+
+
+}
+
+module.exports.changeCommentAssociation = changeCommentAssociation;
+
+/*
+* this method fixes the previous comment-post association in which are no
+* longer valid as some assoications were manually altered in the Comments table
+* This method deletes the invalid records in PostComments table
+*/
+const fixCommentAssociation = async function (req, res) {
+    if (req.user.id === 1) {
+      const CONFIG = require('../config/config');
+
+      const sequelize = new Sequelize(CONFIG.db_name, CONFIG.db_user, CONFIG.db_password, {
+        host: CONFIG.db_host,
+        dialect: CONFIG.db_dialect,
+        port: CONFIG.db_port,
+        operatorsAliases: false
+      });
+
+      sequelize.query('select * from PostComments').then(function(rows) {
+        
+        for (let i in rows[1]) {
+          Comments.find({where: {
+            PostId: rows[1][i].PostId,
+            id: rows[1][i].CommentId
+          }})
+            .then((comment) => {
+              if(!comment) {
+                sequelize.query('delete from PostComments where PostId=' + rows[1][i].PostId + ' && CommentId=' + rows[1][i].CommentId).then(function(rows) {
+                  console.log('Wrong association removed.')
+                });
+
+              }
+            })
+        }
+      });
+      return ReS(res, {message: 'Operation in progress..'});
+
+    } else {
+      return ReE(res, {message:'Unathorized user'}, 401);
+    }
+
+
+}
+
+module.exports.fixCommentAssociation = fixCommentAssociation;

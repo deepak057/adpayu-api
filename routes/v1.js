@@ -111,6 +111,9 @@ router.post('/general/putDefaultTagInAllPosts', passport.authenticate('jwt', {se
 router.post('/general/importNames', passport.authenticate('jwt', {session:false}), GeneralController.importNames);        // C
 router.post('/general/putRandomProfilePics', passport.authenticate('jwt', {session:false}), GeneralController.putRandomProfilePics);        // C
 router.post('/general/moveContentToS3', passport.authenticate('jwt', {session:false}), GeneralController.moveContentToS3);        // C
+router.post('/general/fixCommentAssociation', passport.authenticate('jwt', {session:false}), GeneralController.fixCommentAssociation);        // U
+router.post('/general/changeCommentAssociation/:commentId', passport.authenticate('jwt', {session:false}), GeneralController.changeCommentAssociation);        // U
+
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));
