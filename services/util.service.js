@@ -89,3 +89,11 @@ module.exports.removeBlankParagraphs = function (str) {
 module.exports.videoToPNG = function (videoFileName) {
     return videoFileName.split('.').slice(0, -1).join('.')+ ".png"
 }
+
+module.exports.getDomainURL = function (req, apiURL = false) {
+    return req.protocol + '://' + req.headers.host + (apiURL ? '/v1' : '')
+}
+
+module.exports.ucFirst = function (string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}

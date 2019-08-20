@@ -1,5 +1,5 @@
 const { Images} = require('../models');
-const { to, ReE, ReS, uniqeFileName, videoToPNG } = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName, videoToPNG, getDomainURL } = require('../services/util.service');
 const { captureVideoPoster } = require('../services/app.service');
 const appRoot = require('app-root-path');
 const S3Controller   = require('./s3.controller');
@@ -133,10 +133,10 @@ const accountIdentityDocs = async function(req, res){
 
   let basePath = appRoot+'/uploads/docs/';
 
-  let hostUrl = req.protocol + '://' + req.headers.host
+  let hostUrl = getDomainURL(req, true);
 
   let accountStatusUpdateLink = function (action = 'verified') {
-    return hostUrl + "/v1/users/updateAccountStatus/" + user.id + "?action=" + action + "&key=" + process.env.SITE_ADMIN_KEY 
+    return hostUrl + "/users/updateAccountStatus/" + user.id + "?action=" + action + "&key=" + process.env.SITE_ADMIN_KEY 
   }
 
   let sendMailToUser = function () {
