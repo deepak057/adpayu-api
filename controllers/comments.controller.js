@@ -1,10 +1,11 @@
-const { Comments, User, Likes, Posts, Videos, Questions } = require('../models');
-const { to, ReE, ReS, getMySQLDateTime, removeBlankParagraphs, getDomainURL, ucFirst } = require('../services/util.service');
+const { Comments, User, Likes, Posts, Videos, Questions, Forex } = require('../models');
+const { to, ReE, ReS, getMySQLDateTime, removeBlankParagraphs, getDomainURL, ucFirst, roundTwoDecimalPlaces } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const MailsController   = require('./mails.controller');
 const { NOTIFICATIONS } = require('../config/app-constants');
 const { getCommentIncludes, getSingleComment, canUpdatePost, formatComments } = require('../services/app.service');
 const Sequelize = require('sequelize');
+const { VIDEO_PAYMENT_CONFIG } = require('../config/app-constants');
 require('dotenv').config();
 
 function getNotification(commentId, postId, type= 'text') {
@@ -207,14 +208,39 @@ const reviewVideoComment = async function (req, res) {
     let actionText = function () {
       return action === 'approve' ? 'approved' : action + 'ed';
     }
+    let paymentObj = {
+      getVideoPayment: function (forex) {
+        return {
+          videoPaymentUSD: roundTwoDecimalPlaces(VIDEO_PAYMENT_CONFIG.perVideoPriceINR/forex),
+          videoPaymentINR: VIDEO_PAYMENT_CONFIG.perVideoPriceINR
+        }
+      }
+    }
+    let mailObj = {
+
+    }
     /*
     * function to send mail to user, letting them know about the status of the 
     ** video review process by the admin
     */
     let sendMailToUser = function (comment) {
-      let sub = (action === 'approve' ? 'Congratulations, your ' : 'Your ') +  'Video Comment (' + comment.id + ') is ' + actionText();
-      let content = 'Hi ' + ucFirst(comment.User.first) + ',\n\nYour video comment (' + getCommentURL(comment) + ') has been ' + actionText();
-      MailsController.sendMail(content, sub, comment.User.email, false);
+      let sub = process.env.SITE_NAME + '- ' + (action === 'approve' ? 'Congratulations, ' : 'Sorry, ') +  'your Video Comment (' + comment.id + ') is ' + actionText();
+      let contentHead = 'Hi ' + ucFirst(comment.User.first) + ',\n\nYour video comment (' + getCommentURL(comment) + ') has been reviewed and been ' + actionText() + '.';
+      let contentFooter = '\n\nWe will be very happy to help you if you have any questions or queries, please feel free to contact us.\n\nThank you.\n\n\n\nSincerely,\n\nTeam '+ process.env.SITE_NAME;
+      let contentBody = '\n\n';
+
+      if (action === 'approve') {
+        Forex.getUSD2INR()
+          .then((forex) => {
+              let videoPayment = paymentObj.getVideoPayment(forex);
+              contentBody += '$' + videoPayment.videoPaymentUSD + ' (' + videoPayment.videoPaymentINR + ' INR) have been added to your ' + process.env.SITE_NAME + ' account.';
+              MailsController.sendMail(contentHead + contentBody + contentFooter, sub, comment.User.email, false);
+
+          })
+      } else {
+        contentBody += 'The video could be ' + actionText() + ' due to any of following reasons- \n\n1. The video answer does not answer the question. \n2. The video answer belongs to some other question.\n3. The video answer is too long or too short. Ideally, it should be 10-15 seconds long, as long as it is able to makes sense. \n4. The video answer is not unique and has either been uploaded already or was found on some other website/app.\n5. Video comment/answer is inappropriate and contains objectionable content.\n\nSorry, you will not get paid for this video. But do not loose heart, try to fix the issue and then re-upload the video :) \n\nYour video might be deleted in some time or has already been deleted. Or it will not be deleted at all, in which case, you can delete it yourself if you would like.';
+        MailsController.sendMail(contentHead + contentBody + contentFooter, sub, comment.User.email, false);
+      }
     };
 
     if (!keyAuthentication || !action) {
