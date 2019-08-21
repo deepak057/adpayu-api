@@ -208,6 +208,22 @@ const reviewVideoComment = async function (req, res) {
     let actionText = function () {
       return action === 'approve' ? 'approved' : action + 'ed';
     }
+    let sendNotification = function (comment, action, adConsumed = false, videoPayment = false) {
+      let meta = {
+        commentId: comment.id,
+        postId: comment.PostId,
+      }
+      if (action === 'approve') {
+        meta.adConsumedId = adConsumed.id;
+        meta.amountUSD = videoPayment.videoPaymentUSD;
+        meta.amountINR = videoPayment.videoPaymentINR;
+      }
+      NotificationsController.create({
+        type: action === 'approve' ? NOTIFICATIONS.types.VIDEO_COMMENT_ACCEPTED : NOTIFICATIONS.types.VIDEO_COMMENT_REJECTED,
+        meta: JSON.stringify(meta),
+      }, comment.User.id, comment.User.id)
+    };
+
     let paymentObj = {
       getVideoPayment: function (forex) {
         return {
@@ -262,11 +278,13 @@ const reviewVideoComment = async function (req, res) {
               let videoPayment = paymentObj.getVideoPayment(forex);
               paymentObj.addMoneyToUserAccount(comment, videoPayment.videoPaymentUSD)
                 .then((record) => {
+                  sendNotification(comment, action, record, videoPayment);
                   contentBody += '$' + videoPayment.videoPaymentUSD + ' (' + videoPayment.videoPaymentINR + ' INR) have been added to your ' + process.env.SITE_NAME + ' account.';
                   MailsController.sendMail(contentHead + contentBody + contentFooter, sub, comment.User.email, false);
                 })
           })
       } else {
+        sendNotification(comment, action);
         contentBody += 'The video could be ' + actionText() + ' due to any of following reasons- \n\n1. The video answer does not answer the question. \n2. The video answer belongs to some other question.\n3. The video answer is too long or too short. Ideally, it should be 10-15 seconds long, as long as it is able to makes sense. \n4. The video answer is not unique and has either been uploaded already or was found on some other website/app.\n5. Video comment/answer is inappropriate and contains objectionable content.\n\nSorry, you will not get paid for this video. But do not loose heart, try to fix the issue and then re-upload the video :) \n\nYour video might be deleted in some time or has already been deleted. Or it will not be deleted at all, in which case, you can delete it yourself if you would like.';
         MailsController.sendMail(contentHead + contentBody + contentFooter, sub, comment.User.email, false);
       }
