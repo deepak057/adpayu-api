@@ -1,4 +1,4 @@
-const { Comments, User, Likes, Posts, Videos, Questions, Forex } = require('../models');
+const { Comments, User, Likes, Posts, Videos, Questions, Forex, ConsumedAds } = require('../models');
 const { to, ReE, ReS, getMySQLDateTime, removeBlankParagraphs, getDomainURL, ucFirst, roundTwoDecimalPlaces } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const MailsController   = require('./mails.controller');
@@ -214,16 +214,43 @@ const reviewVideoComment = async function (req, res) {
           videoPaymentUSD: roundTwoDecimalPlaces(VIDEO_PAYMENT_CONFIG.perVideoPriceINR/forex),
           videoPaymentINR: VIDEO_PAYMENT_CONFIG.perVideoPriceINR
         }
+      },
+      addMoneyToUserAccount: function (comment, amount) {
+        return new Promise(function(resolve, reject) {
+          try {
+            ConsumedAds.find({
+              where: {
+                UserId: comment.User.id,
+                CommentId: comment.id
+              }
+            })
+              .then((consumedAd) => {
+                if (!consumedAd) {
+                  ConsumedAds.create({
+                    action: 'videoComment',
+                    amountUSD: amount,
+                    UserId: comment.User.id,
+                    CommentId: comment.id
+                  })
+                    .then((consumedAd) => {
+                      resolve(consumedAd)
+                    })
+                  
+                } else {
+                  resolve(consumedAd)
+                }
+              })  
+          } catch (e) {
+            reject(e)
+          }
+        })
       }
-    }
-    let mailObj = {
-
     }
     /*
     * function to send mail to user, letting them know about the status of the 
     ** video review process by the admin
     */
-    let sendMailToUser = function (comment) {
+    let proceed = function (comment) {
       let sub = process.env.SITE_NAME + '- ' + (action === 'approve' ? 'Congratulations, ' : 'Sorry, ') +  'your Video Comment (' + comment.id + ') is ' + actionText();
       let contentHead = 'Hi ' + ucFirst(comment.User.first) + ',\n\nYour video comment (' + getCommentURL(comment) + ') has been reviewed and been ' + actionText() + '.';
       let contentFooter = '\n\nWe will be very happy to help you if you have any questions or queries, please feel free to contact us.\n\nThank you.\n\n\n\nSincerely,\n\nTeam '+ process.env.SITE_NAME;
@@ -233,9 +260,11 @@ const reviewVideoComment = async function (req, res) {
         Forex.getUSD2INR()
           .then((forex) => {
               let videoPayment = paymentObj.getVideoPayment(forex);
-              contentBody += '$' + videoPayment.videoPaymentUSD + ' (' + videoPayment.videoPaymentINR + ' INR) have been added to your ' + process.env.SITE_NAME + ' account.';
-              MailsController.sendMail(contentHead + contentBody + contentFooter, sub, comment.User.email, false);
-
+              paymentObj.addMoneyToUserAccount(comment, videoPayment.videoPaymentUSD)
+                .then((record) => {
+                  contentBody += '$' + videoPayment.videoPaymentUSD + ' (' + videoPayment.videoPaymentINR + ' INR) have been added to your ' + process.env.SITE_NAME + ' account.';
+                  MailsController.sendMail(contentHead + contentBody + contentFooter, sub, comment.User.email, false);
+                })
           })
       } else {
         contentBody += 'The video could be ' + actionText() + ' due to any of following reasons- \n\n1. The video answer does not answer the question. \n2. The video answer belongs to some other question.\n3. The video answer is too long or too short. Ideally, it should be 10-15 seconds long, as long as it is able to makes sense. \n4. The video answer is not unique and has either been uploaded already or was found on some other website/app.\n5. Video comment/answer is inappropriate and contains objectionable content.\n\nSorry, you will not get paid for this video. But do not loose heart, try to fix the issue and then re-upload the video :) \n\nYour video might be deleted in some time or has already been deleted. Or it will not be deleted at all, in which case, you can delete it yourself if you would like.';
@@ -257,7 +286,7 @@ const reviewVideoComment = async function (req, res) {
         ]
       }));
       if (!err) {
-        sendMailToUser(comment);
+        proceed(comment);
         return ReS(res, {message: 'Comment successfully ' + actionText()}, 200);
       } else {
         throw err

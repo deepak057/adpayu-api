@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('ConsumedAds', {
         action: {
             type:   DataTypes.ENUM,
-            values: ['impression', 'click', 'view'],
+            values: ['impression', 'click', 'view', 'videoComment'],
             defaultValue: 'impression'
         },
         amountUSD: DataTypes.FLOAT,
@@ -44,6 +44,7 @@ module.exports = (sequelize, DataTypes) => {
     Model.associate = function(models){
         this.User = this.belongsTo(models.User, {onDelete: 'CASCADE'});
         this.Post = this.belongsTo(models.Posts, {onDelete: 'CASCADE'});
+        this.Comment = this.belongsTo(models.Comments, {onDelete: 'CASCADE'});
     };
 
     Model.prototype.toWeb = function (pw) {
