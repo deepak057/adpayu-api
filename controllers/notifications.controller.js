@@ -1,4 +1,4 @@
-const { User, Notifications } = require('../models');
+const { User, Notifications, Posts } = require('../models');
 const { to, ReE, ReS, isEmptyObject, getLimitOffset, cloneOject } = require('../services/util.service');
 const Sequelize = require('sequelize');
 
@@ -49,27 +49,49 @@ const create = async function (notification, fromId, toId) {
 
   return new Promise(function(resolve, reject) {
     try {
-      let err, notificationRecord, data, postId = getPostId(notification); 
+      let err, notificationRecord, data, postId = getPostId(notification), postType = getMetaProperty(notification, 'postType'); 
+
+      let createNoti = function (notification) {
+        // create a notification only if doesn't already exist
+        getNotification(notification)
+          .then((noti) => {
+            if (!noti) {
+              Notifications.create(notification)
+                .then((notificationRecord) => {
+                  resolve(notificationRecord)
+                })
+            } else {
+              resolve(noti)
+            }
+          })
+      };
 
       notification.fromId = fromId || toId;
       notification.toId = toId;
 
       if(postId) {
         notification.postId = postId
-      }
 
-      // create a notification only if doesn't already exist
-      getNotification(notification)
-        .then((noti) => {
-          if (!noti) {
-            Notifications.create(notification)
-              .then((notificationRecord) => {
-                resolve(notificationRecord)
-              })
-          } else {
-            resolve(noti)
-          }
-        })
+        // if postId exists but not the post type
+        // add the PostType in Notification meta info
+        if(!postType) {
+          Posts.find({
+            where: {
+              id: postId
+            }
+          })
+            .then((post) => {
+              notification.meta = JSON.parse(notification.meta);
+              notification.meta.postType = post.type;
+              notification.meta = JSON.stringify(notification.meta);
+              createNoti(notification);
+            })
+        } else {
+          createNoti(notification)
+        }
+      } else {
+        createNoti(notification)
+      }
     } catch (e) {
       reject(e)
     }
@@ -105,21 +127,25 @@ function getNotification (notification) {
 }
 
 
-/*
-* method to get PostId from Notification object
-*/
-function getPostId (notification) {
+function getMetaProperty (notification, prop) {
   if ('meta' in notification){
     try {
       let meta = JSON.parse(notification.meta)
-      if (meta && 'postId' in meta) {
-        return meta.postId
+      if (meta && prop in meta) {
+        return meta[prop]
       }
     } catch (e) {
       return false
     }
   }
   return false
+}
+
+/*
+* method to get PostId from Notification object
+*/
+function getPostId (notification) {
+  return getMetaProperty(notification, 'postId')
 }
 
 const remove = async function(notification, fromId = false, toId = false){
