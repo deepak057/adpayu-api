@@ -47,29 +47,62 @@ module.exports.get = get;
 
 const create = async function (notification, fromId, toId) {
 
-  let err, notificationRecord, data, postId = getPostId(notification); 
+  return new Promise(function(resolve, reject) {
+    try {
+      let err, notificationRecord, data, postId = getPostId(notification); 
 
-  notification.fromId = fromId || toId;
-  notification.toId = toId;
+      notification.fromId = fromId || toId;
+      notification.toId = toId;
 
-  if(postId) {
-    notification.postId = postId
-  }
+      if(postId) {
+        notification.postId = postId
+      }
 
-  Notifications.create(notification)
-    .then((notificationRecord) => {
-      return notificationRecord
-    })
-    .catch ((err) => {
-      //return ReE(res, {error: 'Something went wrong while sending a notification to the user'}, 422);
-      console.log(err)
-      return false
-    })
-
-  return false
+      // create a notification only if doesn't already exist
+      getNotification(notification)
+        .then((noti) => {
+          if (!noti) {
+            Notifications.create(notification)
+              .then((notificationRecord) => {
+                resolve(notificationRecord)
+              })
+          } else {
+            resolve(noti)
+          }
+        })
+    } catch (e) {
+      reject(e)
+    }
+  });
 }
 
 module.exports.create = create;
+
+function getNotification (notification) {
+  return new Promise(function(resolve, reject) {
+    let whereClause = {
+      type: notification.type,
+      meta: notification.meta,
+      fromId: notification.fromId,
+      toId: notification.toId
+    }
+    postId = getPostId(notification);
+    
+    if (postId) {
+      whereClause.postId = postId
+    }
+
+    Notifications.find({
+      where: whereClause
+    })
+      .then((noti) => {
+        resolve(noti)
+      })
+      .catch ((e) => {
+        reject (e)
+      })  
+  });
+}
 
 
 /*

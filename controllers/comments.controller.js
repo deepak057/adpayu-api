@@ -92,6 +92,10 @@ const create =  function(req, res){
       return commentObj
     }
 
+    let canSendForAdminReview = function (comment) {
+      return comment.videoPath && process.env.ENABLE_VIDEO_REVIEW === 'true' && !user.byPassVideoReview
+    }
+
      Posts.findOne({where: {id: postId}})
       .then((post) => {
          
@@ -125,9 +129,14 @@ const create =  function(req, res){
              //add User model
              comment.User = req.user;
 
-             //send mail to Admin about the video 
-             sendVideoReviewMailToAdmin(comment);
-
+             /*
+             ** Send mail to Admin about Video review
+             **  
+             */
+             if (canSendForAdminReview(comment)) {
+              sendVideoReviewMailToAdmin(comment); 
+             }
+             
              return ReS(res, {comment: comment});
           })
           .catch((error) => {

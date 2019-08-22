@@ -30,6 +30,7 @@ module.exports = (sequelize, DataTypes) => {
         pageTitleCollapsed: {type: DataTypes.BOOLEAN, defaultValue: false},
         accountStatus: {type: DataTypes.ENUM, values: ['unverified', 'verified', 'pending'], defaultValue: 'unverified'},
         identityDocs  : {type: DataTypes.STRING, defaultValue: ''},
+        byPassVideoReview: {type: DataTypes.BOOLEAN, defaultValue: false},
 
     },{
         defaultScope: {
@@ -37,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         scopes: {
           public: {
-           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview'] },
           },
           visible: {
             where: {
