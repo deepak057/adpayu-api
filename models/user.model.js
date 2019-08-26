@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
         accountStatus: {type: DataTypes.ENUM, values: ['unverified', 'verified', 'pending'], defaultValue: 'unverified'},
         identityDocs  : {type: DataTypes.STRING, defaultValue: ''},
         byPassVideoReview: {type: DataTypes.BOOLEAN, defaultValue: false},
-        perVideoPriceINR: {type: DataTypes.FLOAT}
+        perVideoPriceINR: {type: DataTypes.FLOAT, defaultValue: ''}
     },{
         defaultScope: {
           attributes: { exclude: [] },
