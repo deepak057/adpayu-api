@@ -298,3 +298,17 @@ function getPasswordResetLink (user, url) {
 function getPasswordResetMailBody (user, url) {
     return 'Hello ' + user.first.charAt(0).toUpperCase()+ user.first.slice(1) +', \n\nSomeone has requested to reset your ' + process.env.SITE_NAME +' account password. If it was you, please click the link below to continue.\n\n'+ getPasswordResetLink(user, url) + '\n\nHowever, if you did not request it, please just ignore this mail. Your account is safe and sound. \n\n\n\n Thank you! \n\n\n\n\n '+ process.env.SITE_NAME + ' Team'
 }
+
+const getUserRevenue = async function(req, res) {
+    let err, user = req.user, amount;
+
+    //get total amount of money that user has accumlated
+    [err, amount] = await to(ConsumedAds.getUserTotal(user.id));
+    if(err) return ReE(res, err);
+
+    return ReS(res, {
+        totalRevenue: amount
+    });
+}
+
+module.exports.getUserRevenue = getUserRevenue;
