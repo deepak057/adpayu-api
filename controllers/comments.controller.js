@@ -234,10 +234,11 @@ const reviewVideoComment = async function (req, res) {
     };
 
     let paymentObj = {
-      getVideoPayment: function (forex) {
+      getVideoPayment: function (forex, user) {
+        let INRPrice = user.perVideoPriceINR  || VIDEO_PAYMENT_CONFIG.perVideoPriceINR
         return {
-          videoPaymentUSD: roundTwoDecimalPlaces(VIDEO_PAYMENT_CONFIG.perVideoPriceINR/forex),
-          videoPaymentINR: VIDEO_PAYMENT_CONFIG.perVideoPriceINR
+          videoPaymentUSD: roundTwoDecimalPlaces(INRPrice/forex),
+          videoPaymentINR: INRPrice
         }
       },
       addMoneyToUserAccount: function (comment, amount) {
@@ -284,7 +285,7 @@ const reviewVideoComment = async function (req, res) {
       if (action === 'approve') {
         Forex.getUSD2INR()
           .then((forex) => {
-              let videoPayment = paymentObj.getVideoPayment(forex);
+              let videoPayment = paymentObj.getVideoPayment(forex, comment.User);
               paymentObj.addMoneyToUserAccount(comment, videoPayment.videoPaymentUSD)
                 .then((record) => {
                   sendNotification(comment, action, record, videoPayment);
