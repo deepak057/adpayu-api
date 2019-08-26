@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
         locationCords: {type: DataTypes.STRING, defaultValue: ''},
         visible: {type: DataTypes.BOOLEAN, defaultValue: true},
         systemCreatedUser: {type: DataTypes.BOOLEAN, defaultValue: false},
-        pageTitleCollapsed: {type: DataTypes.BOOLEAN, defaultValue: false},
+        pageTitleCollapsed: {type: DataTypes.BOOLEAN, defaultValue: true},
         accountStatus: {type: DataTypes.ENUM, values: ['unverified', 'verified', 'pending'], defaultValue: 'unverified'},
         identityDocs  : {type: DataTypes.STRING, defaultValue: ''},
         byPassVideoReview: {type: DataTypes.BOOLEAN, defaultValue: false},
