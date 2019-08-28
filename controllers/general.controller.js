@@ -1,8 +1,11 @@
 const { Likes, User, Comments, Posts, Tags, Videos } = require('../models');
 const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
-const { captureVideoPoster, optimizeVideoFile } = require('../services/app.service');
+const { captureVideoPoster, optimizeVideoFile, optimizeImage } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
+const appRoot = require('app-root-path');
+const fs = require('fs');
+const path = require('path'); 
 
 const fakeCommentsLike =  async function(req, res){
     let commentId = req.params.commentId, err, user = req.user, comment, n = parseInt(req.query.n || 100 ), likes = [], users = [];
@@ -74,13 +77,10 @@ module.exports.fakePostLike = fakePostLike;
 const captureScreenshots =  async function(req, res){
     if (req.user.id === 1) {
 
-      const appRoot = require('app-root-path');
-
       // List all files in a directory in Node.js recursively in a synchronous fashion
        var walkSync = function(dir, filelist) {
               var path = path || require('path');
-              var fs = fs || require('fs'),
-                  files = fs.readdirSync(dir);
+              files = fs.readdirSync(dir);
               filelist = filelist || [];
               files.forEach(function(file) {
                   if (fs.statSync(path.join(dir, file)).isDirectory()) {
@@ -149,9 +149,7 @@ module.exports.putDefaultTagInAllPosts = putDefaultTagInAllPosts;
 const importNames =  async function(req, res){
     if (req.user.id === 1) {
       
-      const appRoot = require('app-root-path');
       const csv = require('csv-parser');  
-      const fs = require('fs');
       const authService       = require('../services/auth.service');
       const TagsController   = require('./tags.controller');
       let CSVPath = appRoot + '/uploads/csv-zusammenfuehren.de_77c89p8g.csv'
@@ -276,8 +274,6 @@ module.exports.importNames = importNames;
 const putRandomProfilePics =  async function(req, res){
       if (req.user.id === 1) {
         const https = require('https');
-        const fs = require('fs');
-        const appRoot = require('app-root-path');
         const request = require('request');
         let gender = req.query.gender || 'female';
         let limit = req.query.limit || 500;
@@ -395,7 +391,6 @@ module.exports.optimizeVideos = optimizeVideos;
 const moveContentToS3 = async function (req, res) {
 
   if (req.user.id === 1) {
-    const appRoot = require('app-root-path');
     var level = require('level')
     , s3sync = require('s3-sync-aws')
     , readdirp = require('readdirp')
@@ -531,3 +526,63 @@ const fixCommentAssociation = async function (req, res) {
 }
 
 module.exports.fixCommentAssociation = fixCommentAssociation;
+
+function optimizeImages (req, res) {
+  const S3Controller   = require('./s3.controller');
+  let s3 = S3Controller.getS3Config();
+  let prefix = 'public/thumbs/';
+  let params = {
+    Bucket: s3.bucket,
+    Prefix: prefix
+  }
+  let optimizeSingleFile = function (key) {
+    let localFileDir = appRoot + '/uploads/temp/'
+    let baseName = path.basename(key);
+    let localFilePath = localFileDir + baseName;
+    let localFile = fs.createWriteStream(localFilePath);
+    s3.s3Obj.getObject({ Bucket: s3.bucket, Key: key})
+      .on('error', function (err) {
+          console.log(err);
+      })
+      .on('httpData', function (chunk) {
+          localFile.write(chunk);
+      })
+      .on('httpDone', function () {
+          console.log('File ' + baseName + ' downloaded from S3');
+          localFile.end();
+          optimizeImage (localFilePath)
+            .then((stats) => {
+               S3Controller.deleteS3Object(baseName, prefix)
+                 .then((d) => {
+                    S3Controller.uploadToS3(localFilePath, prefix)
+                      .then((d) => {
+                        console.log('Optimized file ' + baseName + ' uploaded to S3');
+                      })
+                 })
+                
+            })
+      })
+      .send();
+  }
+  let getAllKeys = function (marker =  false) {
+    if (marker) {
+      params.Marker = marker
+    }
+    s3.s3Obj.listObjects(params, function (err, data) {
+     if(err)throw err; 
+     if(data.Contents && data.Contents.length) {
+      for (let i in data.Contents) {
+        optimizeSingleFile(data.Contents[i].Key);
+      }
+     }
+     if(data.IsTruncated) {
+      getAllKeys(data.NextMarker)
+     }
+    });
+  }
+  getAllKeys();
+  return ReS(res, {message: 'Operation in progress..'});
+
+}
+
+module.exports.optimizeImages = optimizeImages;

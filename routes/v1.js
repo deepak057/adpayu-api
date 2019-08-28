@@ -115,6 +115,7 @@ router.post('/general/putRandomProfilePics', passport.authenticate('jwt', {sessi
 router.post('/general/moveContentToS3', passport.authenticate('jwt', {session:false}), GeneralController.moveContentToS3);        // C
 router.post('/general/fixCommentAssociation', passport.authenticate('jwt', {session:false}), GeneralController.fixCommentAssociation);        // U
 router.post('/general/changeCommentAssociation/:commentId', passport.authenticate('jwt', {session:false}), GeneralController.changeCommentAssociation);        // U
+router.post('/general/optimizeImages/', passport.authenticate('jwt', {session:false}), GeneralController.optimizeImages);        // U
 
 
 //********* API DOCUMENTATION **********

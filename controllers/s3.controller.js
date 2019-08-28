@@ -13,6 +13,15 @@ AWS.config.update({
 	secretAccessKey: process.env.AWS_SECRET
 });
 
+function getS3Config () {
+	return {
+		s3Obj: new AWS.S3(),
+		bucket: process.env.AWS_S3_BUCKET_NAME
+	}	
+}
+
+module.exports.getS3Config = getS3Config;
+
 function getParameters (buffer = false, file = false) {
     //configuring parameters
 	let r_ = {
