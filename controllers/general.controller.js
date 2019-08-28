@@ -528,61 +528,65 @@ const fixCommentAssociation = async function (req, res) {
 module.exports.fixCommentAssociation = fixCommentAssociation;
 
 function optimizeImages (req, res) {
-  const S3Controller   = require('./s3.controller');
-  let s3 = S3Controller.getS3Config();
-  let prefix = 'public/thumbs/';
-  let params = {
-    Bucket: s3.bucket,
-    Prefix: prefix
-  }
-  let optimizeSingleFile = function (key) {
-    let localFileDir = appRoot + '/uploads/temp/'
-    let baseName = path.basename(key);
-    let localFilePath = localFileDir + baseName;
-    let localFile = fs.createWriteStream(localFilePath);
-    s3.s3Obj.getObject({ Bucket: s3.bucket, Key: key})
-      .on('error', function (err) {
-          console.log(err);
-      })
-      .on('httpData', function (chunk) {
-          localFile.write(chunk);
-      })
-      .on('httpDone', function () {
-          console.log('File ' + baseName + ' downloaded from S3');
-          localFile.end();
-          optimizeImage (localFilePath)
-            .then((stats) => {
-               S3Controller.deleteS3Object(baseName, prefix)
-                 .then((d) => {
-                    S3Controller.uploadToS3(localFilePath, prefix)
-                      .then((d) => {
-                        console.log('Optimized file ' + baseName + ' uploaded to S3');
-                      })
-                 })
-                
-            })
-      })
-      .send();
-  }
-  let getAllKeys = function (marker =  false) {
-    if (marker) {
-      params.Marker = marker
-    }
-    s3.s3Obj.listObjects(params, function (err, data) {
-     if(err)throw err; 
-     if(data.Contents && data.Contents.length) {
-      for (let i in data.Contents) {
-        optimizeSingleFile(data.Contents[i].Key);
-      }
-     }
-     if(data.IsTruncated) {
-      getAllKeys(data.NextMarker)
-     }
-    });
-  }
-  getAllKeys();
-  return ReS(res, {message: 'Operation in progress..'});
+  if (req.user.id === 1) {
 
+    const S3Controller   = require('./s3.controller');
+    let s3 = S3Controller.getS3Config();
+    let prefix = 'public/thumbs/';
+    let params = {
+      Bucket: s3.bucket,
+      Prefix: prefix
+    }
+    let optimizeSingleFile = function (key) {
+      let localFileDir = appRoot + '/uploads/temp/'
+      let baseName = path.basename(key);
+      let localFilePath = localFileDir + baseName;
+      let localFile = fs.createWriteStream(localFilePath);
+      s3.s3Obj.getObject({ Bucket: s3.bucket, Key: key})
+        .on('error', function (err) {
+            console.log(err);
+        })
+        .on('httpData', function (chunk) {
+            localFile.write(chunk);
+        })
+        .on('httpDone', function () {
+            console.log('File ' + baseName + ' downloaded from S3');
+            localFile.end();
+            optimizeImage (localFilePath)
+              .then((stats) => {
+                 S3Controller.deleteS3Object(baseName, prefix)
+                   .then((d) => {
+                      S3Controller.uploadToS3(localFilePath, prefix)
+                        .then((d) => {
+                          console.log('Optimized file ' + baseName + ' uploaded to S3');
+                        })
+                   })
+                  
+              })
+        })
+        .send();
+    }
+    let getAllKeys = function (marker =  false) {
+      if (marker) {
+        params.Marker = marker
+      }
+      s3.s3Obj.listObjects(params, function (err, data) {
+       if(err)throw err; 
+       if(data.Contents && data.Contents.length) {
+        for (let i in data.Contents) {
+          optimizeSingleFile(data.Contents[i].Key);
+        }
+       }
+       if(data.IsTruncated) {
+        getAllKeys(data.NextMarker)
+       }
+      });
+    }
+    getAllKeys();
+    return ReS(res, {message: 'Operation in progress..'});
+  } else {
+    return ReE(res, {message:'Unathorized user'}, 401);
+  }  
 }
 
 module.exports.optimizeImages = optimizeImages;
