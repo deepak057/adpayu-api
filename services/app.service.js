@@ -286,15 +286,19 @@ function captureVideoPoster (videoFileName) {
       let screenshotFolder = appRoot+'/uploads/thumbs';
       // replace the extension of given video file with ".png"
       let posterImageName = videoFileName.substr(0, videoFileName.lastIndexOf(".")) + ".png";
+      let posterPath = screenshotFolder + '/' + posterImageName;
 
       // create the screenshot only if it doesn't already exist
-      if (!fs.existsSync(screenshotFolder + '/' + posterImageName)) {
+      if (!fs.existsSync(posterPath)) {
         ffmpeg(videoPath)
         .on('end', function() {
           console.log('Screenshot taken');
-          S3Controller.uploadToS3(screenshotFolder + '/' + posterImageName, 'public/thumbs/')
-            .then((data) => {
-              resolve(data)
+          optimizeImage(posterPath)
+            .then((stats) => {
+              S3Controller.uploadToS3(posterPath, 'public/thumbs/')
+                .then((data) => {
+                  resolve(data)
+                })
             })
         })
         .on('error', function(err) {
@@ -377,13 +381,15 @@ function optimizeVideoFile (dbObj, type = 'video') {
 
 module.exports.optimizeVideoFile = optimizeVideoFile;
 
-module.exports.optimizeImage = function (imagePath) {
+function optimizeImage (imagePath) {
   return new Promise(function(resolve, reject) {
     try {
       const compress_images = require('compress-images');
-      let copyPrefix = "_copy";
+      let copyPrefix = "copy_";
       let imageName = path.basename(imagePath);
-      let copyFilePath = imagePath.replace(imageName, '') +  copyPrefix + imageName;
+      let directory = imagePath.replace(imageName, '');
+      let copyFilePath = directory +  copyPrefix + imageName;
+
       fs.copyFile(imagePath, copyFilePath, (err) => {
         if (err) {
           throw err
@@ -398,10 +404,16 @@ module.exports.optimizeImage = function (imagePath) {
                                                   {svg: {engine: 'svgo', command: '--multipass'}},
                                                   {gif: {engine: 'gifsicle', command: ['--colors', '64', '--use-col=web']}}, function(error, completed, statistic){
                   if (completed) {
-                    fs.unlink(copyFilePath)
-                    resolve(statistic)
+                    fs.unlink(copyFilePath);
+                    fs.rename(statistic.path_out_new, imagePath, function(err) {
+                      if (!err) {
+                        console.log("Image " + imageName + ' optimized');
+                        resolve(statistic);
+                      } else {
+                        throw err;
+                      }
+                    });
                   }
-
                   if (error) {
                     throw error
                   }   
@@ -413,6 +425,7 @@ module.exports.optimizeImage = function (imagePath) {
     } catch (e) {
       reject(e)
     }
-
   });
 }
+
+module.exports.optimizeImage = optimizeImage;

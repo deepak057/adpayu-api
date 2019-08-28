@@ -25,7 +25,7 @@ const uploadImage = async function(req, res){
         return res.status(500).send(err);
       } else {
           optimizeImage(filePath)
-            .then(() => {
+            .then((stats) => {
             	S3Controller.uploadToS3(filePath)
 		            .then((data) => {
 		              Images.create({path: name})
@@ -97,18 +97,21 @@ const uploadUserProfilePic = async function(req, res){
       if (err) {
         return ReE(res, err);
       } else {
-        S3Controller.uploadToS3(filePath)
-          .then((data) => {
-            let user = req.user;
-            // delete old profile pic
-            if (user.pic) {
-              S3Controller.deleteS3Object(user.pic)
-            }
-            user.pic = name
-            user.save()
-              .then(function () {
-                return ReS(res, {user: user}, 200);
-              })
+        optimizeImage(filePath)
+          .then((stats) => {
+          	S3Controller.uploadToS3(filePath)
+	          .then((data) => {
+	            let user = req.user;
+	            // delete old profile pic
+	            if (user.pic) {
+	              S3Controller.deleteS3Object(user.pic)
+	            }
+	            user.pic = name
+	            user.save()
+	              .then(function () {
+	                return ReS(res, {user: user}, 200);
+	              })
+	          })
           })
       }
     });
