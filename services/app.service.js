@@ -5,7 +5,7 @@ const op = Sequelize.Op;
 const S3Controller   = require('../controllers/s3.controller');
 const appRoot = require('app-root-path');
 const fs = require('fs');
-
+const path = require('path');
 /*
 * Function to get the array of only UIDs
 * extracted from the given array of User
@@ -376,3 +376,43 @@ function optimizeVideoFile (dbObj, type = 'video') {
 }
 
 module.exports.optimizeVideoFile = optimizeVideoFile;
+
+module.exports.optimizeImage = function (imagePath) {
+  return new Promise(function(resolve, reject) {
+    try {
+      const compress_images = require('compress-images');
+      let copyPrefix = "_copy";
+      let imageName = path.basename(imagePath);
+      let copyFilePath = imagePath.replace(imageName, '') +  copyPrefix + imageName;
+      fs.copyFile(imagePath, copyFilePath, (err) => {
+        if (err) {
+          throw err
+        } else {
+
+          fs.unlink(imagePath, function (err) {
+            if (err) throw err
+            else {
+              compress_images(copyFilePath, imagePath, {compress_force: false, statistic: true, autoupdate: true}, false,
+                                                  {jpg: {engine: 'mozjpeg', command: ['-quality', '60']}},
+                                                  {png: {engine: 'pngquant', command: ['--quality=20-50']}},
+                                                  {svg: {engine: 'svgo', command: '--multipass'}},
+                                                  {gif: {engine: 'gifsicle', command: ['--colors', '64', '--use-col=web']}}, function(error, completed, statistic){
+                  if (completed) {
+                    fs.unlink(copyFilePath)
+                    resolve(statistic)
+                  }
+
+                  if (error) {
+                    throw error
+                  }   
+              });
+            }
+          })  
+        }
+      });
+    } catch (e) {
+      reject(e)
+    }
+
+  });
+}

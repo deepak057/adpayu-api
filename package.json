@@ -45,5 +45,8 @@
     "serve-favicon": "~2.4.5",
     "uniqid": "^5.0.3",
     "validator": "^9.2.0"
+  },
+  "devDependencies": {
+    "compress-images": "^1.5.8"
   }
 }

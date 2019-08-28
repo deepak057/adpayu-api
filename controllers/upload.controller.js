@@ -1,11 +1,10 @@
 const { Images} = require('../models');
 const { to, ReE, ReS, uniqeFileName, videoToPNG, getDomainURL } = require('../services/util.service');
-const { captureVideoPoster } = require('../services/app.service');
+const { captureVideoPoster, optimizeImage } = require('../services/app.service');
 const appRoot = require('app-root-path');
 const S3Controller   = require('./s3.controller');
 const fs = require('fs');
 require('dotenv').config();
-
 
 const uploadImage = async function(req, res){
 
@@ -25,17 +24,20 @@ const uploadImage = async function(req, res){
       if (err) {
         return res.status(500).send(err);
       } else {
-          S3Controller.uploadToS3(filePath)
-            .then((data) => {
-              Images.create({path: name})
-                .then((image) => {
-                  image.setUser(req.user);
-                  return ReS(res, image);
-                })
-                .catch((err) => {
-                  console.log(err);
-                  return ReE(res, {error: 'Something went wrong while trying to upload the image.'});
-                })
+          optimizeImage(filePath)
+            .then(() => {
+            	S3Controller.uploadToS3(filePath)
+		            .then((data) => {
+		              Images.create({path: name})
+		                .then((image) => {
+		                  image.setUser(req.user);
+		                  return ReS(res, image);
+		                })
+		                .catch((err) => {
+		                  console.log(err);
+		                  return ReE(res, {error: 'Something went wrong while trying to upload the image.'});
+		                })
+		            }) 
             }) 
       }
     });
