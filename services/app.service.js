@@ -400,10 +400,10 @@ function optimizeImage (imagePath) {
             else {
               compress_images(copyFilePath, imagePath, {compress_force: false, statistic: true, autoupdate: true}, false,
                                                   {jpg: {engine: 'mozjpeg', command: ['-quality', '60']}},
-                                                  {png: {engine: 'pngquant', command: ['--quality=20-50']}},
+                                                  {png: {engine: 'webp', command: ['-q', '60']}},
                                                   {svg: {engine: 'svgo', command: '--multipass'}},
                                                   {gif: {engine: 'gifsicle', command: ['--colors', '64', '--use-col=web']}}, function(error, completed, statistic){
-                  if (completed) {
+                  if (completed && !err) {
                     fs.unlink(copyFilePath);
                     fs.rename(statistic.path_out_new, imagePath, function(err) {
                       if (!err) {
@@ -415,7 +415,8 @@ function optimizeImage (imagePath) {
                     });
                   }
                   if (error) {
-                    throw error
+                    console.log(error)
+                    throw new Error('Something went wrong.')
                   }   
               });
             }
