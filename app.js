@@ -140,8 +140,14 @@ cron.schedule("0 0 */12 * * *", function() {
 cron.schedule("0 */10 * * * *", function() {
   optimizeVideos();
 });
+
+/*
+* disable auto-db backup script as we have used
+* RDS for Database which automatically takes care
+* of DB backup
+*/
 // cron job for taking database backup every hour
 //"0 0 */1 * * *"
-cron.schedule("0 0 */1 * * *", function() {
-  dbBackup();
-});
+//cron.schedule("0 0 */1 * * *", function() {
+  //dbBackup();
+//});
