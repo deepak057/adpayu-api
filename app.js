@@ -40,8 +40,8 @@ function updateForexRates () {
 */
 
 function optimizeVideos () {
-    const GeneralController   = require('./controllers/general.controller');
-    GeneralController.optimizeVideos()
+    const VideoController   = require('./controllers/video.controller');
+    VideoController.optimizeVideos()
 }
 
 /*

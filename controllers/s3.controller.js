@@ -54,7 +54,6 @@ function upload (params, filePath = false, deleteFile = true) {
 			  		});	
 			  	}
 			    console.log("Uploaded in:", data.Location);
-			    VideoController.transcodeVideo(path.basename(filePath))
 			    resolve(data);
 			  }
 
@@ -131,6 +130,8 @@ const copyS3Object = function (copySource, copyDestination) {
 		
 	});
 }
+
+module.exports.copyS3Object = copyS3Object;
 
 const deleteVideo = function (videoFile) {
 	deleteS3Object(videoFile);

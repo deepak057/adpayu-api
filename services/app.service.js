@@ -319,6 +319,7 @@ function captureVideoPoster (videoFileName) {
 
 module.exports.captureVideoPoster = captureVideoPoster;
 
+/*
 function optimizeVideoFile (dbObj, type = 'video') {
   const ffmpeg = require('fluent-ffmpeg');
   let fileName = type === 'video' ? dbObj.path : dbObj.videoPath; 
@@ -379,7 +380,9 @@ function optimizeVideoFile (dbObj, type = 'video') {
   }  
 }
 
+
 module.exports.optimizeVideoFile = optimizeVideoFile;
+*/
 
 function optimizeImage (imagePath) {
   return new Promise(function(resolve, reject) {

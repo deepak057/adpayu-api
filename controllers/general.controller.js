@@ -342,52 +342,6 @@ const putRandomProfilePics =  async function(req, res){
 
 module.exports.putRandomProfilePics = putRandomProfilePics;
 
-/*
-* this method recursivly picks up un-optimized Video files
-* for optimizing them and when no un-optimized Video files 
-* are found it starts to recursivly optimize Video Comment files
-*/
-const optimizeVideos =  async function(){
-
-  let maxFailedAttempts = 3;
-
-  Videos.find({
-    where: {
-      optimized: false,
-      failedProcessingAttempts: {
-        [op.lte]: maxFailedAttempts
-      }
-    },
-    limit: 1
-  })
-    .then ((video) => {
-      if (video) {
-        optimizeVideoFile (video)
-      } else {
-        Comments.find({
-          where: {
-            videoPath: {
-              [op.ne]: ''
-            },
-            videoOptimized: false,
-            failedProcessingAttempts: {
-              [op.lte]: maxFailedAttempts
-            }
-          },
-          limit: 1
-        })
-          .then((videoComment) => {
-            if (videoComment) {
-              optimizeVideoFile(videoComment, 'videoComment');
-            } else {
-              console.log("No videos to optimize.")
-            }
-          })
-      }
-    })
-}
-module.exports.optimizeVideos = optimizeVideos;
-
 const moveContentToS3 = async function (req, res) {
 
   if (req.user.id === 1) {
