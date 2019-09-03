@@ -5,12 +5,14 @@ const path = require('path');
 //const { GlacierClient } = require('@aws-sdk/client-glacier-node/GlacierClient');
 //const { UploadArchiveCommand } = require('@aws-sdk/client-glacier-node/UploadArchiveCommand');
 const { videoToPNG } = require('../services/util.service');
+const VideoController   = require('./video.controller');
 
 
 //configuring the AWS environment
 AWS.config.update({
 	accessKeyId: process.env.AWS_ACCESS_KEY,
-	secretAccessKey: process.env.AWS_SECRET
+	secretAccessKey: process.env.AWS_SECRET,
+	region: 'ap-south-1'
 });
 
 function getS3Config () {
@@ -52,6 +54,7 @@ function upload (params, filePath = false, deleteFile = true) {
 			  		});	
 			  	}
 			    console.log("Uploaded in:", data.Location);
+			    VideoController.transcodeVideo(path.basename(filePath))
 			    resolve(data);
 			  }
 
