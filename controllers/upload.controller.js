@@ -69,6 +69,7 @@ const uploadVideo = async function(req, res){
           .then((data) => {
             captureVideoPoster (name)
               .then((data) => {
+                fs.unlink(filePath);
                 return ReS(res, {path: name});
               })
           })

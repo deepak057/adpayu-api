@@ -229,3 +229,12 @@ const uploadToS3Glacier = function (filePath, folder = '') {
 }
 
 module.exports.uploadToS3Glacier = uploadToS3Glacier;
+
+const getObjectSize = function (key) {
+    let obj = getS3Config()
+    return obj.s3Obj.headObject({ Key: key, Bucket: obj.bucket })
+        .promise()
+        .then(res => res.ContentLength);
+}
+
+module.exports.getObjectSize = getObjectSize;

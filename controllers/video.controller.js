@@ -24,13 +24,12 @@ const transcodeVideo =  function (inputFileName, outputFileName) {
 			  else {
 			  	if(data.Job.Id) {
 			  		elastictranscoder.waitFor('jobComplete', {Id: data.Job.Id }, function(err, data) {
-					  if (!err && data) {
-					  	console.log('Video transcoded for Job Id-' + data.Job.Id);
-					  	resolve(data);
-					  }
-					});
+  					  if (!err && data) {
+  					  	console.log('Video transcoded for Job Id-' + data.Job.Id);
+  					  	resolve(data);
+  					  }
+  					});
 			  	}
-			  	 
 			  }
 		  });
 		} catch (e) {
@@ -67,9 +66,10 @@ module.exports.transcodeVideo = transcodeVideo;
 /*
 * This video optimisation function does the following-
 * 1. It first copies the original S3 video file to Original/ folder
-* 2. Transcodes and optimises the original video using AWS Elastic Transcoder 
-* 3. Copies the transcoded video to the orignal video and then delets the copied video
-* 4. Updates the database to flag the given video Optimised
+* 2. If the size of the video to be optimised is greater than 6 MB, then proceed. Else jump directly to #5
+* 3. Transcodes and optimises the original video using AWS Elastic Transcoder 
+* 4. Copies the transcoded video to the orignal video and then delets the copied video
+* 5. Updates the database to flag the given video Optimised
 */
 
 
@@ -78,6 +78,7 @@ function optimizeVideoFile (dbObj, type = 'video') {
   let source = 'public/' + fileName;
   let copy = 'original/' + fileName;
   let outputFileName = "copy_" + fileName;
+  let minFileSizeForTranscodingInMb = 6;
   let updateFailedAttempt = function (obj) {
     obj.failedProcessingAttempts += 1;
     obj.save()
@@ -85,27 +86,43 @@ function optimizeVideoFile (dbObj, type = 'video') {
         console.log("Failed attempt at video optimisation recorded in database.")
       })
   }
+  let markVideoAsOptimised = function () {
+    return new Promise (function(resolve, reject) {
+      if (type === 'video') {
+        dbObj.optimized = true;
+      } else {
+        dbObj.videoOptimized = true;
+      }
+      dbObj.save()
+        .then((video) => {
+          console.log("Optimization completed for Video (" + fileName + ")");
+          resolve(video)
+        })
+        .catch((e) => {
+          reject(e)
+        })
+      })
+  }
   try {
   	S3Controller.copyS3Object(source, copy)
   	  .then((data) => {
-  	  	transcodeVideo(fileName, outputFileName)
-  	  	  .then((data1) => {
-  	  	  	S3Controller.copyS3Object('public/'+ outputFileName, source)
-  	  	  	  .then((data2) => {
-  	  	  	  	S3Controller.deleteS3Object(outputFileName)
-  	  	  	      .then((data3) => {
-                    if (type === 'video') {
-                      dbObj.optimized = true;
-                    } else {
-                      dbObj.videoOptimized = true;
-                    }
-                    dbObj.save()
-                      .then((video) => {
-                        console.log("Optimization completed for Video (" + fileName + ")");
-                      })	
-  	  	  	  		})
-  	  	  	    });	  
-  	  	  })
+        S3Controller.getObjectSize(source)
+          .then((size) => {
+            if((size / (1000**2)) > minFileSizeForTranscodingInMb) {
+              transcodeVideo(fileName, outputFileName)
+                .then((data1) => {
+                  S3Controller.copyS3Object('public/'+ outputFileName, source)
+                    .then((data2) => {
+                      S3Controller.deleteS3Object(outputFileName)
+                        .then((data3) => {
+                          markVideoAsOptimised()
+                        })
+                      });   
+                })
+            } else {
+              markVideoAsOptimised()
+            }
+          })
   	  })
   } catch (e) {
       updateFailedAttempt (dbObj);
