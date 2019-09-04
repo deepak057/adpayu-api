@@ -7,6 +7,7 @@ const cors          = require('cors');
 const fileUpload = require('express-fileupload');
 const path = require('path');
 const cron = require("node-cron");
+const compression = require('compression');
 
 const v1    = require('./routes/v1');
 const app   = express();
@@ -95,6 +96,9 @@ if(CONFIG.app==='dev'){
 app.use(cors({
   origin: CONFIG.CORS_WHITELIST
 }));
+
+// compress all responses
+app.use(compression())
 
 app.use('/v1', v1);
 
