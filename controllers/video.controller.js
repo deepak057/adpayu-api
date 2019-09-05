@@ -41,7 +41,7 @@ const transcodeVideo =  function (inputFileName, outputFileName) {
 
 function getTranscodingParameteres (inputFileName, outputFileName) {
 	return {
-		PipelineId: '1567496975573-0lfuuw',
+		PipelineId: process.env.AWS_EMT_PIPELINE_ID,
 		OutputKeyPrefix: 'public/',
 		Input: {
 			Key: 'public/' + inputFileName
