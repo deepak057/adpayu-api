@@ -140,6 +140,27 @@ const deleteVideo = function (videoFile) {
 
 module.exports.deleteVideo = deleteVideo;
 
+const downloadS3Object = function (key, localFilePath) {
+	return new Promise( function(resolve, reject) {
+		let s3 = getS3Config();
+		let localFile = fs.createWriteStream(localFilePath);
+		console.log('Downloading file ' + key +  ' from S3')
+		s3.s3Obj.getObject({ Bucket: s3.bucket, Key: key}, function (err, data) {
+			if (err)  {
+				reject (err)
+			} else {
+				fs.writeFileSync(localFilePath, data.Body);
+	            console.log('File ' + key + ' downloaded from S3');
+	            resolve(key);
+			}
+		    
+		});
+	})
+}
+
+module.exports.downloadS3Object = downloadS3Object;
+
+
 const deleteS3Object = function (fileName, folder = 'public/') {
 	
 	return new Promise(function(resolve, reject) {
