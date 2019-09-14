@@ -1,16 +1,15 @@
 const { Videos, Comments} = require('../models');
 const { to, ReE, ReS } = require('../services/util.service');
-const S3Controller   = require('./s3.controller');
-require('dotenv').config();
-const AWS = require('aws-sdk');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
+const S3Controller   = require('./s3.controller');
 const appRoot = require('app-root-path');
 const path = require('path');
-const spawn = require('child_process').spawn;
+const fs = require('fs');
+
 
 //configuring the AWS environment
-AWS.config.update({
+/*AWS.config.update({
 	accessKeyId: process.env.AWS_ACCESS_KEY,
 	secretAccessKey: process.env.AWS_SECRET
 });
@@ -91,7 +90,7 @@ function getVideoMeta (localFilePath) {
 function getFFMPEGCommand (input, output, resolution = false, overlayIcon = true) {
   let cmd  = 'ffmpeg -i ' + input + " -y";
   if (overlayIcon) {
-    cmd += ' -i "logo-light-icon.png"';
+    cmd += ' -i ' + appRoot + '/public/assets/overlay_icon.png';
   }
   if (resolution || overlayIcon) {
     cmd += ' -filter_complex "';
@@ -113,7 +112,12 @@ function getFilesAndCommands (localFilePath) {
   return new Promise (function (resolve, reject) {
     let getOutputFilePath = function (inputFilePath, resolution) {
       let fileName = path.basename(inputFilePath)
-      return inputFilePath.replace(fileName, '') + resolution + '_' + fileName;
+      let dir = inputFilePath.replace(fileName, '');
+      let subDir = dir + resolution + '/';
+      if (!fs.existsSync(subDir)){
+        fs.mkdirSync(subDir);
+      }
+      return subDir + fileName;
     }
     getVideoMeta(localFilePath)
       .then((meta) => {
@@ -149,7 +153,23 @@ function getCommandArgsArry (command) {
 
 function executeCommand (command) {
   return new Promise (function(resolve, reject) {
-    let ffmpeg = spawn('ffmpeg', getCommandArgsArry(command))
+    const exec = require('child_process').exec;
+    console.log("Executing FFMPEG command- " + command);
+    let ffmpeg = exec(command, function(err, stdout, stderr) {
+    });
+
+    ffmpeg.on('exit', function (code) {
+      if (code === 0) {
+        console.log("Command execution successfull.")
+        resolve (command)
+      } else {
+        reject (code)
+      }
+    });
+
+   /*
+   const spawn = require('child_process').spawn;
+   let ffmpeg = spawn('ffmpeg', getCommandArgsArry(command))
     ffmpeg.on('close', (statusCode) => {
       if (statusCode === 0) {
          console.log('FFMPEG transcoding successfull');
@@ -158,12 +178,15 @@ function executeCommand (command) {
         reject(statusCode)
       }
     })
-    ffmpeg
-      .stderr
+    ffmpeg.stdout.on('data', function(data) {
+      console.log(data);
+    })
+    ffmpeg.stderr
       .on('data', (err) => {
         //console.log(getCommandArgsArry(command))
+        //console.log(new String(err))
         reject(err)
-      })
+      })*/
 
   })
 }
@@ -186,7 +209,6 @@ function transcodeVideo (localFilePath) {
             })
         }
         execute ()
-
       });  
   
     } catch (e) {
@@ -197,7 +219,41 @@ function transcodeVideo (localFilePath) {
   
 }
 
+function getParentDirName (filePath) {
+ return  path.dirname(filePath).split(path.sep).pop()
+}
 
+function manageTranscodedFiles (files) {
+  return new Promise (function(resolve, reject) {
+    let filesUploaded = 0;
+    let uploadToS3 = function () {
+      S3Controller.uploadToS3(files[filesUploaded], 'public/'+ getParentDirName(files[filesUploaded]) + '/')
+        .then((d) => {
+          filesUploaded ++;
+          if (filesUploaded === files.length) {
+            resolve(files)
+          } else {
+            uploadToS3()
+          }
+        })
+    }
+    if (files.length) {
+      uploadToS3()
+    } else {
+      reject(new Error("No Files"))
+    }
+  })
+}
+
+function alreadyInProgress () {
+  return new Promise (function(resolve, reject) {
+    const find = require('find-process');
+    find('name', 'ffmpeg', true)
+      .then(function (list) {
+        resolve(list.length)
+      });  
+  }) 
+}
 
 function optimizeVideoFile (dbObj, type = 'video') {
   let fileName = type === 'video' ? dbObj.path : dbObj.videoPath; 
@@ -231,7 +287,14 @@ function optimizeVideoFile (dbObj, type = 'video') {
   try {
     S3Controller.downloadS3Object(sourceKey, localFilePath)
       .then((data) => {
-        transcodeVideo(localFilePath);
+        transcodeVideo(localFilePath)
+          .then((data1) => {
+            manageTranscodedFiles(data1.outputFiles)
+              .then((data2) => {
+                markVideoAsOptimised()
+                fs.unlink(localFilePath);
+              })
+          })
       })
   } catch (e) {
     console.log(e);
@@ -318,40 +381,47 @@ module.exports.optimizeVideoFile = optimizeVideoFile;
 */
 const optimizeVideos =  async function(){
 
-  let maxFailedAttempts = 3;
+  alreadyInProgress()
+    .then((d) => {
+      if (!d) {
+        let maxFailedAttempts = 3;
 
-  Videos.find({
-    where: {
-      optimized: false,
-      failedProcessingAttempts: {
-        [op.lte]: maxFailedAttempts
-      }
-    },
-    limit: 1
-  })
-    .then ((video) => {
-      if (video) {
-        optimizeVideoFile (video)
-      } else {
-        Comments.find({
+        Videos.find({
           where: {
-            videoPath: {
-              [op.ne]: ''
-            },
-            videoOptimized: false,
+            optimized: false,
             failedProcessingAttempts: {
               [op.lte]: maxFailedAttempts
             }
           },
           limit: 1
         })
-          .then((videoComment) => {
-            if (videoComment) {
-              optimizeVideoFile(videoComment, 'videoComment');
+          .then ((video) => {
+            if (video) {
+              optimizeVideoFile (video)
             } else {
-              console.log("No videos to optimize.")
+              Comments.find({
+                where: {
+                  videoPath: {
+                    [op.ne]: ''
+                  },
+                  videoOptimized: false,
+                  failedProcessingAttempts: {
+                    [op.lte]: maxFailedAttempts
+                  }
+                },
+                limit: 1
+              })
+                .then((videoComment) => {
+                  if (videoComment) {
+                    optimizeVideoFile(videoComment, 'videoComment');
+                  } else {
+                    console.log("No videos to optimize.")
+                  }
+                })
             }
           })
+      } else {
+        console.log('Previous transcoding process is still in progress..')
       }
     })
 }
