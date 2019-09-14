@@ -7,6 +7,7 @@ const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 const appRoot = require('app-root-path');
 const path = require('path');
+const spawn = require('child_process').spawn;
 
 //configuring the AWS environment
 AWS.config.update({
@@ -96,7 +97,7 @@ function getFFMPEGCommand (input, output, resolution = false, overlayIcon = true
     cmd += ' -filter_complex "';
 
     if(resolution) {
-      cmd += '[0:v]scale=-2:' + resolution + '[scaled]; [scaled][1:v]'
+      cmd += '[0:v]scale=-2:' + resolution + '[scaled];[scaled][1:v]'
     }
     if (overlayIcon) {
       cmd += 'overlay=x=(main_w-(overlay_w) - 10):y=(main_h-(overlay_h + 10))'
@@ -105,11 +106,10 @@ function getFFMPEGCommand (input, output, resolution = false, overlayIcon = true
     cmd += '"'
   }
 
-  return  cmd + ' -vcodec libx264 -vprofile high -preset veryslow -crf 30 -threads 0 -c:a aac -b:a 64k -movflags +faststart -map_metadata 0 -b:v 400k -maxrate 500k -bufsize 1000k c_' + output
+  return  cmd + ' -vcodec libx264 -vprofile high -preset veryslow -crf 30 -threads 0 -c:a aac -b:a 64k -movflags +faststart -map_metadata 0 -b:v 400k -maxrate 500k -bufsize 1000k ' + output
 }
 
-
-function transcodeVideo (localFilePath) {
+function getFilesAndCommands (localFilePath) {
   return new Promise (function (resolve, reject) {
     let getOutputFilePath = function (inputFilePath, resolution) {
       let fileName = path.basename(inputFilePath)
@@ -131,12 +131,70 @@ function transcodeVideo (localFilePath) {
             commands.push(getFFMPEGCommand(localFilePath, outputFilePath))
           }
         }
-        console.log(commands);
+        resolve ({
+          outputFiles: outputFilesPath,
+          commands: commands,
+          scalingNeeded: scalingNeeded
+        })
       })
       .catch((e) => {
         reject(e)
       })
   })
+}
+
+function getCommandArgsArry (command) {
+  return command.replace("ffmpeg " , "").split(" ")
+}
+
+function executeCommand (command) {
+  return new Promise (function(resolve, reject) {
+    let ffmpeg = spawn('ffmpeg', getCommandArgsArry(command))
+    ffmpeg.on('close', (statusCode) => {
+      if (statusCode === 0) {
+         console.log('FFMPEG transcoding successfull');
+         resolve (command)
+      } else {
+        reject(statusCode)
+      }
+    })
+    ffmpeg
+      .stderr
+      .on('data', (err) => {
+        //console.log(getCommandArgsArry(command))
+        reject(err)
+      })
+
+  })
+}
+
+function transcodeVideo (localFilePath) {
+  return new Promise(function(resolve, reject){
+    try {
+      getFilesAndCommands(localFilePath)
+      .then((data) => {
+        let commandsExecuted = 0;
+        let execute = function () {
+          executeCommand(data.commands[commandsExecuted])
+            .then((c) => {
+              commandsExecuted ++;
+              if (commandsExecuted === data.commands.length) {
+                resolve (data)
+              } else {
+                execute()
+              }
+            })
+        }
+        execute ()
+
+      });  
+  
+    } catch (e) {
+      reject(e)
+    }
+    
+  })
+  
 }
 
 
