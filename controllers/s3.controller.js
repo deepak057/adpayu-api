@@ -151,7 +151,7 @@ const downloadS3Object = function (key, localFilePath) {
 			} else {
 				fs.writeFileSync(localFilePath, data.Body);
 	            console.log('File ' + key + ' downloaded from S3');
-	            resolve(key);
+	            resolve(data);
 			}
 		    
 		});

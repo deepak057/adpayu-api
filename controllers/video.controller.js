@@ -193,28 +193,25 @@ function executeCommand (command) {
 
 function transcodeVideo (localFilePath) {
   return new Promise(function(resolve, reject){
-    try {
-      getFilesAndCommands(localFilePath)
-      .then((data) => {
-        let commandsExecuted = 0;
-        let execute = function () {
-          executeCommand(data.commands[commandsExecuted])
-            .then((c) => {
-              commandsExecuted ++;
-              if (commandsExecuted === data.commands.length) {
-                resolve (data)
-              } else {
-                execute()
-              }
-            })
-        }
-        execute ()
-      });  
-  
-    } catch (e) {
-      reject(e)
-    }
-    
+    getFilesAndCommands(localFilePath)
+    .then((data) => {
+      let commandsExecuted = 0;
+      let execute = function () {
+        executeCommand(data.commands[commandsExecuted])
+          .then((c) => {
+            commandsExecuted ++;
+            if (commandsExecuted === data.commands.length) {
+              resolve (data)
+            } else {
+              execute()
+            }
+          })
+      }
+      execute ()
+    })
+    .catch ((e) => {
+      reject (e)
+    }) 
   })
   
 }
@@ -284,8 +281,8 @@ function optimizeVideoFile (dbObj, type = 'video') {
       })
   }
  
-  try {
-    S3Controller.downloadS3Object(sourceKey, localFilePath)
+    try{
+      S3Controller.downloadS3Object(sourceKey, localFilePath)
       .then((data) => {
         transcodeVideo(localFilePath)
           .then((data1) => {
@@ -295,11 +292,15 @@ function optimizeVideoFile (dbObj, type = 'video') {
                 fs.unlink(localFilePath);
               })
           })
-      })
-  } catch (e) {
-    console.log(e);
-    updateFailedAttempt()
-  }
+          .catch ((e)=> {
+            updateFailedAttempt()
+          })
+      }) 
+    } catch (e) {
+      updateFailedAttempt()
+      console.log(e);
+    }
+      
 }
 
 
@@ -390,7 +391,7 @@ const optimizeVideos =  async function(){
           where: {
             optimized: false,
             failedProcessingAttempts: {
-              [op.lte]: maxFailedAttempts
+              [op.lt]: maxFailedAttempts
             }
           },
           limit: 1
@@ -406,7 +407,7 @@ const optimizeVideos =  async function(){
                   },
                   videoOptimized: false,
                   failedProcessingAttempts: {
-                    [op.lte]: maxFailedAttempts
+                    [op.lt]: maxFailedAttempts
                   }
                 },
                 limit: 1
