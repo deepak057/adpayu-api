@@ -153,8 +153,9 @@ function getCommandArgsArry (command) {
 
 function executeCommand (command) {
   return new Promise (function(resolve, reject) {
-    const exec = require('child_process').exec;
     console.log("Executing FFMPEG command- " + command);
+
+    /*const exec = require('child_process').exec;
     let ffmpeg = exec(command, function(err, stdout, stderr) {
     });
 
@@ -166,22 +167,24 @@ function executeCommand (command) {
         reject (code)
       }
     });
-
-   /*
+    */
    const spawn = require('child_process').spawn;
-   let ffmpeg = spawn('ffmpeg', getCommandArgsArry(command))
+   //let ffmpeg = spawn('sh', ['-c', command], { stdio: 'inherit' });
+   let ffmpeg = spawn(command, [], { shell: true, stdio: 'inherit' });
+
+   //let ffmpeg = spawn('ffmpeg', getCommandArgsArry(command))
     ffmpeg.on('close', (statusCode) => {
       if (statusCode === 0) {
-         console.log('FFMPEG transcoding successfull');
+         console.log('FFMPEG command execution successfull.');
          resolve (command)
       } else {
         reject(statusCode)
       }
     })
-    ffmpeg.stdout.on('data', function(data) {
+    /*ffmpeg.stdout.on('data', function(data) {
       console.log(data);
-    })
-    ffmpeg.stderr
+    })*/
+    /*ffmpeg.stderr
       .on('data', (err) => {
         //console.log(getCommandArgsArry(command))
         //console.log(new String(err))
