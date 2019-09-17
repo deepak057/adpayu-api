@@ -4,8 +4,7 @@ const fs = require('fs');
 const path = require('path');
 //const { GlacierClient } = require('@aws-sdk/client-glacier-node/GlacierClient');
 //const { UploadArchiveCommand } = require('@aws-sdk/client-glacier-node/UploadArchiveCommand');
-const { videoToPNG } = require('../services/util.service');
-const VideoController   = require('./video.controller');
+const { videoToPNG, getFileMime } = require('../services/util.service');
 
 
 //configuring the AWS environment
@@ -39,25 +38,33 @@ function upload (params, filePath = false, deleteFile = true) {
 
 			var s3 = new AWS.S3();
 
-			s3.upload(params, function (err, data) {
-		  		//handle error
-			  if (err) {
-			    console.log("Error", err);
-			    reject(err)
-			  }
+			getFileMime(filePath)
+			  .then((mimeType) => {
+			  	params.ContentType = mimeType;
+			  	s3.upload(params, function (err, data) {
+			  		//handle error
+				  if (err) {
+				    console.log("Error", err);
+				    reject(err)
+				  }
 
-			  //success
-			  if (data) {
-			  	if(filePath && deleteFile) {
-			  		fs.unlink(filePath, function() {
-			  			console.log('Uploaded to S3, Original file deleted.')
-			  		});	
-			  	}
-			    console.log("Uploaded in:", data.Location);
-			    resolve(data);
-			  }
+				  //success
+				  if (data) {
+				  	if(filePath && deleteFile) {
+				  		fs.unlink(filePath, function() {
+				  			console.log('Uploaded to S3, Original file deleted.')
+				  		});	
+				  	}
+				    console.log("Uploaded in:", data.Location);
+				    resolve(data);
+				  }
 
-			});
+				})
+
+			  })
+			  .catch ((e) => {
+			  	reject(e)
+			  })
 
 		} catch (e) {
 			reject(e)

@@ -2,7 +2,8 @@ const {to} = require('await-to-js');
 const pe = require('parse-error');
 const uniqid = require('uniqid');
 const path = require('path');
-
+const mmm = require('mmmagic');
+   
 module.exports.to = async (promise) => {
     let err, res;
     [err, res] = await to(promise);
@@ -96,4 +97,16 @@ module.exports.getDomainURL = function (req, apiURL = false) {
 
 module.exports.ucFirst = function (string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+module.exports.getFileMime = function (filePath) {
+   return new Promise(function (resolve, reject) {
+      let Magic = mmm.Magic
+      let magic = new Magic(mmm.MAGIC_MIME_TYPE);
+      magic.detectFile(filePath, function(err, result) {
+          if (err) reject(err)
+          resolve(result)
+      });
+   })
+    
 }
