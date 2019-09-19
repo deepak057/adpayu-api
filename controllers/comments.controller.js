@@ -1,4 +1,4 @@
-const { Comments, User, Likes, Posts, Videos, Questions, Forex, ConsumedAds } = require('../models');
+const { Comments, User, Likes, Posts, Videos, Questions, Forex, ConsumedAds, ViewedComments } = require('../models');
 const { to, ReE, ReS, getMySQLDateTime, removeBlankParagraphs, getDomainURL, ucFirst, roundTwoDecimalPlaces } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const MailsController   = require('./mails.controller');
@@ -25,7 +25,8 @@ function getCommentCriteriaObject (user, where = false) {
     attributes: {
       include: [
         [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount'],
-        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id AND Likes.UserId = '+ user.id +')'), 'HasLiked']
+        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'],
+        [Sequelize.literal('(SELECT COUNT(*) FROM ViewedComments WHERE ViewedComments.CommentId = Comments.id AND ViewedComments.UserId = '+ user.id +')'), 'HasViewed']
       ]
     },
   }
@@ -331,18 +332,23 @@ module.exports.reviewVideoComment = reviewVideoComment;
 const markAsViewed = function (req, res) {
   try {
     let user = req.user;
-    let comemntId = req.params.commentId;
-    Comments.findOrCreate({
-      UserId: user.id,
-      CommentId: commentId
-    })
-      .spread((record, created) => {
-        return ReS(res, {message: 'Comment marked as viewed successfully'}, 200);
-      })
+    let commentId = req.params.commentId;
+    ViewedComments.findOrCreate({
+      where: {
+        UserId: user.id,
+        CommentId: commentId 
+      },
+      defaults : {
+        UserId: user.id,
+        CommentId: commentId 
+      }})
+        .spread((record, created) => {
+          return ReS(res, {message: 'Comment marked as viewed successfully'}, 200);
+        })
 
   } catch (e) {
     console.log(e);
-    return ReE(res, {message: 'Somehting went wrong'});
+    return ReE(res, {message: 'Somehting went wrong'}, 500);
   }
 }
 
