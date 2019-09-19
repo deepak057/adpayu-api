@@ -322,8 +322,28 @@ const reviewVideoComment = async function (req, res) {
     }
   } catch (e) {
     console.log(e);
-    return ReE(res, {message: 'Somehting went wrong.'});
+    return ReE(res, {message: 'Somehting went wrong'});
   }
 }
 
 module.exports.reviewVideoComment = reviewVideoComment;
+
+const markAsViewed = function (req, res) {
+  try {
+    let user = req.user;
+    let comemntId = req.params.commentId;
+    Comments.findOrCreate({
+      UserId: user.id,
+      CommentId: commentId
+    })
+      .spread((record, created) => {
+        return ReS(res, {message: 'Comment marked as viewed successfully'}, 200);
+      })
+
+  } catch (e) {
+    console.log(e);
+    return ReE(res, {message: 'Somehting went wrong'});
+  }
+}
+
+module.exports.markAsViewed = markAsViewed;

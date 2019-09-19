@@ -64,6 +64,7 @@ module.exports = (sequelize, DataTypes) => {
         this.Notifications = this.hasMany(models.Notifications, {as: 'sender', foreignKey: 'fromId', onDelete: 'CASCADE'});
         this.Notifications = this.hasMany(models.Notifications, {as: 'receiver', foreignKey: 'toId', onDelete: 'CASCADE'});
         this.ConsumedAds = this.hasMany(models.ConsumedAds, {onDelete: 'CASCADE'});
+        this.ViewedComments = this.hasMany(models.ViewedComments, {onDelete: 'CASCADE'});
     };
 
     Model.getFriends = function (uid, acceptedOnly= true) {

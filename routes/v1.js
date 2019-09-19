@@ -61,6 +61,7 @@ router.post('/comments/:postId',           passport.authenticate('jwt', {session
 router.delete('/comments/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // D
 router.get('/getComment/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.getComment);        // R
 router.get('/reviewVideoComment/:commentId', CommentsController.reviewVideoComment);        //U
+router.put('/markAsViewed/:commentId', passport.authenticate('jwt', {session:false}), CommentsController.markAsViewed);        //U
 
 /** Likes routes**/
 router.post('/like/post/:postId',           passport.authenticate('jwt', {session:false}), LikesController.createPostLike);        // C
