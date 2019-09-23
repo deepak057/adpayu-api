@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, ViewedComments, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
 const { isEmptyObject } = require('./util.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -35,7 +35,7 @@ module.exports.getUIDs = function(users, currentUser = false) {
 * model and dependencies
 */
 
-function getCommentIncludes () {
+function getCommentIncludes (user) {
 return [
   {
     model: User.scope('public')
@@ -49,14 +49,37 @@ return [
       id: 'dummy'
     },
     required: false
+  },
+  {
+    model: ViewedComments,
+    where: {
+      UserId: user.id
+    },
+    required: false
   }
 ]
 }
 
-module.exports.getCommentIncludes = function () {
-  return getCommentIncludes()
+module.exports.getCommentIncludes = getCommentIncludes;
+
+function getCommentCriteriaObject (user, where = false) {
+  let r_ = {
+    include: getCommentIncludes(user),
+    attributes: {
+      include: [
+        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount'],
+        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'],
+        [Sequelize.literal('(SELECT COUNT(*) FROM ViewedComments WHERE ViewedComments.CommentId = Comments.id AND ViewedComments.UserId = '+ user.id +')'), 'HasViewed']
+      ]
+    },
+  }
+  if (where) {
+    r_.where =  where
+  }
+  return r_;
 }
 
+module.exports.getCommentCriteriaObject = getCommentCriteriaObject;
 /*
 ** Get default DB Include models
 */
@@ -89,6 +112,9 @@ function getDBInclude(user, tagIds = [], pushModel = {}) {
     }
   }
 
+  let commentObj = getCommentCriteriaObject(user);
+  commentObj.model = Comments;
+
   let return_ = [
 
           {
@@ -114,14 +140,21 @@ function getDBInclude(user, tagIds = [], pushModel = {}) {
           {
             model: Videos,
           },
-          {
+          /*{
             model: Comments,
-            include: [{
-              model: User.scope('public')
-            }
+            include: [
+              {
+                model: User.scope('public')
+              }, {
+                model: ViewedComments,
+                where: {
+                  UserId: user.id
+                }
+              }
             ],
             required: false
-          },
+          }*/
+          commentObj,
           {
             model: ConsumedAds,
             where: {

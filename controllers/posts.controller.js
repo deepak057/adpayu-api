@@ -1,9 +1,10 @@
 const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders, PushedAds, ConsumedAds } = require('../models');
-const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset, removeBlankParagraphs, videoToPNG } = require('../services/util.service');
+const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset, removeBlankParagraphs, videoToPNG, cloneOject } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 const { ADS } = require('../config/app-constants');
+const CommentsController   = require('./comments.controller');
 
 
 const create = async function(req, res){
@@ -303,7 +304,22 @@ const get = async function(req, res){
 
 async function FixPosts (posts, user) {
   return new Promise(function(resolve, reject) {
-    let postsArr = [], postObjs;
+    let postsArr = [], postObjs;   
+    let getDefaultComment = function (post) {
+      if (post.Comments.length) {
+        let comments = post.Comments;
+        /*for(let i =0; i< comments.length; i++) {
+          comments[i] = cloneOject(comments[i])
+        }*/
+        comments = CommentsController.setDefaultComment(comments);
+        for (let i =0; i < comments.length; i ++) {
+          if (comments[i].setDefault) {
+            return comments[i]
+          }
+        }
+      }
+      return false;
+    }
     for (let i in posts) {
       postsArr.push(posts[i].id)
     }
@@ -323,7 +339,8 @@ async function FixPosts (posts, user) {
               // as front-end app only needs to have 
               // the last comment, so only send the 
               // last comment, if post has comments
-              posts[i].setDataValue('lastComment', postObjs[j].Comments && postObjs[j].Comments.length ? postObjs[j].Comments[postObjs[j].Comments.length-1] : false);
+              //posts[i].setDataValue('defaultComment', postObjs[j].Comments && postObjs[j].Comments.length ? postObjs[j].Comments[postObjs[j].Comments.length-1] : false);
+              posts[i].setDataValue('defaultComment', getDefaultComment(posts[j]));
               posts[i].setDataValue('ConsumedAds', postObjs[j].ConsumedAds)
             }
           }

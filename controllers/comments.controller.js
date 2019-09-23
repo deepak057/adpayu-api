@@ -1,9 +1,9 @@
 const { Comments, User, Likes, Posts, Videos, Questions, Forex, ConsumedAds, ViewedComments } = require('../models');
-const { to, ReE, ReS, getMySQLDateTime, removeBlankParagraphs, getDomainURL, ucFirst, roundTwoDecimalPlaces } = require('../services/util.service');
+const { to, ReE, ReS, getMySQLDateTime, removeBlankParagraphs, getDomainURL, ucFirst, roundTwoDecimalPlaces, cloneOject } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const MailsController   = require('./mails.controller');
 const { NOTIFICATIONS } = require('../config/app-constants');
-const { getCommentIncludes, getSingleComment, canUpdatePost, formatComments } = require('../services/app.service');
+const { getCommentCriteriaObject, getSingleComment, canUpdatePost, formatComments } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const { VIDEO_PAYMENT_CONFIG } = require('../config/app-constants');
 require('dotenv').config();
@@ -17,23 +17,6 @@ function getNotification(commentId, postId, type= 'text') {
       postType: type
     })
   }
-}
-
-function getCommentCriteriaObject (user, where = false) {
-  let r_ = {
-    include: getCommentIncludes(),
-    attributes: {
-      include: [
-        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount'],
-        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'],
-        [Sequelize.literal('(SELECT COUNT(*) FROM ViewedComments WHERE ViewedComments.CommentId = Comments.id AND ViewedComments.UserId = '+ user.id +')'), 'HasViewed']
-      ]
-    },
-  }
-  if (where) {
-    r_.where =  where
-  }
-  return r_;
 }
 
 function getCommentURL (comment) {
@@ -51,7 +34,7 @@ const get =  function(req, res){
           } else {
             comments = []
           }
-          return ReS(res, {comments: comments});
+          return ReS(res, {comments: setDefaultComment(comments)});
         })
     } else {
       throw new Error('PostId is not provided')
@@ -181,6 +164,43 @@ const remove = async function(req, res){
 
 }
 module.exports.remove = remove;
+
+
+function setDefaultComment (comments) {
+    if (comments.length) {
+
+      let sortedArr = cloneOject(comments)
+      let unviewedFound = false
+
+      let getIndexInOriginalArrayByCommentId = function (commentId) {
+        for (let i in comments) {
+          if (comments[i].id === commentId) {
+            return parseInt(i)
+          }
+        }
+      }
+
+      sortedArr.sort((a, b) => {
+        return a.CommentsLikesCount - b.CommentsLikesCount
+      })
+
+      for (let i = (sortedArr.length - 1); i >= 0; i--) {
+        if (!sortedArr[i].HasViewed) {
+          comments[getIndexInOriginalArrayByCommentId(sortedArr[i].id)].setDefault = true;
+          unviewedFound = true
+          break
+        } 
+      }
+      if (!unviewedFound) {
+        comments[getIndexInOriginalArrayByCommentId(sortedArr[(sortedArr.length - 1)].id)].setDefault = true;
+      }
+    } else {
+      comments[0].setDefault = true;
+    }
+    return comments
+}
+
+module.exports.setDefaultComment = setDefaultComment;
 
 const getComment = async function(req, res){
   try {
