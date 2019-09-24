@@ -15,12 +15,12 @@ module.exports = (sequelize, DataTypes) => {
         videoOptimized: {type: DataTypes.BOOLEAN, defaultValue: false},
         failedProcessingAttempts: {type: DataTypes.INTEGER, defaultValue: 0},
         deleted: {type: DataTypes.BOOLEAN, defaultValue: false},
-        setDefault: {
+        /*setDefault: {
           type: Sequelize.VIRTUAL,
           get () {
             return false
           }
-        }
+        }*/
     }, {
          defaultScope: {
             where: {

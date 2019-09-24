@@ -167,10 +167,14 @@ module.exports.remove = remove;
 
 
 function setDefaultComment (comments) {
-    if (comments.length) {
+    if (comments.length && comments.length > 1) {
 
-      let sortedArr = cloneOject(comments)
-      let unviewedFound = false
+      let addDefaultCommentProperty = function (comments) {
+        for (let i in comments) {
+          comments[i].setDefault = false;
+        } 
+        return comments;
+      }
 
       let getIndexInOriginalArrayByCommentId = function (commentId) {
         for (let i in comments) {
@@ -179,6 +183,10 @@ function setDefaultComment (comments) {
           }
         }
       }
+
+      comments = addDefaultCommentProperty(comments)
+      let sortedArr = cloneOject(comments)
+      let unviewedFound = false
 
       sortedArr.sort((a, b) => {
         return a.CommentsLikesCount - b.CommentsLikesCount
@@ -194,7 +202,7 @@ function setDefaultComment (comments) {
       if (!unviewedFound) {
         comments[getIndexInOriginalArrayByCommentId(sortedArr[(sortedArr.length - 1)].id)].setDefault = true;
       }
-    } else {
+    } else if (comments.length === 1){
       comments[0].setDefault = true;
     }
     return comments

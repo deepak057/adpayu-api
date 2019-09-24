@@ -50,13 +50,13 @@ return [
     },
     required: false
   },
-  {
+  /*{
     model: ViewedComments,
     where: {
       UserId: user.id
     },
     required: false
-  }
+  }*/
 ]
 }
 
@@ -65,6 +65,7 @@ module.exports.getCommentIncludes = getCommentIncludes;
 function getCommentCriteriaObject (user, where = false) {
   let r_ = {
     include: getCommentIncludes(user),
+    required: false,
     attributes: {
       include: [
         [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount'],

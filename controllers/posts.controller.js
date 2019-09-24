@@ -8,135 +8,144 @@ const CommentsController   = require('./comments.controller');
 
 
 const create = async function(req, res){
-    let err, post, comments, question, adOptions, images, tags, video, order;
-    let user = req.user;
-
-    let post_info = req.body;
-
-    /*
-    * delete the ID parameter just in case 
-    * it was sent from the client side
-    */
-    if('id' in post_info) {
-      delete post_info.id
-    }
-
-    // filter the Post text
-    if (post_info.content) {
-      post_info.content = removeBlankParagraphs(post_info.content.trim())
-    }
-
-    // create the post
-    [err, post] = await to(Posts.create(post_info));
-    if(err) return ReE(res, err, 422);
-
-    // Saving user and post relations
-    user.addPosts(post);
-    post.setUser(user);
-
-
-    //save the question
-     if(!isEmptyObject(post_info.question)){
-
-      [err, question] = await to(Questions.create(post_info.question));
-       if(err) return ReE(res, err, 422);
-
-       post.setQuestion(question);
-       user.addQuestions(question);
-       question.setUser(user);
-
-    }
-
-    //save the video 
-    if(!isEmptyObject(post_info.video)){
-
-      [err, video] = await to(Videos.create(post_info.video));
-       if(err) return ReE(res, err, 422);
-
-       post.setVideo(video);
-       user.addVideos(video);
-       video.setUser(user)
-    }
-
-    //save the ad configuration
-    if(post_info.adOptions.postIsAd) {
       
-      [err, adOptions] = await to(AdOptions.create(getAdOptions(post_info.adOptions)));
+    try {
+      let err, post, comments, question, adOptions, images, tags, video, order;
+      let user = req.user;
+
+      let post_info = req.body;
+
+      /*
+      * delete the ID parameter just in case 
+      * it was sent from the client side
+      */
+      if('id' in post_info) {
+        delete post_info.id
+      }
+
+      // filter the Post text
+      if (post_info.content) {
+        post_info.content = removeBlankParagraphs(post_info.content.trim())
+      }
+
+      // create the post
+      [err, post] = await to(Posts.create(post_info));
       if(err) return ReE(res, err, 422);
 
-      if ('orderId' in post_info && post_info.orderId.length) {
-        //make sure the order was created by the current user
-        [err, order] = await to(Orders.find({where: {id: post_info.orderId, UserId: user.id}}));
-        if(err) return ReE(res, {success: false, error: 'Order not found'}, 422);
-        //associate the order with the AdOptions
-        adOptions.setOrder(order);
+      // Saving user and post relations
+      user.addPosts(post);
+      post.setUser(user);
+
+
+      //save the question
+       if(!isEmptyObject(post_info.question)){
+
+        [err, question] = await to(Questions.create(post_info.question));
+         if(err) return ReE(res, err, 422);
+
+         post.setQuestion(question);
+         user.addQuestions(question);
+         question.setUser(user);
+
       }
 
-      post.setAdOption(adOptions);
-      adOptions.setUser(user);
-      user.addAdOptions(adOptions);
-    }
+      //save the video 
+      if(!isEmptyObject(post_info.video)){
 
-    //save images
-    if(post_info.images.length > 0) {
+        [err, video] = await to(Videos.create(post_info.video));
+         if(err) return ReE(res, err, 422);
 
-      for(let j in post_info.images) {
-          [err, image] = await to(Images.find({where: { id: post_info.images[j].id}}));
-          if(image) {
-            post.addImages(image)
-            image.setPost(post)
-          }
-        }
-    }
+         post.setVideo(video);
+         user.addVideos(video);
+         video.setUser(user)
+      }
 
-    //save Tags
-
-    /*
-    ** Loop through given Tags and cretae new tags if they don't already exist in database
-    ** also associate tags with current post 
-    */
-
-    if(post_info.tags.length > 0) {
-
-      for(var i in post_info.tags){
+      //save the ad configuration
+      if(post_info.adOptions.postIsAd) {
         
-        Tags.findOrCreate(
-        {
-          where: {name: post_info.tags[i].text},
-          defaults: {
-            name: post_info.tags[i].text,
-            UserId: user.id
+        [err, adOptions] = await to(AdOptions.create(getAdOptions(post_info.adOptions)));
+        if(err) return ReE(res, err, 422);
+
+        if ('orderId' in post_info && post_info.orderId.length) {
+          //make sure the order was created by the current user
+          [err, order] = await to(Orders.find({where: {id: post_info.orderId, UserId: user.id}}));
+          if(err) return ReE(res, {success: false, error: 'Order not found'}, 422);
+          //associate the order with the AdOptions
+          adOptions.setOrder(order);
+        }
+
+        post.setAdOption(adOptions);
+        adOptions.setUser(user);
+        user.addAdOptions(adOptions);
+      }
+
+      //save images
+      if(post_info.images.length > 0) {
+
+        for(let j in post_info.images) {
+            [err, image] = await to(Images.find({where: { id: post_info.images[j].id}}));
+            if(image) {
+              post.addImages(image)
+              image.setPost(post)
+            }
           }
-        },
-        ). spread ((tag, created) => {
-          post.addTags(tag)
-          tag.addUsers(user)
-          user.addTags(tag)
+      }
+
+      //save Tags
+
+      /*
+      ** Loop through given Tags and cretae new tags if they don't already exist in database
+      ** also associate tags with current post 
+      */
+
+      if(post_info.tags.length > 0) {
+
+        for(var i in post_info.tags){
+          
+          Tags.findOrCreate(
+          {
+            where: {name: post_info.tags[i].text},
+            defaults: {
+              name: post_info.tags[i].text,
+              UserId: user.id
+            }
+          },
+          ). spread ((tag, created) => {
+            post.addTags(tag)
+            tag.addUsers(user)
+            user.addTags(tag)
+          })
+
+        }
+
+      }
+
+      //update the post
+      [err, post] = await to(post.save());
+      if(err) return ReE(res, err, 422);
+
+      /*
+      ** Delay code execution by 100 miliseconds so that some database queries can finish executing
+      ** And we get the most updated Post object to be sent to the front end
+      */
+      await sleep(100);
+
+      Posts.findOne({include: getDBInclude(user), where: {id: post.id}})
+        .then((post) => {
+              return ReS(res, toWeb(post, user), 201);
+
+        })
+        .catch((err) => {
+          console.log(err)
+          return ReE(res, err, 422);
         })
 
-      }
-
+    } catch (e){
+      console.log(e)
+      return ReE(res, err, 422);
     }
 
-    //update the post
-    [err, post] = await to(post.save());
-    if(err) return ReE(res, err, 422);
-
-    /*
-    ** Delay code execution by 100 miliseconds so that some database queries can finish executing
-    ** And we get the most updated Post object to be sent to the front end
-    */
-    await sleep(100);
-
-    Posts.findOne({include: getDBInclude(user), where: {id: post.id}})
-      .then((post) => {
-            return ReS(res, toWeb(post, user), 201);
-
-      })
-      .catch((err) => {
-        return ReE(res, err, 422);
-      })
-
+    
 }
 
 /*
@@ -308,9 +317,6 @@ async function FixPosts (posts, user) {
     let getDefaultComment = function (post) {
       if (post.Comments.length) {
         let comments = post.Comments;
-        /*for(let i =0; i< comments.length; i++) {
-          comments[i] = cloneOject(comments[i])
-        }*/
         comments = CommentsController.setDefaultComment(comments);
         for (let i =0; i < comments.length; i ++) {
           if (comments[i].setDefault) {
@@ -340,7 +346,7 @@ async function FixPosts (posts, user) {
               // the last comment, so only send the 
               // last comment, if post has comments
               //posts[i].setDataValue('defaultComment', postObjs[j].Comments && postObjs[j].Comments.length ? postObjs[j].Comments[postObjs[j].Comments.length-1] : false);
-              posts[i].setDataValue('defaultComment', getDefaultComment(posts[j]));
+              posts[i].setDataValue('defaultComment', getDefaultComment(posts[i]));
               posts[i].setDataValue('ConsumedAds', postObjs[j].ConsumedAds)
             }
           }
