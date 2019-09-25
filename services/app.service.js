@@ -50,13 +50,13 @@ return [
     },
     required: false
   },
-  /*{
+  {
     model: ViewedComments,
     where: {
       UserId: user.id
     },
     required: false
-  }*/
+  }
 ]
 }
 

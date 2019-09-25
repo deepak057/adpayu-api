@@ -7,6 +7,19 @@ const CONFIG            = require('../config/config');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 
+function defaultScope () {
+    return {
+      where: {
+        visible: {
+            [op.eq]: true
+        },
+        deleted: {
+            [op.eq]: false
+        }
+      }
+    }    
+}
+
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Posts', {
         type     : DataTypes.STRING,
@@ -20,16 +33,23 @@ module.exports = (sequelize, DataTypes) => {
         deleted: {type: DataTypes.BOOLEAN, defaultValue: false},
     }, {
 
-        defaultScope: {
-          where: {
-            visible: {
-                [op.eq]: true
+        defaultScope: defaultScope(),
+        scopes: {
+
+            /* This scope will ommit the posts on which all the 
+            *  answers or comments have been viewed by the given user
+            */
+            ExcludedViewedPosts: function (user) {
+                return {
+                    where: {
+                        'abc': Sequelize.literal("((select count (*) from ViewedComments where ViewedComments.CommentId In (select id from Comments where Comments.PostId = Posts.id) AND ViewedComments.UserId = " + user.id + ") != (select count(*) from Comments where Comments.PostId = Posts.id))")
+                    }
+                }
             },
-            deleted: {
-                [op.eq]: false
+            defaultScopeCopy : function () {
+                return defaultScope()
             }
-          }
-        },
+        }
     });
 
     Model.associate = function(models){

@@ -90,16 +90,16 @@ const create =  function(req, res){
              post.addComments(comment);
              user.addComments(comment);
 
-             // send notification
-             if (req.user.id !== post.UserId) {
-               NotificationsController.create(getNotification(comment.id, post.id, post.type), req.user.id, post.UserId)
-               
-              /* Update updatedAt timestamp on this post, 
-              * if it needs to be updated
-              */
+             /* Update updatedAt timestamp on this post, 
+             * if it needs to be updated
+             */
                if (canUpdatePost(post, comment)) {
                  Posts.update({updatedAt: getMySQLDateTime()}, {where: {id: post.id}})
                }
+
+             // send notification
+             if (req.user.id !== post.UserId) {
+               NotificationsController.create(getNotification(comment.id, post.id, post.type), req.user.id, post.UserId)
                
                /* commenting below code as it didn't work for some reason*/
                /*post.updatedAt = getMySQLDateTime();
@@ -165,6 +165,16 @@ const remove = async function(req, res){
 }
 module.exports.remove = remove;
 
+/*
+* this function set a comment ad 'default'
+* in the given array of comments
+* Default comment/answer is what shows up under a question
+* by default in User Feed
+* The basic algorithm for determinign the default answer is-
+* 1. Sort the comments from lowest to highest likes count
+* 2. The "unviewed" comment with highest likes count is set as default comment
+* 3. If all the comments are "viewed" then simply set the comment with highest likes count as default
+*/
 
 function setDefaultComment (comments) {
     if (comments.length && comments.length > 1) {
@@ -187,7 +197,6 @@ function setDefaultComment (comments) {
       comments = addDefaultCommentProperty(comments)
       let sortedArr = cloneOject(comments)
       let unviewedFound = false
-
       sortedArr.sort((a, b) => {
         return a.CommentsLikesCount - b.CommentsLikesCount
       })

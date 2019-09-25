@@ -191,7 +191,7 @@ const get = async function(req, res){
     let limitNOffset = getLimitOffset(page);
 
     // get current user's friends
-    [err, friends] = await to(User.getFriends(req.user.id))
+    [err, friends] = await to(User.getFriends(user.id))
      if(err) {
        return ReE(res, err, 422);
      }
@@ -213,12 +213,7 @@ const get = async function(req, res){
 
     let criteria = getPostCriteriaObject(user);
       
-    criteria.order = Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);
-      
-      /*
-      * Get only those posts which are from user's friends, public, selft created or ads
-      */
-        
+    criteria.order = Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);  
 
     if(tag === 'all')  {
 
@@ -233,6 +228,8 @@ const get = async function(req, res){
             }
           }
 
+
+
           // push friends conditions i.e. get posts that are from friends or self
           condition.push(friendsPostsCondition);
 
@@ -243,7 +240,7 @@ const get = async function(req, res){
           // club all the conditions
           criteria.where = getWhereCondition (user, condition)
 
-          Posts.findAll(criteria)
+          Posts.scope(getPostScopes(user)).findAll(criteria)
            .then((posts) => {
               return sendFeed(user, posts, res, page)
             })
@@ -287,7 +284,7 @@ const get = async function(req, res){
 
             criteria.where = getWhereCondition (user, condition)
 
-            Posts.findAll(criteria)
+            Posts.scope(getPostScopes(user)).findAll(criteria)
              .then(posts => {
                 return sendFeed(user, posts, res, page)
              })
@@ -302,6 +299,30 @@ const get = async function(req, res){
   }
 }
 
+
+function getPostScopes (user) {
+  return scopes = [
+      { 
+        /* Use ExcludedViewedPosts and pass it user object
+        * this scope will ommit the posts on which all the 
+        * answers or comments have been viewed by current user
+        */
+        method: ['ExcludedViewedPosts', user]
+      },
+
+      /*
+      * using scope array seems to ignore the default Posts scope
+      * so use the copy of default scope as well to keep the 
+      * default scope applied
+      */
+      {
+        method: ['defaultScopeCopy']
+      }
+    ]
+
+}
+
+
 /*
 ** This method is another layer in feed interpretation and 
 ** manipulation. Since the default SQL retreive has issues, this method 
@@ -314,10 +335,17 @@ const get = async function(req, res){
 async function FixPosts (posts, user) {
   return new Promise(function(resolve, reject) {
     let postsArr = [], postObjs;   
+    
+    /*
+    * function to set default comment in the given post
+    * the client side app, generates the Post Description
+    * based on the default comment/answer on a post
+    */ 
+
     let getDefaultComment = function (post) {
       if (post.Comments.length) {
-        let comments = post.Comments;
-        comments = CommentsController.setDefaultComment(comments);
+        let comments = post.Comments.reverse();
+        comments = CommentsController.setDefaultComment(comments)
         for (let i =0; i < comments.length; i ++) {
           if (comments[i].setDefault) {
             return comments[i]
@@ -326,6 +354,7 @@ async function FixPosts (posts, user) {
       }
       return false;
     }
+
     for (let i in posts) {
       postsArr.push(posts[i].id)
     }
