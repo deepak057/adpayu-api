@@ -188,7 +188,7 @@ const get = async function(req, res){
 
     let dbIncludes = getDBInclude(user)
 
-    let limitNOffset = getLimitOffset(page);
+    let limitNOffset = getLimitOffset(page, 15);
 
     // get current user's friends
     [err, friends] = await to(User.getFriends(user.id))
