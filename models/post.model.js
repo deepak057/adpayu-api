@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
             ExcludedViewedPosts: function (user) {
                 return {
                     where: {
-                        'abc': Sequelize.literal("((select count (*) from ViewedComments where ViewedComments.CommentId In (select id from Comments where Comments.PostId = Posts.id) AND ViewedComments.UserId = " + user.id + ") != (select count(*) from Comments where Comments.PostId = Posts.id))")
+                        'abc': Sequelize.literal(" (case when (Posts.type = 'question') then ((select count (*) from ViewedComments where ViewedComments.CommentId In (select id from Comments where Comments.PostId = Posts.id) AND ViewedComments.UserId = " + user.id + ") != (select count(*) from Comments where Comments.PostId = Posts.id)) else 1 end)")
                     }
                 }
             },
