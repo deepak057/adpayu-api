@@ -9,13 +9,18 @@ const Op = Sequelize.Op;
 ** function to return OR condition
 * array depending upon the search filter
 */
-function getContentCondition (searchType, keyword) {
+function getContentCondition (searchType, keyword, req = false) {
       let contentCondition = [];
       let onlyQuestions = { '$Question.question$': {[Op.like] :  '%' +keyword+'%'}};
       let onlyVideos = { '$Video.title$': {[Op.like] :  '%' +keyword+'%'}}
       if (searchType === 'video') {
         contentCondition.push(onlyVideos)
       } else if (searchType === 'questions') {
+        let uncommented = req ? (req.query.uncommented ? req.query.uncommented === 'true' : false) : false;
+        if (uncommented) {
+          // if this parameter is true, retreive only those questions that don't have any answers
+          onlyQuestions.abc = Sequelize.literal('((select count(*) from Comments where Comments.PostId = Posts.id) = 0)')
+        }
         contentCondition.push(onlyQuestions)
       } else {
         contentCondition.push(onlyVideos);
@@ -117,7 +122,7 @@ const get = async function(req, res){
                 ],
               },
               {
-                [Op.or]: getContentCondition (searchType, keyword)
+                [Op.or]: getContentCondition (searchType, keyword, req)
               }
             ]
           };
