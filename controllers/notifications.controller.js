@@ -1,8 +1,20 @@
 const { User, Notifications, Posts } = require('../models');
 const { to, ReE, ReS, isEmptyObject, getLimitOffset, cloneOject } = require('../services/util.service');
 const Sequelize = require('sequelize');
-
 const Op = Sequelize.Op;
+
+function getNotificationData(notiType, commentId, postId, type= 'text') {
+  return {
+    type: notiType,
+    meta: JSON.stringify({
+      commentId: parseInt(commentId),
+      postId: parseInt(postId),
+      postType: type
+    })
+  }
+}
+
+module.exports.getNotificationData = getNotificationData;
 
 const get = async function (req, res) {
 

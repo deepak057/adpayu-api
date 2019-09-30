@@ -9,15 +9,10 @@ const { VIDEO_PAYMENT_CONFIG } = require('../config/app-constants');
 require('dotenv').config();
 
 function getNotification(commentId, postId, type= 'text') {
-  return {
-    type: NOTIFICATIONS.types.COMMENT_ON_POST,
-    meta: JSON.stringify({
-      commentId: parseInt(commentId),
-      postId: parseInt(postId),
-      postType: type
-    })
-  }
+  return NotificationsController.getNotificationData(NOTIFICATIONS.types.COMMENT_ON_POST, commentId, postId, type)
 }
+
+module.exports.getNotification = getNotification;
 
 function getCommentURL (comment) {
   return process.env.FRONT_END_SITE_URL_BASE + '/c/' + comment.id;

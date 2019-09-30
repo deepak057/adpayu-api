@@ -391,6 +391,36 @@ const changeCommentAssociation = async function (req, res) {
       try {
         let commentId = req.params.commentId;
         let newPostId = req.query.postId;
+        const { NOTIFICATIONS } = require('../config/app-constants');
+        const NotificationsController   = require('./notifications.controller');
+        const CommentsController   = require('./comments.controller');
+
+        let deletePreviousNotification = function (comment, currentPost) {
+          let noti = CommentsController.getNotification(commentId, currentPost.id, currentPost.type)
+          NotificationsController.remove(noti, comment.UserId, currentPost.UerId)
+        }
+
+        let sendNotification = function (comment, currentPost) {
+
+          // delete previous notification that was 
+          // sent to the owner of current post
+          // when this comment was posted there
+          deletePreviousNotification(comment, currentPost)
+
+          /*
+          * Send notification to comment owner about 
+          * the change in comment association
+          */
+          let noti = {
+            type: NOTIFICATIONS.types.COMMENT_ASSOCIATION_CHANGED,
+            meta: JSON.stringify({
+              commentId: parseInt(commentId),
+              postId: parseInt(newPostId),
+            })
+          }
+          return NotificationsController.create(noti, comment.UserId, comment.UserId)
+        }
+
         Comments.find({
           where: {
             id: commentId
@@ -414,6 +444,7 @@ const changeCommentAssociation = async function (req, res) {
                     comment.save()
                       .then((comment) => {
                         newPost.addComments(comment);
+                        sendNotification(comment, oldPost)
                         return ReS(res, {message: 'Comment '+ commentId + ' is now associated with Post '+ newPostId});
                       })
 
