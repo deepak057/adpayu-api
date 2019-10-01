@@ -116,10 +116,14 @@ function getNotification (notification) {
   return new Promise(function(resolve, reject) {
     let whereClause = {
       type: notification.type,
-      meta: notification.meta,
       fromId: notification.fromId,
       toId: notification.toId
     }
+    
+    if ('meta' in notification) {
+      whereClause.meta = notification.meta
+    }
+
     postId = getPostId(notification);
     
     if (postId) {
