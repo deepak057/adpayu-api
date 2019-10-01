@@ -375,7 +375,7 @@ async function FixPosts (posts, user) {
               // the last comment, so only send the 
               // last comment, if post has comments
               //posts[i].setDataValue('defaultComment', postObjs[j].Comments && postObjs[j].Comments.length ? postObjs[j].Comments[postObjs[j].Comments.length-1] : false);
-              posts[i].setDataValue('defaultComment', getDefaultComment(posts[i]));
+              posts[i].setDataValue('defaultComment', getDefaultComment(postObjs[j]));
               posts[i].setDataValue('ConsumedAds', postObjs[j].ConsumedAds)
             }
           }
