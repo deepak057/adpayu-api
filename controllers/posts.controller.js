@@ -615,23 +615,49 @@ const getTimelineFeed = async function(req, res){
 
   let criteria = getPostCriteriaObject(req.user);
 
+  let getAnsweredPosts = function (posts) {
+    return new Promise (function(resolve, reject) {
+
+    })
+  }
+
   criteria.order = [['createdAt', 'DESC']];
   criteria.limit = limitNOffset.limit;
   criteria.offset = limitNOffset.offset;
   criteria.where = {};
 
+  let answerdPostsCond = Sequelize.literal("id IN (select Comments.PostId from Comments where UserId = " + profileUserId + " AND videoPath !='' AND deleted = 0 )") 
+
+  let orCondition = {
+    [op.or]: [
+        {
+          UserId: req.user.id
+        },
+        {
+          abc: answerdPostsCond
+        }
+     ]
+  }
+
   if (profileUserId === req.user.id) {
-     criteria.where = {
-        UserId: req.user.id
-     }
+     criteria.where = orCondition;
+
   } else {
     let err, friends, isFriend = false;
 
-    criteria.where = {
+    let andCondition = [
+          {
+            AdOptionId: { [op.eq]: null}
+          },
+            
+       ]
+
+    
+    /*criteria.where = {
        UserId: profileUserId,
        AdOptionId: { [op.eq]: null}
 
-    };
+    };*/
 
     // get profile user's friends
     [err, friends] = await to(User.getFriends(profileUserId))
@@ -640,13 +666,22 @@ const getTimelineFeed = async function(req, res){
      }
 
      // check if current user is friends with Profile user
-     if(friends.length) {
+     if(friends && friends.length) {
        isFriend = getUIDs(friends).indexOf(req.user.id) !== -1
      }
      
      if (!isFriend) {
-       criteria.where.public = { [op.eq]: true}
-     } 
+       andCondition.push({
+        public: { 
+          [op.eq]: true
+        }
+       })
+     }
+     criteria.where = {
+        [op.and]: andCondition
+    }
+
+
   }
   
   Posts.findAll(criteria)
