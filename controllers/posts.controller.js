@@ -631,7 +631,7 @@ const getTimelineFeed = async function(req, res){
   let orCondition = {
     [op.or]: [
         {
-          UserId: req.user.id
+          UserId: profileUserId
         },
         {
           abc: answerdPostsCond
@@ -646,12 +646,10 @@ const getTimelineFeed = async function(req, res){
     let err, friends, isFriend = false;
 
     let andCondition = [
-          {
-            AdOptionId: { [op.eq]: null}
-          },
-            
-       ]
-
+      {
+        AdOptionId: { [op.eq]: null},
+      }
+    ]
     
     /*criteria.where = {
        UserId: profileUserId,
@@ -671,17 +669,16 @@ const getTimelineFeed = async function(req, res){
      }
      
      if (!isFriend) {
-       andCondition.push({
-        public: { 
+       andCondition.push({public: { 
           [op.eq]: true
-        }
-       })
+        }})
      }
+
+     andCondition.push(orCondition);
+
      criteria.where = {
-        [op.and]: andCondition
-    }
-
-
+      [op.and]: andCondition
+     }
   }
   
   Posts.findAll(criteria)
