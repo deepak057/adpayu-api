@@ -615,80 +615,111 @@ const getTimelineFeed = async function(req, res){
 
   let criteria = getPostCriteriaObject(req.user);
 
-  let getAnsweredPosts = function (posts) {
-    return new Promise (function(resolve, reject) {
+  /*
+  * function to set default comment property in a post
+  * as the comment that was posted by the profile 
+  * user
+  */
 
+  let setDefaultComment = function (posts) {
+    for (let i in posts) {
+      posts[i].setDataValue('defaultComment', false)
+      if (posts[i].Comments.length) {
+        for(let j in posts[i].Comments) {
+          if (posts[i].Comments[j].UserId === profileUserId) {
+            posts[i].setDataValue('defaultComment', posts[i].Comments[j])
+          }
+        }
+      }
+    }
+    return posts
+  }
+
+  let getWhereCondition = function () {
+    
+    return new Promise(function(resolve, reject) {
+      /* 
+      * condition for including the posts
+      * that user has left any answer on
+      */
+      let answerdPostsCond = Sequelize.literal("id IN (select Comments.PostId from Comments where UserId = " + profileUserId + " AND videoPath !='' AND deleted = 0 )") 
+
+      /*
+      * Or condtion to give the posts
+      * that are either created by the 
+      * profile user or the posts where
+      * this user left any answer on
+      */
+      let orCondition = {
+        [op.or]: [
+            {
+              UserId: profileUserId
+            },
+            {
+              abc: answerdPostsCond
+            }
+         ]
+      }
+
+      if (profileUserId === req.user.id) {
+         resolve(orCondition)
+
+      } else {
+        let isFriend = false, andCondition = []
+
+        // get profile user's friends
+        User.getFriends(profileUserId)
+          .then((friends) => {
+
+            // check if current user is friends with Profile user
+            if(friends && friends.length) {
+               isFriend = getUIDs(friends).indexOf(req.user.id) !== -1
+             }
+
+             /*
+             * if current user is not friend with profile user
+             * show them only public posts from profile user
+             */
+            if (!isFriend) {
+              andCondition.push({public: { 
+                 [op.eq]: true
+               }})
+            }
+
+            /*
+           * for other user's profile, don't
+           * show the ad posts
+           */
+           andCondition.push({
+              AdOptionId: { [op.eq]: null},
+            })
+
+           andCondition.push(orCondition);
+
+           resolve({
+            [op.and]: andCondition
+           })
+
+          })         
+      }
     })
+    
   }
 
   criteria.order = [['createdAt', 'DESC']];
   criteria.limit = limitNOffset.limit;
   criteria.offset = limitNOffset.offset;
-  criteria.where = {};
-
-  let answerdPostsCond = Sequelize.literal("id IN (select Comments.PostId from Comments where UserId = " + profileUserId + " AND videoPath !='' AND deleted = 0 )") 
-
-  let orCondition = {
-    [op.or]: [
-        {
-          UserId: profileUserId
-        },
-        {
-          abc: answerdPostsCond
-        }
-     ]
-  }
-
-  if (profileUserId === req.user.id) {
-     criteria.where = orCondition;
-
-  } else {
-    let err, friends, isFriend = false;
-
-    let andCondition = [
-      {
-        AdOptionId: { [op.eq]: null},
-      }
-    ]
-    
-    /*criteria.where = {
-       UserId: profileUserId,
-       AdOptionId: { [op.eq]: null}
-
-    };*/
-
-    // get profile user's friends
-    [err, friends] = await to(User.getFriends(profileUserId))
-     if(err) {
-       return ReE(res, err, 422);
-     }
-
-     // check if current user is friends with Profile user
-     if(friends && friends.length) {
-       isFriend = getUIDs(friends).indexOf(req.user.id) !== -1
-     }
-     
-     if (!isFriend) {
-       andCondition.push({public: { 
-          [op.eq]: true
-        }})
-     }
-
-     andCondition.push(orCondition);
-
-     criteria.where = {
-      [op.and]: andCondition
-     }
-  }
-  
-  Posts.findAll(criteria)
-   .then(posts => {
-      return ReS(res, {posts: toWeb(posts, req.user)});
-   })
-   .catch ((error) => {
-     return ReS(res, error);
-   })
-
+  getWhereCondition()
+    .then((condition) => {
+      criteria.where = condition;
+      Posts.findAll(criteria)
+       .then(posts => {
+          return ReS(res, {posts: toWeb(setDefaultComment(posts), req.user)});
+       })
+       .catch ((error) => {
+         return ReS(res, error);
+       })
+    })
 }
 
 module.exports.getTimelineFeed = getTimelineFeed;
