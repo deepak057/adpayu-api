@@ -706,7 +706,7 @@ const getTimelineFeed = async function(req, res){
     
   }
 
-  criteria.order = [['createdAt', 'DESC']];
+  criteria.order = [['updatedAt', 'DESC']];
   criteria.limit = limitNOffset.limit;
   criteria.offset = limitNOffset.offset;
   getWhereCondition()
