@@ -1,4 +1,4 @@
-const { User, Friendship, ConsumedAds }          = require('../models');
+const { User, Friendship, ConsumedAds, ViewedEntities }          = require('../models');
 const authService       = require('../services/auth.service');
 const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces}  = require('../services/util.service');
 const TagsController   = require('./tags.controller');
@@ -328,3 +328,32 @@ const getUserRevenue = async function(req, res) {
 }
 
 module.exports.getUserRevenue = getUserRevenue;
+
+const markAsViewed = function (req, res) {
+  try {
+    let user = req.user;
+    let id = req.body.id;
+    let type = req.body.entityType;
+    let data = {
+      UserId: user.id
+    };
+    if (type === 'post') {
+      data.PostId = id;
+    } else {
+      data.CommentId = id
+    }
+    ViewedEntities.findOrCreate({
+      where: data,
+      defaults : data
+    })
+      .spread((record, created) => {
+        return ReS(res, {message: type + ' marked as viewed successfully'}, 200);
+      })
+
+  } catch (e) {
+    console.log(e);
+    return ReE(res, {message: 'Somehting went wrong'}, 500);
+  }
+}
+
+module.exports.markAsViewed = markAsViewed;

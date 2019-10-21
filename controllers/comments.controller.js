@@ -1,4 +1,4 @@
-const { Comments, User, Likes, Posts, Videos, Questions, Forex, ConsumedAds, ViewedComments } = require('../models');
+const { Comments, User, Likes, Posts, Videos, Questions, Forex, ConsumedAds } = require('../models');
 const { to, ReE, ReS, getMySQLDateTime, removeBlankParagraphs, getDomainURL, ucFirst, roundTwoDecimalPlaces, cloneOject } = require('../services/util.service');
 const NotificationsController   = require('./notifications.controller');
 const MailsController   = require('./mails.controller');
@@ -360,28 +360,3 @@ const reviewVideoComment = async function (req, res) {
 }
 
 module.exports.reviewVideoComment = reviewVideoComment;
-
-const markAsViewed = function (req, res) {
-  try {
-    let user = req.user;
-    let commentId = req.params.commentId;
-    ViewedComments.findOrCreate({
-      where: {
-        UserId: user.id,
-        CommentId: commentId 
-      },
-      defaults : {
-        UserId: user.id,
-        CommentId: commentId 
-      }})
-        .spread((record, created) => {
-          return ReS(res, {message: 'Comment marked as viewed successfully'}, 200);
-        })
-
-  } catch (e) {
-    console.log(e);
-    return ReE(res, {message: 'Somehting went wrong'}, 500);
-  }
-}
-
-module.exports.markAsViewed = markAsViewed;

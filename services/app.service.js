@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, ViewedComments, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, ViewedEntities, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
 const { isEmptyObject } = require('./util.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -51,7 +51,7 @@ return [
     required: false
   },
   {
-    model: ViewedComments,
+    model: ViewedEntities,
     where: {
       UserId: user.id
     },
@@ -70,7 +70,7 @@ function getCommentCriteriaObject (user, where = false) {
       include: [
         [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount'],
         [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'],
-        [Sequelize.literal('(SELECT COUNT(*) FROM ViewedComments WHERE ViewedComments.CommentId = Comments.id AND ViewedComments.UserId = '+ user.id +')'), 'HasViewed']
+        [Sequelize.literal('(SELECT COUNT(*) FROM ViewedEntities WHERE ViewedEntities.CommentId = Comments.id AND ViewedEntities.UserId = '+ user.id +')'), 'HasViewed']
       ]
     },
   }
@@ -147,7 +147,7 @@ function getDBInclude(user, tagIds = [], pushModel = {}) {
               {
                 model: User.scope('public')
               }, {
-                model: ViewedComments,
+                model: ViewedEntities,
                 where: {
                   UserId: user.id
                 }
@@ -191,6 +191,7 @@ function getPostCriteriaObject (user, tagIds = []) {
           [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id && deleted = 0)'), 'CommentsCount'],
           [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id)'), 'LikesCount'],
           [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'],
+          [Sequelize.literal('(SELECT COUNT(*) FROM ViewedEntities WHERE ViewedEntities.PostId = Posts.id AND ViewedEntities.UserId = '+ user.id +')'), 'HasViewed'],
           //[Sequelize.literal('(SELECT * FROM ConsumedAds WHERE ConsumedAds.PostId = Posts.id AND ConsumedAds.UserId = '+ user.id +')'), 'ConsumedAds']
         ]
       },

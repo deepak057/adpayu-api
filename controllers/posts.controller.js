@@ -235,7 +235,7 @@ const get = async function(req, res){
 
           // push public Posts condition. i.e. get public posts in the tags that 
           // current user follows
-          condition.push({public: { [op.eq]: true},'$Tags.id$': tagsId});
+          condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': tagsId});
 
           // club all the conditions
           criteria.where = getWhereCondition (user, condition)
@@ -280,9 +280,9 @@ const get = async function(req, res){
             //condition.push({public: { [op.eq]: true}});
             
             // get only those posts that are public and belong to current/given tag
-            condition.push({public: { [op.eq]: true},'$Tags.id$': [Dbtag.id]});
+            condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': [Dbtag.id]});
 
-            criteria.where = getWhereCondition (user, condition)
+            criteria.where = getWhereCondition(user, condition)
 
             Posts.scope(getPostScopes(user)).findAll(criteria)
              .then(posts => {

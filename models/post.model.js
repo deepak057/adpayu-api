@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
             ExcludedViewedPosts: function (user) {
                 return {
                     where: {
-                        'abc': Sequelize.literal(" (case when (Posts.type = 'question') then ((select count (*) from ViewedComments where ViewedComments.CommentId In (select id from Comments where Comments.PostId = Posts.id AND Comments.deleted = 0) AND ViewedComments.UserId = " + user.id + ") != (select count(*) from Comments where Comments.PostId = Posts.id AND Comments.deleted = 0)) else 1 end)")
+                        'abc': Sequelize.literal(" (case when (Posts.type = 'question') then ((select count (*) from ViewedEntities where ViewedEntities.CommentId In (select id from Comments where Comments.PostId = Posts.id AND Comments.deleted = 0) AND ViewedEntities.UserId = " + user.id + ") != (select count(*) from Comments where Comments.PostId = Posts.id AND Comments.deleted = 0)) else 1 end) AND (case when (Posts.type != 'question' AND Posts.AdOptionId IS NULL) then ( (select count(*) from ViewedEntities where ViewedEntities.PostId = Posts.id && ViewedEntities.UserId=" + user.id + ") = 0) else 1 end)")
                     }
                 }
             },
@@ -65,6 +65,7 @@ module.exports = (sequelize, DataTypes) => {
         this.Comments = this.belongsToMany(models.Comments, {through: 'PostComments', onDelete: 'CASCADE'});
         this.ConsumedAds = this.hasMany(models.ConsumedAds, { onDelete: 'CASCADE'});
         this.PushedAds = this.hasMany(models.PushedAds, { onDelete: 'CASCADE'});
+        this.ViewedEntities = this.hasMany(models.ViewedEntities, {onDelete: 'CASCADE'});
     };
    
 

@@ -39,6 +39,7 @@ router.delete(  '/users',           passport.authenticate('jwt', {session:false}
 router.post(    '/users/login',     UserController.login);
 router.get(    '/users/updateAccountStatus/:userId',     UserController.updateAccountStatus); 
 router.post(     '/users/getUserRevenue',           passport.authenticate('jwt', {session:false}), UserController.getUserRevenue);        // R
+router.put('/users/markAsViewed/', passport.authenticate('jwt', {session:false}), UserController.markAsViewed);        //U
 
 /** Posts routes **/
 router.post('/posts',           passport.authenticate('jwt', {session:false}), PostsController.create);        // C
@@ -61,7 +62,6 @@ router.post('/comments/:postId',           passport.authenticate('jwt', {session
 router.delete('/comments/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // D
 router.get('/getComment/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.getComment);        // R
 router.get('/reviewVideoComment/:commentId', CommentsController.reviewVideoComment);        //U
-router.put('/comments/markAsViewed/:commentId', passport.authenticate('jwt', {session:false}), CommentsController.markAsViewed);        //U
 
 /** Likes routes**/
 router.post('/like/post/:postId',           passport.authenticate('jwt', {session:false}), LikesController.createPostLike);        // C
