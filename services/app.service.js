@@ -312,7 +312,7 @@ module.exports.canUpdatePost = function (post, comment) {
 }
 
 
-/*
+
 function captureVideoPoster (videoFileName) {
   return new Promise(function(resolve, reject) {
     try {
@@ -351,9 +351,8 @@ function captureVideoPoster (videoFileName) {
     }
   });
 }
-*/
 
-
+/*
 function captureVideoPoster (videoFileName) {
   return new Promise(function(resolve, reject) {
     try {
@@ -392,6 +391,7 @@ function captureVideoPoster (videoFileName) {
     }
   });
 }
+*/
 
 module.exports.captureVideoPoster = captureVideoPoster;
 
