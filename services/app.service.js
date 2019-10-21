@@ -312,6 +312,7 @@ module.exports.canUpdatePost = function (post, comment) {
 }
 
 
+/*
 function captureVideoPoster (videoFileName) {
   return new Promise(function(resolve, reject) {
     try {
@@ -344,6 +345,47 @@ function captureVideoPoster (videoFileName) {
           folder: screenshotFolder,
           filename: posterImageName
         });
+      }
+    } catch (e) {
+      reject(e)
+    }
+  });
+}
+*/
+
+
+function captureVideoPoster (videoFileName) {
+  return new Promise(function(resolve, reject) {
+    try {
+      let videoPath = appRoot+'/uploads/'+ videoFileName;
+      let screenshotFolder = appRoot+'/uploads/thumbs';
+      // replace the extension of given video file with ".png"
+      let posterImageName = videoFileName.substr(0, videoFileName.lastIndexOf(".")) + ".png";
+      let posterPath = screenshotFolder + '/' + posterImageName;
+
+      const spawn = require('child_process').spawn;
+      
+
+      // create the screenshot only if it doesn't already exist
+      if (!fs.existsSync(posterPath)) {
+        //let ffmpeg = spawn('sh', ['-c', command], { stdio: 'inherit' });
+        let ffmpeg = spawn('ffmpeg -ss 00:00:01 -i '  + videoPath + ' -vframes 1 -q:v 2 ' + posterPath , [], { shell: true, stdio: 'inherit' });
+
+       //let ffmpeg = spawn('ffmpeg', getCommandArgsArry(command))
+        ffmpeg.on('close', (statusCode) => {
+          if (statusCode === 0) {
+             console.log('Screenshot taken');
+             optimizeImage(posterPath)
+              .then((stats) => {
+                S3Controller.uploadToS3(posterPath, 'public/thumbs/')
+                  .then((data) => {
+                    resolve(data)
+                  })
+              })
+          } else {
+            reject(statusCode)
+          }
+        })
       }
     } catch (e) {
       reject(e)
