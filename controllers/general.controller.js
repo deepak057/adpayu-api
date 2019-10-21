@@ -621,3 +621,30 @@ function optimizeImages (req, res) {
 }
 
 module.exports.optimizeImages = optimizeImages;
+
+const testVideoUpload = async function(req, res){
+  const S3Controller   = require('./s3.controller');
+
+// The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
+  //let sampleFile = req.files.video;
+    
+  let name = '8ml4il7hyk209nxug1.mp4';
+  
+  let filePath = appRoot+'/uploads/'+ name;
+
+        S3Controller.uploadToS3(filePath, '', false)
+          .then((data) => {
+            captureVideoPoster (name)
+              .then((data) => {
+                fs.unlink(filePath);
+                return ReS(res, {path: name});
+              })
+          })
+          .catch((err) => {
+            console.log(err);
+            return ReE(res, {'message': 'Something went wrong.'});
+          })
+      
+}
+
+module.exports.testVideoUpload = testVideoUpload;

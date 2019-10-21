@@ -117,6 +117,8 @@ router.post('/general/moveContentToS3', passport.authenticate('jwt', {session:fa
 router.post('/general/fixCommentAssociation', passport.authenticate('jwt', {session:false}), GeneralController.fixCommentAssociation);        // U
 router.post('/general/changeCommentAssociation/:commentId', passport.authenticate('jwt', {session:false}), GeneralController.changeCommentAssociation);        // U
 router.post('/general/optimizeImages/', passport.authenticate('jwt', {session:false}), GeneralController.optimizeImages);        // U
+router.post('/general/testVideoUpload/', passport.authenticate('jwt', {session:false}), GeneralController.testVideoUpload);        // U
+
 
 
 //********* API DOCUMENTATION **********
