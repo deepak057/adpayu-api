@@ -15,9 +15,11 @@ const app   = express();
 const CONFIG = require('./config/config');
 
 app.use(logger('dev'));
-app.use(bodyParser.json({limit: '50mb', extended: true}));
-app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
-app.use(fileUpload());
+app.use(bodyParser.json({limit: '5000mb', extended: true}));
+app.use(bodyParser.urlencoded({limit: '5000mb', extended: true}));
+app.use(fileUpload({
+  limits: { fileSize: 10 * 1024 * 1024 * 1024 },
+}));
 //app.use(express.static(path.join(__dirname, 'uploads')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 // app.use(cookieParser());
