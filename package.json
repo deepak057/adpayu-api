@@ -21,7 +21,7 @@
     "parse-error": "^0.2.0",
     "passport": "^0.4.0",
     "passport-jwt": "^3.0.0",
-    "sequelize": "^4.31.2",
+    "sequelize": "^5.15.1",
     "sequelize-cli": "^3.0.0",
     "serve-favicon": "~2.4.5",
     "validator": "^9.2.0"
