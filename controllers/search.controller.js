@@ -104,7 +104,7 @@ const get = async function(req, res){
       * A hack to use Limit and Offset as we are querying through other tables
       * in which case, limit and offset parameters cause mySQL errors
       */
-       criteria.order = Sequelize.literal('createdAt DESC LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
+       criteria.order = Sequelize.literal((req.user.recentActivitiesEnabled ? 'updatedAt' : 'createdAt') + ' DESC LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
 
        criteria.where = {      
             [Op.and]: [
