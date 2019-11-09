@@ -408,7 +408,12 @@ const optimizeVideos =  async function(){
                   videoPath: {
                     [op.ne]: ''
                   },
-                  videoOptimized: false,
+                  videoOptimized: {
+                    [op.eq]: false
+                  },
+                  deleted: {
+                    [op.eq]: false
+                  },
                   failedProcessingAttempts: {
                     [op.lt]: maxFailedAttempts
                   }

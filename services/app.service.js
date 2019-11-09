@@ -342,7 +342,7 @@ function captureVideoPoster (videoFileName) {
           reject(err)
         })
         .screenshots({
-          timestamps: [1],
+          timestamps: [4],
           folder: screenshotFolder,
           filename: posterImageName
         });
