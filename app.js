@@ -143,7 +143,7 @@ cron.schedule("0 0 */12 * * *", function() {
 
 //cron job running once in 10 minutes for 
 // optimizing the videos   
-cron.schedule("0 */10 * * * *", function() {
+cron.schedule("0 */1 * * * *", function() {
   optimizeVideos();
 });
 

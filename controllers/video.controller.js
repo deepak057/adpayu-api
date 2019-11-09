@@ -1,4 +1,4 @@
-const { Videos, Comments} = require('../models');
+const { Videos, Comments, Posts} = require('../models');
 const { to, ReE, ReS } = require('../services/util.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -298,6 +298,9 @@ function optimizeVideoFile (dbObj, type = 'video') {
           .catch ((e)=> {
             updateFailedAttempt()
           })
+      })
+      .catch((e) => {
+        updateFailedAttempt()
       }) 
     } catch (e) {
       updateFailedAttempt()
@@ -389,19 +392,33 @@ const optimizeVideos =  async function(){
     .then((d) => {
       if (!d) {
         let maxFailedAttempts = 3;
-
-        Videos.find({
+        Posts.find({
+          include: [
+            {
+              model: Videos,
+              where: {
+                optimized: false,
+                failedProcessingAttempts: {
+                  [op.lt]: maxFailedAttempts
+                },
+              },
+              required: true
+            }
+          ],
+          limit: 1
+        })
+        /*Videos.find({
           where: {
             optimized: false,
             failedProcessingAttempts: {
               [op.lt]: maxFailedAttempts
-            }
+            },
           },
           limit: 1
-        })
-          .then ((video) => {
-            if (video) {
-              optimizeVideoFile (video)
+        })*/
+          .then ((post) => {
+            if (post) {
+              optimizeVideoFile (post.Video)
             } else {
               Comments.find({
                 where: {
@@ -409,9 +426,6 @@ const optimizeVideos =  async function(){
                     [op.ne]: ''
                   },
                   videoOptimized: {
-                    [op.eq]: false
-                  },
-                  deleted: {
                     [op.eq]: false
                   },
                   failedProcessingAttempts: {
