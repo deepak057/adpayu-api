@@ -449,3 +449,30 @@ const optimizeVideos =  async function(){
     })
 }
 module.exports.optimizeVideos = optimizeVideos;
+
+const videoEditing = async function(req, res) {
+  try {
+    let config = req.body.config;
+    let user = req.user;
+    let getVideoObj = function () {
+      return new Promise ((resolve, reject) => {
+        if (config.type === 'comment') {
+          Comments.find({
+            where: {
+              id: config.videoType,
+              UserId: user.id
+            }
+          })
+        } else {
+          
+        }
+      })
+    }
+
+
+  } catch (e) {
+    return ReE(res, {message: 'Sorry, something went wrong'}, 500)
+  }
+}
+
+module.exports.videoEditing = videoEditing;
