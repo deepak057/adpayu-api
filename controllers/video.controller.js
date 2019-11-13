@@ -1,5 +1,5 @@
 const { Videos, Comments, Posts} = require('../models');
-const { to, ReE, ReS } = require('../services/util.service');
+const { to, ReE, ReS, getDirectory } = require('../services/util.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 const S3Controller   = require('./s3.controller');
@@ -113,10 +113,7 @@ function getFilesAndCommands (localFilePath) {
     let getOutputFilePath = function (inputFilePath, resolution) {
       let fileName = path.basename(inputFilePath)
       let dir = inputFilePath.replace(fileName, '');
-      let subDir = dir + resolution + '/';
-      if (!fs.existsSync(subDir)){
-        fs.mkdirSync(subDir);
-      }
+      let subDir = getDirectory(dir + resolution + '/');
       return subDir + fileName;
     }
     getVideoMeta(localFilePath)
@@ -450,29 +447,75 @@ const optimizeVideos =  async function(){
 }
 module.exports.optimizeVideos = optimizeVideos;
 
-const videoEditing = async function(req, res) {
+const edit = async function(req, res) {
   try {
     let config = req.body.config;
     let user = req.user;
-    let getVideoObj = function () {
-      return new Promise ((resolve, reject) => {
-        if (config.type === 'comment') {
-          Comments.find({
-            where: {
-              id: config.videoType,
-              UserId: user.id
-            }
-          })
-        } else {
-          
-        }
-      })
+    let isCommentVideo = config.videoType === 'comment'
+    let model = isCommentVideo ? Comments : Videos
+    let throwErr = ()=> {
+      return ReE(res, {message: 'Sorry, something went wrong'}, 500)
     }
+    model.find({
+      where: {
+        id: config.videoId,
+        UserId: user.id
+      }
+    })
+      .then((video) => {
+        let videoName = isCommentVideo ? video.videoPath : video.path
+        let S3SourceKey = 'public/' + videoName
+        let copyVideoName = "copy_" + videoName
+        let localVideoDir = getDirectory(appRoot + '/uploads/editing')
+        let audioPath = localVideoDir + '/a1.mp3'
+        let localSrcVideoPath = localVideoDir + '/' + copyVideoName
+        let localOutputVideoPath = localVideoDir + '/' + videoName
+        S3Controller.downloadS3Object(S3SourceKey, localSrcVideoPath)
+          .then ((d) => {
+            let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioPath + " -c:v copy -map 0:v:0 -map 1:a:0 " + localOutputVideoPath
+            executeCommand (command)
+              .then ((d) => {
+                fs.unlink(localSrcVideoPath)
+                S3Controller.uploadToS3(localOutputVideoPath, S3SourceKey)
+                  .then((d) => {
+                    if (isCommentVideo) {
+                      video.optimized = false
+                    } else {
+                      video.videoOptimized = false
+                    }
+                    video.failedProcessingAttempts = 0
+                    video.save()
+                      .then((videoUpdated) => {
+                        ReS(res, {message: 'Video editing successfull'}, 200)
+                      })
+                      .catch((pErr) => {
+                        console.log(pErr)
+                        return throwErr()
+                      })
+
+                  })
+              })
+              .catch((pErr) => {
+                console.log(pErr)
+                return throwErr()
+              })
+          })
+          .catch((pErr) => {
+            console.log(pErr)
+            return throwErr()
+          })
+
+      })
+      .catch((pErr) => {
+        console.log(pErr)
+        return throwErr()
+      })
 
 
   } catch (e) {
-    return ReE(res, {message: 'Sorry, something went wrong'}, 500)
+    console.log(e)
+    return throwErr()
   }
 }
 
-module.exports.videoEditing = videoEditing;
+module.exports.edit = edit;

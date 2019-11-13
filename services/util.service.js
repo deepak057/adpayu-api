@@ -3,6 +3,7 @@ const pe = require('parse-error');
 const uniqid = require('uniqid');
 const path = require('path');
 const mmm = require('mmmagic');
+const fs = require('fs');
    
 module.exports.to = async (promise) => {
     let err, res;
@@ -109,4 +110,11 @@ module.exports.getFileMime = function (filePath) {
       });
    })
     
+}
+
+module.exports.getDirectory = function (dir) {
+  if (!fs.existsSync(dir)){
+    fs.mkdirSync(dir);
+  }
+  return dir
 }

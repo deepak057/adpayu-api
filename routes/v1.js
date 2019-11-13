@@ -15,6 +15,7 @@ const AdsController = require('../controllers/ads.controller');
 const WithdrawController = require('../controllers/withdraw.controller');
 const MailsController = require('../controllers/mails.controller');
 const GeneralController = require('../controllers/general.controller');
+const VideoController = require('../controllers/video.controller');
 
 const custom 	        = require('./../middleware/custom');
 
@@ -102,6 +103,9 @@ router.post('/ad/adConsumed/:action/:postId',   passport.authenticate('jwt', {se
 /** Withdraw routes **/
 router.get('/withdraw/overview',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdrawOverview);        // R
 router.post('/withdraw',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdraw);        // C
+
+/** Video routes **/
+router.put('/video/edit',   passport.authenticate('jwt', {session:false}),  VideoController.edit);        // P
 
 /** Mails routes **/
 router.post('/mails/sendContactMail',  MailsController.sendContactMail);        // P
