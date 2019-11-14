@@ -447,6 +447,14 @@ const optimizeVideos =  async function(){
 }
 module.exports.optimizeVideos = optimizeVideos;
 
+/*
+* How it works-
+* 1) First the video is downloaded in local file system from S3
+* 2) The selected audio track is added to the downloaded video
+* 3) The original video is copied/backed up to S3 folder 'original'
+* 4) The original video is then replaced by the new video optained from #2
+* 5) The video is then marked as "unoptimzed" so Video Optimisation Cron can optimize the new Source file 
+*/
 const edit = async function(req, res) {
   try {
     let config = req.body.config;
@@ -472,27 +480,25 @@ const edit = async function(req, res) {
         let localOutputVideoPath = localVideoDir + '/' + videoName
         S3Controller.downloadS3Object(S3SourceKey, localSrcVideoPath)
           .then ((d) => {
-            let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioPath + " -c:v copy -map 0:v:0 -map 1:a:0 " + localOutputVideoPath
+            let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioPath + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + localOutputVideoPath
             executeCommand (command)
               .then ((d) => {
                 fs.unlink(localSrcVideoPath)
-                S3Controller.uploadToS3(localOutputVideoPath, S3SourceKey)
+                S3Controller.copyS3Object(S3SourceKey, 'original/'+videoName)
                   .then((d) => {
-                    if (isCommentVideo) {
-                      video.optimized = false
-                    } else {
-                      video.videoOptimized = false
-                    }
-                    video.failedProcessingAttempts = 0
-                    video.save()
-                      .then((videoUpdated) => {
-                        ReS(res, {message: 'Video editing successfull'}, 200)
+                    S3Controller.uploadToS3(localOutputVideoPath, 'public/')
+                      .then((d) => {
+                        if (isCommentVideo) {
+                          video.videoOptimized = false
+                        } else {
+                          video.optimized = false
+                        }
+                        video.failedProcessingAttempts = 0
+                        video.save()
+                          .then((videoUpdated) => {
+                            ReS(res, {message: 'Video editing successfull'}, 200)
+                          })
                       })
-                      .catch((pErr) => {
-                        console.log(pErr)
-                        return throwErr()
-                      })
-
                   })
               })
               .catch((pErr) => {
