@@ -180,6 +180,14 @@ async function fetchBeneficiary (transactionDetails, transaferDetails, authentic
   }
 }
 
+/*
+* How it works-
+* 1) If transaction is from Paytm, check if can it proceed with the given number, if not, return the error
+* 2) Record the details of this transactiuon in database
+* 3) Call the Cashfree Payout APIs
+* 4) Upon successfull transfer, flag the money as "Paid" for this user
+*/
+
 async function requestTransfer(transactionDetails, transaferDetails, authenticationToken, user, res) {
   return new Promise(function(resolve, reject) {
       let data = ''
@@ -198,10 +206,7 @@ async function requestTransfer(transactionDetails, transaferDetails, authenticat
             //save this transaction details in database
           recordWithdrawl(transactionDetails, postData, transaferDetails)
             .then((withdrawl) => {
-
               console.log("Requesting transfer...")
-
-
                 var post_req = https.request(getRequestOptions('requestTransfer',getAuthenticationHeader(authenticationToken)), function(resp) {
                   resp.on('data', function (chunk) {
                        data += chunk;
@@ -238,13 +243,11 @@ async function requestTransfer(transactionDetails, transaferDetails, authenticat
             * generate a response structure in simialr format
             * as Payout's API's
             */
-            let response = {
-              ben: {
-                status: 'ERROR',
-                message: 'This number has already been used by someone else'
-              }
+            let errResponse = {
+              status: 'ERROR',
+              message: 'This number has already been used by someone else'
             }
-            reject (response)
+            resolve(errResponse)
           }
         })
         .catch ((e) => {
@@ -291,22 +294,24 @@ function canUseNumberForPaytm(transaferDetails, benDetails, currentUser) {
 */
 
 function recordWithdrawl (transactionDetails, transaferDetails, benDetails) {
-  return Withdrawals.create({
-    payableAmount: transaferDetails.amount,
-    transferMode: transaferDetails.transferMode,
-    transferId: transaferDetails.transferId,
-    INRPerUSDRate: transactionDetails.forex,
-    siteFee: transactionDetails.siteFeeINR,
-    paymentGatewayCharges: transactionDetails.paymentGatewayChargeINR,
-    UserId: transaferDetails.beneId,
-    totalAmount: transactionDetails.amountAccumulatedINR,
-    phone: benDetails.phone
-  })
-  .then ((withdrawl) => {
-    return new Promise((resolve) => { resolve(withdrawl) })
-  })
-  .catch((error) => {
-    return new Promise((resolve, reject) => { reject(error) })
+  return new Promise (function(resolve, reject) {
+    Withdrawals.create({
+      payableAmount: transaferDetails.amount,
+      transferMode: transaferDetails.transferMode,
+      transferId: transaferDetails.transferId,
+      INRPerUSDRate: transactionDetails.forex,
+      siteFee: transactionDetails.siteFeeINR,
+      paymentGatewayCharges: transactionDetails.paymentGatewayChargeINR,
+      UserId: transaferDetails.beneId,
+      totalAmount: transactionDetails.amountAccumulatedINR,
+      phone: benDetails.phone
+    })
+      .then ((withdrawl) => {
+        resolve(withdrawl)
+      })
+      .catch((error) => {
+        reject(error)
+      })
   })
 }
 
@@ -325,7 +330,6 @@ function ifRemoveBeneficiary (ben, transaferDetails) {
 // for current user
 
 function settleConsumedAdsAmount (user) {
-  return 
   return ConsumedAds.update({
     settled: true
   },{
