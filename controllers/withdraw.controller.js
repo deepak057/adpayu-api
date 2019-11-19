@@ -5,6 +5,8 @@ const NotificationsController   = require('./notifications.controller');
 const MailsController   = require('./mails.controller');
 require('dotenv').config();//instatiate environment variables
 const https = require('https');
+const Sequelize = require('sequelize');
+const op = Sequelize.Op;
 
 const test_payment = process.env.PAYMENT_MODE === 'TEST';
 
@@ -107,7 +109,7 @@ async function addBeneficiary (transactionDetails, transaferDetails, authenticat
       let data = ''
 
       let postData = JSON.stringify({
-        beneId: user.id,
+        beneId: user.id.toString(),
         name: user.first + ' ' + user.last,
         email: user.email,
         phone: transaferDetails.phone,
@@ -190,43 +192,63 @@ async function requestTransfer(transactionDetails, transaferDetails, authenticat
         remarks: 'Payout from '+ process.env.SITE_NAME
       };
 
-      //save this transaction details in database
-      recordWithdrawl(transactionDetails, postData)
-        .then((withdrawl) => {
+      canUseNumberForPaytm(postData, transaferDetails, user)
+        .then ((d) => {
+          if (d) {
+            //save this transaction details in database
+          recordWithdrawl(transactionDetails, postData, transaferDetails)
+            .then((withdrawl) => {
 
-          console.log("Requesting transfer...")
+              console.log("Requesting transfer...")
 
 
-            var post_req = https.request(getRequestOptions('requestTransfer',getAuthenticationHeader(authenticationToken)), function(resp) {
-              resp.on('data', function (chunk) {
-                   data += chunk;
-              });
-              resp.on('end', () => {
-                let response = JSON.parse(data)
-                // update the database
-                withdrawl.response = data.trim()
-                withdrawl.status = response.status
-                withdrawl.save()
-                  .then ((withdrawlUpdated) => {
-                    if (response.status === "SUCCESS") {
-                      settleConsumedAdsAmount(user)
-                        .then ((userAmountSettled) => {
-                          //also, update current user saved bank account details
-                          user.bankDetails = JSON.stringify(transaferDetails); user.save()
+                var post_req = https.request(getRequestOptions('requestTransfer',getAuthenticationHeader(authenticationToken)), function(resp) {
+                  resp.on('data', function (chunk) {
+                       data += chunk;
+                  });
+                  resp.on('end', () => {
+                    let response = JSON.parse(data)
+                    // update the database
+                    withdrawl.response = data.trim()
+                    withdrawl.status = response.status
+                    withdrawl.save()
+                      .then ((withdrawlUpdated) => {
+                        if (response.status === "SUCCESS") {
+                          settleConsumedAdsAmount(user)
+                            .then ((userAmountSettled) => {
+                              //also, update current user saved bank account details
+                              user.bankDetails = JSON.stringify(transaferDetails); user.save()
+                              resolve(response)
+                            })
+                        } else {
                           resolve(response)
-                        })
-                    } else {
-                      resolve(response)
-                    }
+                        }
+                      })
+                  });
+                  resp.on('error', (err) => {
+                    reject(err)
                   })
-              });
-              resp.on('error', (err) => {
-                reject(err)
-              })
-            });
+                });
 
-          post_req.write(JSON.stringify(postData));
-          post_req.end();
+              post_req.write(JSON.stringify(postData));
+              post_req.end();
+            })
+          } else {
+            /*
+            * generate a response structure in simialr format
+            * as Payout's API's
+            */
+            let response = {
+              ben: {
+                status: 'ERROR',
+                message: 'This number has already been used by someone else'
+              }
+            }
+            reject (response)
+          }
+        })
+        .catch ((e) => {
+          reject (e)
         })
 
   });
@@ -234,11 +256,41 @@ async function requestTransfer(transactionDetails, transaferDetails, authenticat
 }
 
 /*
+* function to check wether a mobile number
+* being used for Paytm Transaction has 
+* already been used by some other user
+* 
+*/
+function canUseNumberForPaytm(transaferDetails, benDetails, currentUser) {
+  return new Promise (function(resolve, reject) {
+    if (transaferDetails.transferMode === 'paytm') {
+      Withdrawals.find({
+        where: {
+            UserId: {[op.ne]: currentUser.id},
+            transferMode: 'paytm',
+            phone: benDetails.phone,
+            status: 'SUCCESS'
+          }
+      })
+        .then((d) => {
+          resolve ( d ? false : true)
+        })
+        .catch ((e) => {
+          reject (e)
+        })
+    } else {
+      resolve(true)
+    }
+    
+  })
+}
+
+/*
 * function to keep track of 
 * withdrawals
 */
 
-function recordWithdrawl (transactionDetails, transaferDetails) {
+function recordWithdrawl (transactionDetails, transaferDetails, benDetails) {
   return Withdrawals.create({
     payableAmount: transaferDetails.amount,
     transferMode: transaferDetails.transferMode,
@@ -247,7 +299,8 @@ function recordWithdrawl (transactionDetails, transaferDetails) {
     siteFee: transactionDetails.siteFeeINR,
     paymentGatewayCharges: transactionDetails.paymentGatewayChargeINR,
     UserId: transaferDetails.beneId,
-    totalAmount: transactionDetails.amountAccumulatedINR
+    totalAmount: transactionDetails.amountAccumulatedINR,
+    phone: benDetails.phone
   })
   .then ((withdrawl) => {
     return new Promise((resolve) => { resolve(withdrawl) })
@@ -272,6 +325,7 @@ function ifRemoveBeneficiary (ben, transaferDetails) {
 // for current user
 
 function settleConsumedAdsAmount (user) {
+  return 
   return ConsumedAds.update({
     settled: true
   },{

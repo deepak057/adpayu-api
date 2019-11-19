@@ -16,7 +16,11 @@ module.exports = (sequelize, DataTypes) => {
         transferMode: DataTypes.STRING,
         INRPerUSDRate: DataTypes.FLOAT,
         paymentGatewayCharges: DataTypes.FLOAT,
-        siteFee: DataTypes.FLOAT
+        siteFee: DataTypes.FLOAT,
+        phone: {
+            type: DataTypes.STRING,
+            allowNull: true
+        }
     });
 
     Model.associate = function(models){
