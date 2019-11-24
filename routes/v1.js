@@ -16,6 +16,7 @@ const WithdrawController = require('../controllers/withdraw.controller');
 const MailsController = require('../controllers/mails.controller');
 const GeneralController = require('../controllers/general.controller');
 const VideoController = require('../controllers/video.controller');
+const AudioController = require('../controllers/audio.controller');
 
 const custom 	        = require('./../middleware/custom');
 
@@ -105,7 +106,10 @@ router.get('/withdraw/overview',   passport.authenticate('jwt', {session:false})
 router.post('/withdraw',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdraw);        // C
 
 /** Video routes **/
-router.put('/video/edit',   passport.authenticate('jwt', {session:false}),  VideoController.edit);        // P
+router.put('/video/edit',   passport.authenticate('jwt', {session:false}),  VideoController.edit);        // U
+
+/** Audio routes **/
+router.get('/audio/getCategories',   passport.authenticate('jwt', {session:false}),  AudioController.getCategories);        // R
 
 /** Mails routes **/
 router.post('/mails/sendContactMail',  MailsController.sendContactMail);        // P

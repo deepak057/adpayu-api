@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('AudioTracks', {
         title     : DataTypes.STRING,
         description: DataTypes.TEXT,
-        genre: DataTypes.INTEGER,
+        genere: DataTypes.INTEGER,
         path: DataTypes.STRING
     });
 
