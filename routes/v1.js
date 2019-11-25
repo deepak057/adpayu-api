@@ -110,6 +110,7 @@ router.put('/video/edit',   passport.authenticate('jwt', {session:false}),  Vide
 
 /** Audio routes **/
 router.get('/audio/getCategories',   passport.authenticate('jwt', {session:false}),  AudioController.getCategories);        // R
+router.post('/audio/upload',   passport.authenticate('jwt', {session:false}),  AudioController.upload);        // C
 
 /** Mails routes **/
 router.post('/mails/sendContactMail',  MailsController.sendContactMail);        // P
