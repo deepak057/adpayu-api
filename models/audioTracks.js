@@ -7,7 +7,7 @@ const CONFIG            = require('../config/config');
 
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('AudioTracks', {
-        title     : DataTypes.STRING,
+        name     : DataTypes.STRING,
         description: DataTypes.TEXT,
         genere: DataTypes.INTEGER,
         path: DataTypes.STRING

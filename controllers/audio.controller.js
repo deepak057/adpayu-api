@@ -1,9 +1,10 @@
-const { Images} = require('../models');
+const { AudioTracks} = require('../models');
 const { to, ReE, ReS, uniqeFileName, getDirectory} = require('../services/util.service');
 const appRoot = require('app-root-path');
 const S3Controller   = require('./s3.controller');
 const fs = require('fs');
 require('dotenv').config();
+const S3AudioFolder = 'public/audio/';
 
 function musicGeneres () {
   return [
@@ -36,23 +37,26 @@ const getCategories = async function(req, res){
 
 module.exports.getCategories = getCategories;
 
-function optimizeAudio (filePath) {
+function optimizeAudio (input, output) {
   return new Promise (function(resolve, reject) {
     console.log('Optimizing uploaded audio file...')
     const spawn = require('child_process').spawn;
-     let ffmpeg = spawn(command, [], { shell: true, stdio: 'inherit' });
-
-     //let ffmpeg = spawn('ffmpeg', getCommandArgsArry(command))
-      ffmpeg.on('close', (statusCode) => {
-        if (statusCode === 0) {
-           console.log('FFMPEG command execution successfull.');
-           resolve (command)
-        } else {
-          reject(statusCode)
-        }
-      })
+    let command = "ffmpeg -i " + input + " -vn -b:a 64k " + output;
+    let ffmpeg = spawn(command, [], { shell: true, stdio: 'inherit' });
+    ffmpeg.on('close', (statusCode) => {
+      if (statusCode === 0) {
+         console.log('FFMPEG command execution for audio optimisation is successfull.');
+         resolve (output)
+      } else {
+        reject(statusCode)
+      }
+    })
   })
   
+}
+
+function throwErr (res) {
+  return ReE(res, {message: 'Sorry, something went wrong'}, 500)
 }
 
 const upload = async function(req, res){
@@ -68,21 +72,76 @@ const upload = async function(req, res){
 
   let fileDir = getDirectory(appRoot+'/uploads/audio/');
 
+  let srcFile = fileDir + 'copy_'+name;
+
   let filePath = fileDir + name;
-    
-      // Use the mv() method to place the file somewhere on your server
-    sampleFile.mv(filePath, function(err){
-      if (err) {
-        return res.status(500).send(err);
-      } else {
-        S3Controller.uploadToS3(filePath, 'public/audio/')
-          .then((data) => {
-              ReS(res,{path: name}, 200)
-          }) 
-      }
-    });
+  
+  sampleFile.mv(srcFile, function(err){
+    if (err) {
+      return res.status(500).send(err);
+    } else {
+      optimizeAudio(srcFile, filePath)
+        .then((d) => {
+          fs.unlink(srcFile)
+          S3Controller.uploadToS3(filePath, S3AudioFolder)
+            .then((data) => {
+                ReS(res,{path: name}, 200)
+            })
+        })
+        .catch((e) => {
+          throwErr(res)
+        })
+    }
+  });
 
 }
 
-
 module.exports.upload = upload;
+
+const deleteFile = async function (req, res) {
+  try {
+    let filePath = req.params.filePath;
+    /*
+    * make sure the file being deleted
+    * has not been used in existing tracks
+    */
+    AudioTracks.find({
+      where: {
+        path: filePath
+      }
+    })
+      .then((track) => {
+        if (!track) {
+          S3Controller.deleteS3Object(filePath, S3AudioFolder)
+            .then((d) => {
+              ReS(res, {message: 'File deleted successfully'}, 200)
+            })
+        }
+      })
+  } catch (e) {
+    throwErr (res)
+  }
+}
+
+module.exports.deleteFile = deleteFile;
+
+const save = async function (req, res) {
+  try {
+    let data = req.body;
+    data.UserId = req.user.id;
+    AudioTracks.create(data)
+      .then((track) => {
+        ReS(res, {
+          message: 'Track added successfully',
+          track: track
+        }, 200)
+      })
+      .catch ((e) => {
+        throwErr (res)
+      })
+  } catch (e) {
+    throwErr (res)
+  }
+}
+
+module.exports.save = save;
