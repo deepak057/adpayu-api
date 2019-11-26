@@ -109,6 +109,7 @@ router.post('/withdraw',   passport.authenticate('jwt', {session:false}),  Withd
 router.put('/video/edit',   passport.authenticate('jwt', {session:false}),  VideoController.edit);        // U
 
 /** Audio routes **/
+router.get('/audio/get',   passport.authenticate('jwt', {session:false}),  AudioController.get);        // R
 router.get('/audio/getCategories',   passport.authenticate('jwt', {session:false}),  AudioController.getCategories);        // R
 router.post('/audio/upload',   passport.authenticate('jwt', {session:false}),  AudioController.upload);        // C
 router.delete('/audio/deleteFile/:filePath',   passport.authenticate('jwt', {session:false}),  AudioController.deleteFile);        // D

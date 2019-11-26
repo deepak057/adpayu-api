@@ -37,6 +37,23 @@ const getCategories = async function(req, res){
 
 module.exports.getCategories = getCategories;
 
+const get = async function (req, res) {
+  try {
+    AudioTracks.findAll({
+      limit: 10,
+      order: [['updatedAt', 'DESC']]
+    })
+      .then ((tracks) => {
+        ReS(res, {tracks: tracks}, 200)
+      })
+  } catch (e) {
+    console.log(e)
+    throwErr(res)
+  }
+}
+
+module.exports.get = get;
+
 function optimizeAudio (input, output) {
   return new Promise (function(resolve, reject) {
     console.log('Optimizing uploaded audio file...')
