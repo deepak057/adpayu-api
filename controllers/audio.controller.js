@@ -1,5 +1,5 @@
 const { AudioTracks} = require('../models');
-const { to, ReE, ReS, uniqeFileName, getDirectory} = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName, getDirectory, getLimitOffset} = require('../services/util.service');
 const appRoot = require('app-root-path');
 const S3Controller   = require('./s3.controller');
 const fs = require('fs');
@@ -39,8 +39,14 @@ module.exports.getCategories = getCategories;
 
 const get = async function (req, res) {
   try {
+
+    let page = req.query.page || 1;
+
+    let limitNOffset = getLimitOffset(page, 4);
+
     AudioTracks.findAll({
-      limit: 10,
+      limit: limitNOffset.limit,
+      offset: limitNOffset.offset,
       order: [['updatedAt', 'DESC']]
     })
       .then ((tracks) => {
