@@ -42,12 +42,23 @@ const get = async function (req, res) {
 
     let page = req.query.page || 1;
 
+    let searchKeyword = req.query.search;
+
+    let genere = parseInt(req.query.genere) || false;
+
     let limitNOffset = getLimitOffset(page, 4);
+
+    let whereCondition = {}
+
+    if (genere) {
+      whereCondition.genere = genere
+    }
 
     AudioTracks.findAll({
       limit: limitNOffset.limit,
       offset: limitNOffset.offset,
-      order: [['updatedAt', 'DESC']]
+      order: [['updatedAt', 'DESC']],
+      where: whereCondition
     })
       .then ((tracks) => {
         ReS(res, {tracks: tracks}, 200)
