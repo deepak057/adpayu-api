@@ -5,6 +5,8 @@ const S3Controller   = require('./s3.controller');
 const fs = require('fs');
 require('dotenv').config();
 const S3AudioFolder = 'public/audio/';
+const Sequelize = require('sequelize');
+const Op = Sequelize.Op;
 
 function musicGeneres () {
   return [
@@ -52,6 +54,11 @@ const get = async function (req, res) {
 
     if (genere) {
       whereCondition.genere = genere
+    }
+    if (searchKeyword) {
+      whereCondition.name = {
+        [Op.like] :  '%' + searchKeyword + '%'
+      }
     }
 
     AudioTracks.findAll({
