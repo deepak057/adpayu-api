@@ -459,14 +459,15 @@ const edit = async function(req, res) {
   try {
     let config = req.body.config;
     let user = req.user;
-    let isCommentVideo = config.videoType === 'comment'
+    let isCommentVideo = 'videoPath' in config.videoObj
     let model = isCommentVideo ? Comments : Videos
+    let track = config.backgroundTrack
     let throwErr = ()=> {
       return ReE(res, {message: 'Sorry, something went wrong'}, 500)
     }
     model.find({
       where: {
-        id: config.videoId,
+        id: config.videoObj.id,
         UserId: user.id
       }
     })
@@ -475,35 +476,40 @@ const edit = async function(req, res) {
         let S3SourceKey = 'public/' + videoName
         let copyVideoName = "copy_" + videoName
         let localVideoDir = getDirectory(appRoot + '/uploads/editing')
-        let audioPath = localVideoDir + '/a1.mp3'
+        let audioPath = localVideoDir + '/' + videoName + '_' + track.path 
         let localSrcVideoPath = localVideoDir + '/' + copyVideoName
         let localOutputVideoPath = localVideoDir + '/' + videoName
+        let s3SrcTrack = 'public/audio/' + track.path
         S3Controller.downloadS3Object(S3SourceKey, localSrcVideoPath)
           .then ((d) => {
-            let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioPath + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + localOutputVideoPath
-            executeCommand (command)
-              .then ((d) => {
-                fs.unlink(localSrcVideoPath)
-                S3Controller.copyS3Object(S3SourceKey, 'original/'+videoName)
-                  .then((d) => {
-                    S3Controller.uploadToS3(localOutputVideoPath, 'public/')
+            S3Controller.downloadS3Object(s3SrcTrack, audioPath)
+              .then((d) => {
+                let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioPath + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + localOutputVideoPath
+                executeCommand (command)
+                  .then ((d) => {
+                    fs.unlink(localSrcVideoPath)
+                    fs.unlink(audioPath)
+                    S3Controller.copyS3Object(S3SourceKey, 'original/'+videoName)
                       .then((d) => {
-                        if (isCommentVideo) {
-                          video.videoOptimized = false
-                        } else {
-                          video.optimized = false
-                        }
-                        video.failedProcessingAttempts = 0
-                        video.save()
-                          .then((videoUpdated) => {
-                            ReS(res, {message: 'Video editing successfull'}, 200)
+                        S3Controller.uploadToS3(localOutputVideoPath, 'public/')
+                          .then((d) => {
+                            if (isCommentVideo) {
+                              video.videoOptimized = false
+                            } else {
+                              video.optimized = false
+                            }
+                            video.failedProcessingAttempts = 0
+                            video.save()
+                              .then((videoUpdated) => {
+                                ReS(res, {message: 'Video editing successfull'}, 200)
+                              })
                           })
                       })
                   })
-              })
-              .catch((pErr) => {
-                console.log(pErr)
-                return throwErr()
+                  .catch((pErr) => {
+                    console.log(pErr)
+                    return throwErr()
+                  })
               })
           })
           .catch((pErr) => {
