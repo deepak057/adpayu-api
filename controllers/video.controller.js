@@ -501,7 +501,7 @@ const edit = async function(req, res) {
                             video.failedProcessingAttempts = 0
                             video.save()
                               .then((videoUpdated) => {
-                                ReS(res, {message: 'Video editing successfull'}, 200)
+                                ReS(res, {message: 'Video edited successfully'}, 200)
                               })
                           })
                       })
