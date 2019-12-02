@@ -48,7 +48,7 @@ const get = async function (req, res) {
 
     let genere = parseInt(req.query.genere) || false;
 
-    let limitNOffset = getLimitOffset(page, 4);
+    let limitNOffset = getLimitOffset(page, 12);
 
     let whereCondition = {}
 
