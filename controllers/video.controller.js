@@ -1,4 +1,4 @@
-const { Videos, Comments, Posts} = require('../models');
+const { Videos, Comments, Posts, EditedVideos} = require('../models');
 const { to, ReE, ReS, getDirectory } = require('../services/util.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -452,8 +452,6 @@ module.exports.optimizeVideos = optimizeVideos;
 * 1) First the video is downloaded in local file system from S3
 * 2) The selected audio track is added to the downloaded video
 * 3) The original video is copied/backed up to S3 folder 'original'
-* 4) The original video is then replaced by the new video optained from #2
-* 5) The video is then marked as "unoptimzed" so Video Optimisation Cron can optimize the new Source file 
 */
 const edit = async function(req, res) {
   try {
@@ -504,18 +502,38 @@ const edit = async function(req, res) {
       
     }
 
+    let trackVideoEditing = function (videoObj) {
+      let data = {
+        UserId: user.id,
+        AudioTrackId: track.id,
+      }
+      if (isCommentVideo) {
+        data.CommentId = videoObj.id
+      } else {
+        data.VideoId = videoObj.id;
+      }
+      EditedVideos.create(data)
+    }
+
     let addBackgroundTrack = function (videoObj, audioTrakFile) {
       return new Promise(function(resolve, reject) {
         let videoName = 'videoPath' in videoObj ? videoObj.videoPath : videoObj.path 
         let videoFilesEdited = 0;
+        let videoResolutions = videoRes;
+
+        /* add a boolean "false" in the begenning of Resolutions array so 
+        ** audio track is added in the original video as well
+        */
+        videoResolutions.unshift(false);
+        
         let addTrackExecute = function () {
-          runCommand(videoName, audioTrakFile, videoRes[videoFilesEdited])
+          runCommand(videoName, audioTrakFile, videoResolutions[videoFilesEdited])
             .then((d) => {
               videoFilesEdited ++
-              if (videoFilesEdited <= (res.length -1)) {
-                addTrackExecute()
-              } else {
+              if (videoFilesEdited === videoResolutions.length) {
                 resolve(d)
+              } else {
+                addTrackExecute()
               }
             })
         }
@@ -542,8 +560,9 @@ const edit = async function(req, res) {
         S3Controller.downloadS3Object(s3SrcTrack, audioPath)
           .then((d) => {
             addBackgroundTrack(video, audioPath)
-              .then((d) => {
+              .then((d1) => {
                 fs.unlink(audioPath)
+                trackVideoEditing(video)
                 ReS(res, {message: 'Video edited successfully'}, 200)
               })
           })
@@ -557,7 +576,6 @@ const edit = async function(req, res) {
         console.log(pErr)
         return throwErr()
       })
-
 
   } catch (e) {
     console.log(e)
