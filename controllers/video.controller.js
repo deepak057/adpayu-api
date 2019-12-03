@@ -6,61 +6,61 @@ const S3Controller   = require('./s3.controller');
 const appRoot = require('app-root-path');
 const path = require('path');
 const fs = require('fs');
-
+const videoRes = [360, 480];
 
 //configuring the AWS environment
 /*AWS.config.update({
-	accessKeyId: process.env.AWS_ACCESS_KEY,
-	secretAccessKey: process.env.AWS_SECRET
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET
 });
 
 /*
 const transcodeVideo =  function (inputFileName, outputFileName) {
-	return new Promise(function (resolve, reject) {
-		try {
-		  let elastictranscoder = new AWS.ElasticTranscoder();
-		  elastictranscoder.createJob(getTranscodingParameteres(inputFileName, outputFileName), function(err, data) {
-			  if (err) {
-			  	throw err
-			  } 
-			  else {
-			  	if(data.Job.Id) {
-			  		elastictranscoder.waitFor('jobComplete', {Id: data.Job.Id }, function(err, data) {
-  					  if (!err && data) {
-  					  	console.log('Video transcoded for Job Id-' + data.Job.Id);
-  					  	resolve(data);
-  					  }
-  					});
-			  	}
-			  }
-		  });
-		} catch (e) {
-			console.log(e)
-			reject(e)
-		}
-	})
+  return new Promise(function (resolve, reject) {
+    try {
+      let elastictranscoder = new AWS.ElasticTranscoder();
+      elastictranscoder.createJob(getTranscodingParameteres(inputFileName, outputFileName), function(err, data) {
+        if (err) {
+          throw err
+        } 
+        else {
+          if(data.Job.Id) {
+            elastictranscoder.waitFor('jobComplete', {Id: data.Job.Id }, function(err, data) {
+              if (!err && data) {
+                console.log('Video transcoded for Job Id-' + data.Job.Id);
+                resolve(data);
+              }
+            });
+          }
+        }
+      });
+    } catch (e) {
+      console.log(e)
+      reject(e)
+    }
+  })
 }
 
 function getTranscodingParameteres (inputFileName, outputFileName) {
-	return {
-		PipelineId: process.env.AWS_EMT_PIPELINE_ID,
-		OutputKeyPrefix: 'public/',
-		Input: {
-			Key: 'public/' + inputFileName
-		},
-		Output: {
-			Key: outputFileName,
-			PresetId: '1351620000001-100070',
-			Watermarks: [
-				{
-					PresetWatermarkId: 'BottomRight',
-					InputKey: 'public/logo-light-icon.png'
-				}
-			]
+  return {
+    PipelineId: process.env.AWS_EMT_PIPELINE_ID,
+    OutputKeyPrefix: 'public/',
+    Input: {
+      Key: 'public/' + inputFileName
+    },
+    Output: {
+      Key: outputFileName,
+      PresetId: '1351620000001-100070',
+      Watermarks: [
+        {
+          PresetWatermarkId: 'BottomRight',
+          InputKey: 'public/logo-light-icon.png'
+        }
+      ]
 
-		}
-		
-	}
+    }
+    
+  }
 }
 
 module.exports.transcodeVideo = transcodeVideo;
@@ -118,7 +118,7 @@ function getFilesAndCommands (localFilePath) {
     }
     getVideoMeta(localFilePath)
       .then((meta) => {
-        let desiredResolutions = [360, 480];
+        let desiredResolutions = videoRes;
         let commands = [];
         let outputFilesPath = [];
         let scalingNeeded = 0;
@@ -348,8 +348,8 @@ function optimizeVideoFile (dbObj, type = 'video') {
       })
   }
   try {
-  	S3Controller.copyS3Object(source, copy)
-  	  .then((data) => {
+    S3Controller.copyS3Object(source, copy)
+      .then((data) => {
         S3Controller.getObjectSize(source)
           .then((size) => {
             if((size / (1000**2)) > minFileSizeForTranscodingInMb) {
@@ -367,7 +367,7 @@ function optimizeVideoFile (dbObj, type = 'video') {
               markVideoAsOptimised()
             }
           })
-  	  })
+      })
   } catch (e) {
       updateFailedAttempt (dbObj);
       console.log("Error occured during video processing" + e);
@@ -462,9 +462,75 @@ const edit = async function(req, res) {
     let isCommentVideo = 'videoPath' in config.videoObj
     let model = isCommentVideo ? Comments : Videos
     let track = config.backgroundTrack
+    let localVideoRootDir = getDirectory(appRoot + '/uploads/editing/')
+    let s3SrcTrack = 'public/audio/' + track.path
+
     let throwErr = ()=> {
       return ReE(res, {message: 'Sorry, something went wrong'}, 500)
     }
+    let isOptimized = (video)=> {
+      return 'videoOptimized' in video ? video.videoOptimized : video.optimized
+    }
+    let runCommand = (videoName, audioTrakFile, res = false)=> {
+      return new Promise(function (resolve, reject) {
+        let videoSubDir = res ? ( res + '/') : ''
+        let s3OriginalVideoSrc = 'public/' + videoName
+        let s3VideoSrcDir = 'public/' + videoSubDir
+        let s3VideoSrc = s3VideoSrcDir + videoName
+        let localVideoDir = getDirectory(localVideoRootDir + '/' + videoSubDir)
+        let localSrcVideoPath = localVideoDir + 'src_' + videoName
+        let localOutputVideoPath = localVideoDir + videoName
+
+        S3Controller.downloadS3Object(s3VideoSrc, localSrcVideoPath)
+          .then((d1) => {
+            let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioTrakFile + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + localOutputVideoPath
+            executeCommand(command)
+              .then((d2) => {
+                  S3Controller.copyS3Object(s3OriginalVideoSrc, 'original/'+videoName)
+                      .then((d3) => {
+                        S3Controller.uploadToS3(localOutputVideoPath, s3VideoSrcDir)
+                          .then((d4) => {
+                            fs.unlink(localSrcVideoPath)
+                            resolve(s3VideoSrc)
+                          })
+                      })
+
+              })
+          })
+          .catch((e) => {
+            reject(e)
+          })
+      })
+      
+    }
+
+    let addBackgroundTrack = function (videoObj, audioTrakFile) {
+      return new Promise(function(resolve, reject) {
+        let videoName = 'videoPath' in videoObj ? videoObj.videoPath : videoObj.path 
+        let videoFilesEdited = 0;
+        let addTrackExecute = function () {
+          runCommand(videoName, audioTrakFile, videoRes[videoFilesEdited])
+            .then((d) => {
+              videoFilesEdited ++
+              if (videoFilesEdited <= (res.length -1)) {
+                addTrackExecute()
+              } else {
+                resolve(d)
+              }
+            })
+        }
+
+        if(!isOptimized(videoObj)) {
+          runCommand(videoName, audioTrakFile)
+            .then((d) => {
+              resolve(d)
+            })
+        } else {
+          addTrackExecute()
+        }
+      })
+    }
+
     model.find({
       where: {
         id: config.videoObj.id,
@@ -472,44 +538,13 @@ const edit = async function(req, res) {
       }
     })
       .then((video) => {
-        let videoName = isCommentVideo ? video.videoPath : video.path
-        let S3SourceKey = 'public/' + videoName
-        let copyVideoName = "copy_" + videoName
-        let localVideoDir = getDirectory(appRoot + '/uploads/editing')
-        let audioPath = localVideoDir + '/' + videoName + '_' + track.path 
-        let localSrcVideoPath = localVideoDir + '/' + copyVideoName
-        let localOutputVideoPath = localVideoDir + '/' + videoName
-        let s3SrcTrack = 'public/audio/' + track.path
-        S3Controller.downloadS3Object(S3SourceKey, localSrcVideoPath)
-          .then ((d) => {
-            S3Controller.downloadS3Object(s3SrcTrack, audioPath)
+        let audioPath = localVideoRootDir + '/' + video.id + '_' + track.path
+        S3Controller.downloadS3Object(s3SrcTrack, audioPath)
+          .then((d) => {
+            addBackgroundTrack(video, audioPath)
               .then((d) => {
-                let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioPath + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + localOutputVideoPath
-                executeCommand (command)
-                  .then ((d) => {
-                    fs.unlink(localSrcVideoPath)
-                    fs.unlink(audioPath)
-                    S3Controller.copyS3Object(S3SourceKey, 'original/'+videoName)
-                      .then((d) => {
-                        S3Controller.uploadToS3(localOutputVideoPath, 'public/')
-                          .then((d) => {
-                            if (isCommentVideo) {
-                              video.videoOptimized = false
-                            } else {
-                              video.optimized = false
-                            }
-                            video.failedProcessingAttempts = 0
-                            video.save()
-                              .then((videoUpdated) => {
-                                ReS(res, {message: 'Video edited successfully'}, 200)
-                              })
-                          })
-                      })
-                  })
-                  .catch((pErr) => {
-                    console.log(pErr)
-                    return throwErr()
-                  })
+                fs.unlink(audioPath)
+                ReS(res, {message: 'Video edited successfully'}, 200)
               })
           })
           .catch((pErr) => {
