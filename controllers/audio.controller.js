@@ -8,6 +8,11 @@ const S3AudioFolder = 'public/audio/';
 const Sequelize = require('sequelize');
 const Op = Sequelize.Op;
 
+/*
+* Id of My Tracks music category
+*/
+let myTracksCategoryId = 12;
+
 function musicGeneres () {
   return [
     {
@@ -15,26 +20,58 @@ function musicGeneres () {
       id: 0
     },
     {
-      label: 'Hip Hop',
+      label: 'Angry',
       id: 1
     },
     {
-      label: 'Dance',
+      label: 'Bright',
       id: 2
     },
     {
-      label: 'Rock',
+      label: 'Calm',
       id: 3
     },
     {
-      label: 'Horror',
+      label: 'Dark',
       id: 4
+    },
+    {
+      label: 'Dramatic',
+      id: 5
+    },
+    {
+      label: 'Funky',
+      id: 6
+    },
+    {
+      label: 'Happy',
+      id: 7
+    },
+    {
+      label: 'Inspirational',
+      id: 8
+    },
+    {
+      label: 'Naugthy',
+      id: 9
+    },
+    {
+      label: 'Romantic',
+      id: 10
+    },
+    {
+      label: 'Sad',
+      id: 11
+    },
+    {
+      label: 'My Tracks',
+      id: 12
     }
   ]
 }
 
 const getCategories = async function(req, res){
-  ReS(res, musicGeneres(), 200)
+  ReS(res, {categories: musicGeneres(), myTracksCategoryId: myTracksCategoryId}, 200)
 }
 
 module.exports.getCategories = getCategories;
@@ -53,7 +90,12 @@ const get = async function (req, res) {
     let whereCondition = {}
 
     if (genere) {
-      whereCondition.genere = genere
+      if (genere === myTracksCategoryId) {
+        whereCondition.UserId = req.user.id
+      } else {
+        whereCondition.genere = genere  
+      }
+      
     }
     if (searchKeyword) {
       whereCondition.name = {
@@ -68,7 +110,7 @@ const get = async function (req, res) {
       where: whereCondition
     })
       .then ((tracks) => {
-        ReS(res, {tracks: tracks}, 200)
+        ReS(res, {tracks: tracks, myTracksCategoryId: myTracksCategoryId}, 200)
       })
   } catch (e) {
     console.log(e)
@@ -77,6 +119,36 @@ const get = async function (req, res) {
 }
 
 module.exports.get = get;
+
+
+const remove = async function (req, res) {
+  try {
+    let trackId = req.params.trackId
+    let user = req.user
+
+    AudioTracks.find({
+      where: {
+        id: trackId,
+        UserId: user.id
+      }
+    })
+      .then((track) => {
+          S3Controller.deleteS3Object(track.path, S3AudioFolder)
+            .then((d1) => {
+              track.deleted = true
+              track.save()
+                .then((updatedTrack) => {
+                  ReS(res, {message: 'Track deleted successfully'}, 200)
+                })
+            })
+      })
+  } catch (e) {
+    console.log(e)
+    throwErr(res)
+  }
+}
+
+module.exports.delete = remove;
 
 function optimizeAudio (input, output) {
   return new Promise (function(resolve, reject) {

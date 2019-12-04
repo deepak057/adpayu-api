@@ -113,6 +113,7 @@ router.get('/audio/get',   passport.authenticate('jwt', {session:false}),  Audio
 router.get('/audio/getCategories',   passport.authenticate('jwt', {session:false}),  AudioController.getCategories);        // R
 router.post('/audio/upload',   passport.authenticate('jwt', {session:false}),  AudioController.upload);        // C
 router.delete('/audio/deleteFile/:filePath',   passport.authenticate('jwt', {session:false}),  AudioController.deleteFile);        // D
+router.delete('/audio/delete/:trackId',   passport.authenticate('jwt', {session:false}),  AudioController.delete);        // D
 router.post('/audio/save',   passport.authenticate('jwt', {session:false}),  AudioController.save);        // C
 
 /** Mails routes **/
