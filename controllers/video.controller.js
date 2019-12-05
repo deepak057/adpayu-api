@@ -483,16 +483,12 @@ const edit = async function(req, res) {
           .then((d1) => {
             let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioTrakFile + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + localOutputVideoPath
             executeCommand(command)
-              .then((d2) => {
-                  S3Controller.copyS3Object(s3OriginalVideoSrc, 'original/'+videoName)
-                      .then((d3) => {
-                        S3Controller.uploadToS3(localOutputVideoPath, s3VideoSrcDir)
-                          .then((d4) => {
-                            fs.unlink(localSrcVideoPath)
-                            resolve(s3VideoSrc)
-                          })
-                      })
-
+              .then((d2) => { 
+                S3Controller.uploadToS3(localOutputVideoPath, s3VideoSrcDir)
+                  .then((d3) => {
+                    fs.unlink(localSrcVideoPath)
+                    resolve(s3VideoSrc)
+                  })
               })
           })
           .catch((e) => {
@@ -537,15 +533,17 @@ const edit = async function(req, res) {
               }
             })
         }
-
-        if(!isOptimized(videoObj)) {
-          runCommand(videoName, audioTrakFile)
-            .then((d) => {
-              resolve(d)
-            })
-        } else {
-          addTrackExecute()
-        }
+        S3Controller.copyS3Object('public/' + videoName, 'original/'+videoName)
+          .then((d) => {
+              if(!isOptimized(videoObj)) {
+                runCommand(videoName, audioTrakFile)
+                  .then((d) => {
+                    resolve(d)
+                  })
+              } else {
+                addTrackExecute()
+              }
+          }) 
       })
     }
 
