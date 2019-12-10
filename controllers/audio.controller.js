@@ -1,5 +1,5 @@
 const { AudioTracks} = require('../models');
-const { to, ReE, ReS, uniqeFileName, getDirectory, getLimitOffset} = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName, getDirectory, getLimitOffset, getFileNameWithExtension} = require('../services/util.service');
 const appRoot = require('app-root-path');
 const S3Controller   = require('./s3.controller');
 const fs = require('fs');
@@ -156,6 +156,7 @@ function optimizeAudio (input, output) {
     const spawn = require('child_process').spawn;
     let command = "ffmpeg -i " + input + " -vn -b:a 64k " + output;
     let ffmpeg = spawn(command, [], { shell: true, stdio: 'inherit' });
+    console.log("Executing: " + command)
     ffmpeg.on('close', (statusCode) => {
       if (statusCode === 0) {
          console.log('FFMPEG command execution for audio optimisation is successfull.');
@@ -181,24 +182,26 @@ const upload = async function(req, res){
 // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
   let sampleFile = req.files.audio;
     
-  let name = uniqeFileName(sampleFile.name, req.user);
+  let inputFilename = uniqeFileName(sampleFile.name, req.user);
 
   let fileDir = getDirectory(appRoot+'/uploads/audio/');
 
-  let srcFile = fileDir + 'copy_'+name;
+  let srcFile = fileDir + 'copy_'+ inputFilename;
 
-  let filePath = fileDir + name;
+  let outputFileName = getFileNameWithExtension(inputFilename)
+
+  let outputFilePath = fileDir + outputFileName;
   
   sampleFile.mv(srcFile, function(err){
     if (err) {
       return res.status(500).send(err);
     } else {
-      optimizeAudio(srcFile, filePath)
+      optimizeAudio(srcFile, outputFilePath)
         .then((d) => {
           fs.unlink(srcFile)
-          S3Controller.uploadToS3(filePath, S3AudioFolder)
+          S3Controller.uploadToS3(outputFilePath, S3AudioFolder)
             .then((data) => {
-                ReS(res,{path: name}, 200)
+                ReS(res,{path: outputFileName}, 200)
             })
         })
         .catch((e) => {

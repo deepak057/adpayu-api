@@ -56,7 +56,7 @@ module.exports.sleep  = function (ms) {
 }
 
 module.exports.uniqeFileName = function (fileName, user = false) {
-      return fileName? uniqid() + ( user ? user.id: '' ) + path.extname(fileName) : ''
+      return fileName? (uniqid() + ( user ? user.id: '' ) + path.extname(fileName)).replace(' ', '_') : ''
 }
 
 /*
@@ -117,4 +117,8 @@ module.exports.getDirectory = function (dir) {
     fs.mkdirSync(dir);
   }
   return dir
+}
+
+module.exports.getFileNameWithExtension = function(filename, ext = "mp3") {
+  return filename.indexOf("." + ext) !== -1 ? filename : filename + "." + ext
 }
