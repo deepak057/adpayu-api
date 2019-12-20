@@ -460,6 +460,7 @@ const edit = async function(req, res) {
     let isCommentVideo = 'videoPath' in config.videoObj
     let model = isCommentVideo ? Comments : Videos
     let track = config.backgroundTrack
+    let trim = config.trim
     let localVideoRootDir = getDirectory(appRoot + '/uploads/editing/')
     let s3SrcTrack = 'public/audio/' + track.path
 
@@ -468,6 +469,9 @@ const edit = async function(req, res) {
     }
     let isOptimized = (video)=> {
       return 'videoOptimized' in video ? video.videoOptimized : video.optimized
+    }
+    let getCommand = ()=> {
+
     }
     let runCommand = (videoName, audioTrakFile, res = false)=> {
       return new Promise(function (resolve, reject) {
@@ -479,9 +483,22 @@ const edit = async function(req, res) {
         let localSrcVideoPath = localVideoDir + 'src_' + videoName
         let localOutputVideoPath = localVideoDir + videoName
 
+        let getTrimCommand = () => {
+          if (trim.length) {
+            let subCmd = "'"
+            for (let i in trim) {
+              subCmd += "between(t," + trim[i][0] + ',' + trim[i][1] + ")+"
+            }
+            subCmd += "'"
+            return "-vf \"select=" + subCmd + ",setpts=N/FRAME_RATE/TB\" -af \"aselect=" + subCmd + ",asetpts=N/SR/TB\" "
+          } else {
+            return ''
+          }
+        }
+
         S3Controller.downloadS3Object(s3VideoSrc, localSrcVideoPath)
           .then((d1) => {
-            let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioTrakFile + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + localOutputVideoPath
+            let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioTrakFile + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + getTrimCommand() + localOutputVideoPath
             executeCommand(command)
               .then((d2) => { 
                 S3Controller.uploadToS3(localOutputVideoPath, s3VideoSrcDir)
