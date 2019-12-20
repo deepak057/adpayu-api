@@ -196,7 +196,7 @@ const sendPasswordResetLink = async function (req, res) {
             if (user) {
                 updateUserPasswordResetSecretHash(user)
                   .then ((user) => {
-                     MailsController.sendMail(getPasswordResetMailBody(user, url), process.env.SITE_NAME+ '- Reset your account password', email)
+                     MailsController.sendMail(getPasswordResetMailBody(user, url), process.env.SITE_NAME+ '- Reset your account password', email, false)
                       .then((m) => {
                         return ReS(res, {
                           message: 'Password Reset link has been sent to your email address. Please follow that link.'
