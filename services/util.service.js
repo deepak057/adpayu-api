@@ -122,3 +122,8 @@ module.exports.getDirectory = function (dir) {
 module.exports.getFileNameWithExtension = function(filename, ext = "mp3") {
   return filename.indexOf("." + ext) !== -1 ? filename : filename + "." + ext
 }
+
+module.exports.removeLastOccuranceOf = function (str, char) {
+  let n = str.lastIndexOf(char)
+  return str.slice(0, n) + str.slice(n).replace(char, '')
+}

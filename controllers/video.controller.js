@@ -1,5 +1,5 @@
 const { Videos, Comments, Posts, EditedVideos} = require('../models');
-const { to, ReE, ReS, getDirectory } = require('../services/util.service');
+const { to, ReE, ReS, getDirectory, removeLastOccuranceOf } = require('../services/util.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 const S3Controller   = require('./s3.controller');
@@ -459,10 +459,9 @@ const edit = async function(req, res) {
     let user = req.user;
     let isCommentVideo = 'videoPath' in config.videoObj
     let model = isCommentVideo ? Comments : Videos
-    let track = config.backgroundTrack
-    let trim = config.trim
+    let track = config.backgroundTrack || false
+    let trim = config.trim || false
     let localVideoRootDir = getDirectory(appRoot + '/uploads/editing/')
-    let s3SrcTrack = 'public/audio/' + track.path
 
     let throwErr = ()=> {
       return ReE(res, {message: 'Sorry, something went wrong'}, 500)
@@ -470,55 +469,12 @@ const edit = async function(req, res) {
     let isOptimized = (video)=> {
       return 'videoOptimized' in video ? video.videoOptimized : video.optimized
     }
-    let getCommand = ()=> {
-
-    }
-    let runCommand = (videoName, audioTrakFile, res = false)=> {
-      return new Promise(function (resolve, reject) {
-        let videoSubDir = res ? ( res + '/') : ''
-        let s3OriginalVideoSrc = 'public/' + videoName
-        let s3VideoSrcDir = 'public/' + videoSubDir
-        let s3VideoSrc = s3VideoSrcDir + videoName
-        let localVideoDir = getDirectory(localVideoRootDir + '/' + videoSubDir)
-        let localSrcVideoPath = localVideoDir + 'src_' + videoName
-        let localOutputVideoPath = localVideoDir + videoName
-
-        let getTrimCommand = () => {
-          if (trim.length) {
-            let subCmd = "'"
-            for (let i in trim) {
-              subCmd += "between(t," + trim[i][0] + ',' + trim[i][1] + ")+"
-            }
-            subCmd += "'"
-            return "-vf \"select=" + subCmd + ",setpts=N/FRAME_RATE/TB\" -af \"aselect=" + subCmd + ",asetpts=N/SR/TB\" "
-          } else {
-            return ''
-          }
-        }
-
-        S3Controller.downloadS3Object(s3VideoSrc, localSrcVideoPath)
-          .then((d1) => {
-            let command = "ffmpeg -i " + localSrcVideoPath +  " -y -i " + audioTrakFile + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + getTrimCommand() + localOutputVideoPath
-            executeCommand(command)
-              .then((d2) => { 
-                S3Controller.uploadToS3(localOutputVideoPath, s3VideoSrcDir)
-                  .then((d3) => {
-                    fs.unlink(localSrcVideoPath)
-                    resolve(s3VideoSrc)
-                  })
-              })
-          })
-          .catch((e) => {
-            reject(e)
-          })
-      })
-      
-    }
 
     let trackVideoEditing = function (videoObj) {
       let data = {
         UserId: user.id,
         AudioTrackId: track.id,
+        trim: trim ? JSON.stringify(trim) : ''
       }
       if (isCommentVideo) {
         data.CommentId = videoObj.id
@@ -528,40 +484,111 @@ const edit = async function(req, res) {
       EditedVideos.create(data)
     }
 
-    let addBackgroundTrack = function (videoObj, audioTrakFile) {
-      return new Promise(function(resolve, reject) {
-        let videoName = 'videoPath' in videoObj ? videoObj.videoPath : videoObj.path 
-        let videoFilesEdited = 0;
-        let videoResolutions = videoRes;
+    let getVideoName = (videoObj) => {
+      return 'videoPath' in videoObj ? videoObj.videoPath : videoObj.path 
+    }
 
-        /* add a boolean "false" in the begenning of Resolutions array so 
-        ** audio track is added in the original video as well
-        */
-        videoResolutions.unshift(false);
-        
-        let addTrackExecute = function () {
-          runCommand(videoName, audioTrakFile, videoResolutions[videoFilesEdited])
-            .then((d) => {
-              videoFilesEdited ++
-              if (videoFilesEdited === videoResolutions.length) {
-                resolve(d)
-              } else {
-                addTrackExecute()
-              }
+    let trimVideo = (srcVideoPath, outputVideoPath, trim) => {
+      let getTrimCommand = () => {
+        let subCmd = "'"
+        for (let i in trim) {
+          subCmd += "between(t," + trim[i][0] + ',' + trim[i][1] + ")+"
+        }
+        subCmd += "'"
+        subCmd = removeLastOccuranceOf (subCmd, '+')
+        return "ffmpeg -i " + srcVideoPath + " -y -vf \"select=" + subCmd + ",setpts=N/FRAME_RATE/TB\" -af \"aselect=" + subCmd + ",asetpts=N/SR/TB\" " + outputVideoPath      
+      }
+      return executeCommand(getTrimCommand())
+    }
+
+    let addBackgroundTrack = (srcVideoPath, outputVideoPath, trackFilePath) => {
+      let command = "ffmpeg -i " + srcVideoPath +  " -y -i " + trackFilePath + " -c:v copy -map 0:v:0 -map 1:a:0 -shortest " + outputVideoPath
+      return executeCommand(command)
+    }
+
+    let editVideo = (videoObj, videoRes, trimConf = [], trackPath = false) => {
+      return new Promise((resolve, reject) => {
+        let videoName = getVideoName(videoObj)
+        let videoSubDir = videoRes ? ( videoRes + '/') : ''
+        let s3OriginalVideoSrc = 'public/' + videoName
+        let s3VideoSrcDir = 'public/' + videoSubDir
+        let s3VideoSrc = s3VideoSrcDir + videoName
+        let localVideoDir = getDirectory(localVideoRootDir + '/' + videoSubDir)
+        let localSrcVideoPath = localVideoDir + 'src_' + videoName
+        let localOutputVideoPath = localVideoDir + videoName
+        let resolveFunction = (d) => {
+          if (fs.existsSync(localSrcVideoPath)) {
+            fs.unlink(localSrcVideoPath)
+          }
+          S3Controller.uploadToS3(localOutputVideoPath, s3VideoSrcDir)
+            .then((d1) => {
+              resolve (d)
+            })
+            .catch((uErr) => {
+              reject(uErr)
             })
         }
-        S3Controller.copyS3Object('public/' + videoName, 'original/'+videoName)
-          .then((d) => {
-              if(!isOptimized(videoObj)) {
-                runCommand(videoName, audioTrakFile)
-                  .then((d) => {
-                    resolve(d)
+        let execute = () => {
+          S3Controller.downloadS3Object(s3VideoSrc, localSrcVideoPath)
+            .then((d1) => {
+              if (trimConf && trimConf.length) {
+                trimVideo(localSrcVideoPath, localOutputVideoPath, trimConf)
+                  .then((d2) => {
+                    if (trackPath) {
+                      fs.rename(localOutputVideoPath, localSrcVideoPath, function(err) {
+                        if (!err ) {
+                          addBackgroundTrack(localSrcVideoPath, localOutputVideoPath, trackPath)
+                            .then((d3) => {
+                              resolveFunction(d3)
+                            })
+                        } else { 
+                          reject (err)
+                        }
+                      })
+                    } else {
+                      resolveFunction(d2)
+                    }
                   })
-              } else {
-                addTrackExecute()
+                  .catch((pErr) => {
+                    reject(pErr)
+                  })
               }
-          }) 
+              else if (trackPath) {
+                addBackgroundTrack(localSrcVideoPath, localOutputVideoPath, trackPath)
+                  .then((d2) => {
+                    resolveFunction(d2)
+                  })
+                  .catch((pErr) => {
+                    reject(pErr)
+                  })
+              }
+
+            })
+        }
+
+        /*
+        * if video Resolution is false, it means it's the original video
+        * In which case, take the backup of the original video
+        */
+        if (!videoRes) {
+          S3Controller.copyS3Object(s3VideoSrc, 'original/' + videoName)
+            .then((d) => {
+              execute()
+            })
+        } else {
+          execute()
+        }
+      
       })
+
+    }
+
+    let getVideoSources = (video) => {
+      let videoSrc = [false]
+        if(isOptimized(video)) {
+          videoSrc = videoSrc.concat(videoRes)
+        }
+      return videoSrc
     }
 
     model.find({
@@ -571,21 +598,36 @@ const edit = async function(req, res) {
       }
     })
       .then((video) => {
-        let audioPath = localVideoRootDir + '/' + video.id + '_' + track.path
-        S3Controller.downloadS3Object(s3SrcTrack, audioPath)
-          .then((d) => {
-            addBackgroundTrack(video, audioPath)
-              .then((d1) => {
-                fs.unlink(audioPath)
+        let videoSrc = getVideoSources(video)
+        let videosEdited = 0
+        let audioTrakFile = false
+        let execute = function () {
+          editVideo(video, videoSrc[videosEdited], trim, audioTrakFile)
+            .then((c) => {
+              videosEdited ++
+              if (videosEdited === videoSrc.length) {
+                if (track && fs.existsSync(audioTrakFile)) {
+                  fs.unlink(audioTrakFile)
+                }
                 trackVideoEditing(video)
                 ReS(res, {message: 'Video edited successfully'}, 200)
-              })
-          })
-          .catch((pErr) => {
-            console.log(pErr)
-            return throwErr()
-          })
+              } else {
+                execute()
+              }
+            })
+        }
+        if (track) {
+          let s3SrcTrack = 'public/audio/' + track.path
+          let audioPath = localVideoRootDir + '/' + video.id + '_' + track.path
+          S3Controller.downloadS3Object(s3SrcTrack, audioPath)
+            .then((d) => {
+              audioTrakFile = audioPath
+              execute()
+            })
 
+        } else {
+          execute()
+        }
       })
       .catch((pErr) => {
         console.log(pErr)
