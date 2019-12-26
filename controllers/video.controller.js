@@ -580,7 +580,6 @@ const edit = async function(req, res) {
         }
       
       })
-
     }
 
     let getVideoSources = (video) => {
