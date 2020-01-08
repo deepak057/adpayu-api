@@ -18,7 +18,7 @@ function getCommentURL (comment) {
   return process.env.FRONT_END_SITE_URL_BASE + '/c/' + comment.id;
 }
 
-const get =  function(req, res){
+const get = function(req, res){
   try {
     let postId = req.params.postId || false, user = req.user;
     if (postId) {
@@ -216,9 +216,9 @@ module.exports.setDefaultComment = setDefaultComment;
 
 const getComment = async function(req, res){
   try {
-    let commentId = req.params.commentId, comment, err, post;
+    let commentId = req.params.commentId, comment, err, post, user = req.user || false;
     
-     [err, comment] = await to(Comments.find(getCommentCriteriaObject(req.user, {id: commentId})));
+     [err, comment] = await to(Comments.find(getCommentCriteriaObject(user, {id: commentId})));
      if(err) {
         console.log(err)
         throw new Error('error occured trying to get the comment')
@@ -230,7 +230,7 @@ const getComment = async function(req, res){
         throw new Error('error occured trying to get the post')
        }
 
-      return ReS(res, {comment: getSingleComment(comment, req.user), post: post}, 200);      
+      return ReS(res, {comment: getSingleComment(comment, user), post: post}, 200);      
 
   } catch (e) {
     console.log(e)

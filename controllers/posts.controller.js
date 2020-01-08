@@ -728,9 +728,10 @@ module.exports.getTimelineFeed = getTimelineFeed;
 const getPostById = function(req, res){
     let postId = req.params.postId || false
     let checkOwner = req.query.checkOwner || false
+    let user = req.user || false
 
     if(postId) {
-      let criteria = getPostCriteriaObject(req.user);
+      let criteria = getPostCriteriaObject(user);
       criteria.where = {id: postId};
 
       /*
@@ -739,12 +740,12 @@ const getPostById = function(req, res){
       ** by current user
       */
       if (checkOwner === 'true') {
-        criteria.where.UserId = req.user.id;
+        criteria.where.UserId = user.id;
       }
       
       Posts.findOne(criteria)
       .then((post) => {
-            return ReS(res, toWeb(post, req.user), 201);
+            return ReS(res, toWeb(post, user), 200);
       })
       .catch((err) => {
         return ReE(res, err, 422);

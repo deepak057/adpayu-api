@@ -46,7 +46,8 @@ router.put('/users/markAsViewed/', passport.authenticate('jwt', {session:false})
 /** Posts routes **/
 router.post('/posts',           passport.authenticate('jwt', {session:false}), PostsController.create);        // C
 router.get('/posts/:tag',           passport.authenticate('jwt', {session:false}), PostsController.get);        	   // R
-router.get('/post/:postId',           passport.authenticate('jwt', {session:false}), PostsController.getPostById);        	   // R
+router.get('/post/:postId',  passport.authenticate('jwt', {session:false}), PostsController.getPostById);        	   // R
+router.get('/post/public/:postId',  PostsController.getPostById);        	   // R
 router.get('/posts/timelineFeed/:userId',           passport.authenticate('jwt', {session:false}), PostsController.getTimelineFeed);        	   // R
 router.put('/posts',           passport.authenticate('jwt', {session:false}), PostsController.update);         // U
 router.delete('/posts/:postId',           passport.authenticate('jwt', {session:false}), PostsController.remove);        // D
@@ -59,10 +60,11 @@ router.put('/tags/follow/:tagId',           passport.authenticate('jwt', {sessio
 router.delete('/tags/unfollow/:tagId',           passport.authenticate('jwt', {session:false}), TagsController.unfollow);        // R
 
 /** Comments routes**/
-router.get('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.get);        // R
+router.get('/comments/:postId', passport.authenticate('jwt', {session:false}), CommentsController.get);        // R
 router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C
 router.delete('/comments/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // D
-router.get('/comments/getComment/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.getComment);        // R
+router.get('/comments/getComment/:commentId', passport.authenticate('jwt', {session:false}), CommentsController.getComment);        // R
+router.get('/comments/public/getComment/:commentId', CommentsController.getComment);        // R
 router.get('/reviewVideoComment/:commentId', CommentsController.reviewVideoComment);        //U
 
 /** Likes routes**/

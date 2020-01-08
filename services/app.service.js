@@ -35,43 +35,49 @@ module.exports.getUIDs = function(users, currentUser = false) {
 * model and dependencies
 */
 
-function getCommentIncludes (user) {
-return [
-  {
-    model: User.scope('public')
-  },
-  {
-    model: Likes,
-    //including an a fake condition
-    // to prevent selecting all the 
-    // associated Records to save 
-    where: {
-      id: 'dummy'
+function getCommentIncludes (user = false) {
+  let r = [
+    {
+      model: User.scope('public')
     },
-    required: false
-  },
-  {
-    model: ViewedEntities,
-    where: {
-      UserId: user.id
+    {
+      model: Likes,
+      //including an a fake condition
+      // to prevent selecting all the 
+      // associated Records to save 
+      where: {
+        id: 'dummy'
+      },
+      required: false
     },
-    required: false
+  ]
+  if (user) {
+    r.push({
+      model: ViewedEntities,
+      where: {
+        UserId: user.id
+      },
+      required: false
+    })
   }
-]
+  return r;
 }
 
 module.exports.getCommentIncludes = getCommentIncludes;
 
-function getCommentCriteriaObject (user, where = false) {
+function getCommentCriteriaObject (user = false, where = false) {
+  let includes = [
+    [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount']
+  ]
+  if (user) {
+    includes.push([Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'])
+    includes.push([Sequelize.literal('(SELECT COUNT(*) FROM ViewedEntities WHERE ViewedEntities.CommentId = Comments.id AND ViewedEntities.UserId = '+ user.id +')'), 'HasViewed'])
+  }
   let r_ = {
     include: getCommentIncludes(user),
     required: false,
     attributes: {
-      include: [
-        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount'],
-        [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'],
-        [Sequelize.literal('(SELECT COUNT(*) FROM ViewedEntities WHERE ViewedEntities.CommentId = Comments.id AND ViewedEntities.UserId = '+ user.id +')'), 'HasViewed']
-      ]
+      include: includes
     },
   }
   if (where) {
@@ -85,7 +91,7 @@ module.exports.getCommentCriteriaObject = getCommentCriteriaObject;
 ** Get default DB Include models
 */
 
-function getDBInclude(user, tagIds = [], pushModel = {}) {
+function getDBInclude(user = false, tagIds = [], pushModel = {}) {
   let tags = {
     model: Tags,
   }
@@ -155,14 +161,7 @@ function getDBInclude(user, tagIds = [], pushModel = {}) {
             ],
             required: false
           }*/
-          commentObj,
-          {
-            model: ConsumedAds,
-            where: {
-              UserId: user.id,
-            },
-            required: false,
-          }
+          commentObj
           
         ];
 
@@ -174,12 +173,32 @@ function getDBInclude(user, tagIds = [], pushModel = {}) {
       return_.push(pushModel)
     }
 
+    if (user) {
+      return_.push({
+        model: ConsumedAds,
+        where: {
+          UserId: user.id,
+        },
+        required: false,
+      })
+    }
+
     return return_;
 }
 module.exports.getDBInclude = getDBInclude;
 
 
-function getPostCriteriaObject (user, tagIds = []) {
+function getPostCriteriaObject (user = false, tagIds = []) {
+  let includes = [
+    [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id && deleted = 0)'), 'CommentsCount'],
+    [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id)'), 'LikesCount']
+  ]
+  
+  if (user) {
+    includes.push([Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'])
+    includes.push([Sequelize.literal('(SELECT COUNT(*) FROM ViewedEntities WHERE ViewedEntities.PostId = Posts.id AND ViewedEntities.UserId = '+ user.id +')'), 'HasViewed'])
+  }
+
   return {
       include: getDBInclude(user, tagIds) ,
       
@@ -187,13 +206,7 @@ function getPostCriteriaObject (user, tagIds = []) {
       Include comments count 
       */
       attributes: {
-        include: [
-          [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id && deleted = 0)'), 'CommentsCount'],
-          [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id)'), 'LikesCount'],
-          [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'],
-          [Sequelize.literal('(SELECT COUNT(*) FROM ViewedEntities WHERE ViewedEntities.PostId = Posts.id AND ViewedEntities.UserId = '+ user.id +')'), 'HasViewed'],
-          //[Sequelize.literal('(SELECT * FROM ConsumedAds WHERE ConsumedAds.PostId = Posts.id AND ConsumedAds.UserId = '+ user.id +')'), 'ConsumedAds']
-        ]
+        include: includes
       },
         
     }
