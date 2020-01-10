@@ -30,7 +30,17 @@ ADS.defaultPricing = {
 
 ADS.processingFeePercentage = 3
 ADS.maxAdsToBePushedToTop = 2
-
+ADS.actions = {
+  impression: 'impression',
+  click: 'click',
+  view: 'view',
+  videoComment: 'videoComment'
+}
+ADS.adsRestrictionPolicy = {
+  maxAdsToShowOnRegistration: 1,
+  daysInterval: 1,
+  maxAdsToShowOnInterval: 1
+}
 module.exports.ADS = ADS;
 
 let TAGS = {}

@@ -322,10 +322,95 @@ function getPostScopes (user) {
 
 }
 
+/*
+* This function is used to implement Ad Restriction policy
+* If policy is enabled, this function will implement the rules
+* as per the policy and will restrict the ads that get sent to the 
+* user feed
+*/
+
+function putAdRestrictions (posts, user) {
+  return new Promise(function (resolve, reject) {
+    let getPosts = ()=> {
+      return toWeb(posts)
+    }
+    // function to return array of Ads in given posts
+    let getAdPosts = (postsJson) => {
+      let ads = []
+      if (postsJson.length ) {
+        for (let i in postsJson) {
+          if (postsJson[i].AdOption) {
+            ads.push(postsJson[i])
+          }
+        }
+      }
+      return ads
+    }
+    let getUnseenAds = (postsJson) => {
+      let unseenAds = [];
+      for (let i in postsJson) {
+        if (postsJson[i].UserId !== user.id) {
+          if (postsJson[i].ConsumedAds && postsJson[i].ConsumedAds.length) {
+          } else {
+            unseenAds.push(postsJson[i])
+          }  
+        } 
+      }
+      return unseenAds
+    }
+    let deleteUnseenAds = (postsJson, adsToDeleteCount, unseenAds) => {
+      let deletedAds = 0;
+      for (let i = (postsJson.length -1); i >= 0; i-- ) {
+        if (deletedAds === adsToDeleteCount) {
+          return posts
+        }
+        for (let j = (unseenAds.length - 1); j >= 0; j--) {
+          if (postsJson[i].id === unseenAds[j].id) {
+            posts.splice(i, 1)
+            // console.log('Deleting ' + adsToDeleteCount + '\n\n\n\n\n\n')
+            deletedAds++
+          }
+        }
+      }
+    }
+    let keepTheAdsUsersCanSee = (postsJson, newAdsUserCanSee, unseenAds) => {
+      if (!unseenAds.length || unseenAds.length <= newAdsUserCanSee) {
+        return posts
+      } else {
+        return deleteUnseenAds(postsJson, (unseenAds.length - newAdsUserCanSee), unseenAds)
+      }
+    }
+    let postsJson = getPosts()
+    let ads = getUnseenAds(postsJson)
+    //proceed only if ad restriction policy is on and there are ads in the given set of posts
+    if (process.env.AD_RESTRICTION === 'true' && ads.length) {
+      let policy = ADS.adsRestrictionPolicy
+      ConsumedAds.count({
+        where: {
+          UserId: user.id,
+          action: ADS.actions.impression
+        }
+      })
+        .then((seenAdsCount) => {
+          seenAdsCount = parseInt(seenAdsCount) 
+          if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
+            //interval ads rule
+            resolve(posts)
+          } else {
+            let newAdsUserCanSee = policy.maxAdsToShowOnRegistration - seenAdsCount
+            resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))
+          }
+        })
+    } else {
+      resolve(posts)
+    }
+  })
+}
+
 
 /*
 ** This method is another layer in feed interpretation and 
-** manipulation. Since the default SQL retreive has issues, this method 
+** manipulation. Since the default SQL retreival has issues, this method 
 ** is needed to do following-
 **   1) Fixes the Adstats object in posts so that it doesn't have incorrect stats values
 **   2) Adds lastComment field in posts
@@ -380,7 +465,10 @@ async function FixPosts (posts, user) {
             }
           }
         }
-        resolve(posts)
+        putAdRestrictions(posts, user)
+          .then((postsUpdated) => {
+            resolve(postsUpdated)
+          })
      })
      .catch ((err) => {
         reject(err)
