@@ -359,15 +359,16 @@ function putAdRestrictions (posts, user) {
       return unseenAds
     }
     let deleteUnseenAds = (postsJson, adsToDeleteCount, unseenAds) => {
+      console.log('it is here --- '+ adsToDeleteCount+ ' total posts - '+postsJson.length+ ' unseen Ads -'+unseenAds.length+'\n\n\n\n\n')
       let deletedAds = 0;
       for (let i = (postsJson.length -1); i >= 0; i-- ) {
+        console.log('Deleted ads- ' + deletedAds +'\n')
         if (deletedAds === adsToDeleteCount) {
           return posts
         }
         for (let j = (unseenAds.length - 1); j >= 0; j--) {
           if (postsJson[i].id === unseenAds[j].id) {
             posts.splice(i, 1)
-            // console.log('Deleting ' + adsToDeleteCount + '\n\n\n\n\n\n')
             deletedAds++
           }
         }
@@ -380,30 +381,51 @@ function putAdRestrictions (posts, user) {
         return deleteUnseenAds(postsJson, (unseenAds.length - newAdsUserCanSee), unseenAds)
       }
     }
-    let postsJson = getPosts()
-    let ads = getUnseenAds(postsJson)
-    //proceed only if ad restriction policy is on and there are ads in the given set of posts
-    if (process.env.AD_RESTRICTION === 'true' && ads.length) {
-      let policy = ADS.adsRestrictionPolicy
-      ConsumedAds.count({
-        where: {
-          UserId: user.id,
-          action: ADS.actions.impression
-        }
-      })
-        .then((seenAdsCount) => {
-          seenAdsCount = parseInt(seenAdsCount) 
-          if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
-            //interval ads rule
-            resolve(posts)
-          } else {
-            let newAdsUserCanSee = policy.maxAdsToShowOnRegistration - seenAdsCount
-            resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))
+    let main = ()=> {
+      let postsJson = getPosts()
+      let ads = getUnseenAds(postsJson)
+      //proceed only if ad restriction policy is on and there are ads in the given set of posts
+      if (process.env.AD_RESTRICTION === 'true' && ads.length) {
+        let policy = ADS.adsRestrictionPolicy
+        ConsumedAds.count({
+          where: {
+            UserId: user.id,
+            action: ADS.actions.impression
           }
         })
-    } else {
-      resolve(posts)
+          .then((seenAdsCount) => {
+            if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
+              let moment = require('moment')
+              ConsumedAds.count({
+                where: {
+                  UserId: user.id,
+                  action: ADS.actions.impression,
+                  updatedAt: {
+                    [op.gte]: moment().subtract(policy.daysInterval, 'days').toDate()
+                    // [op.gte]: Sequelize.literal('NOW() - INTERVAL "' + policy.daysInterval + 'd"')
+                  }
+                }
+              })
+                .then((seenAdsCountInDaysInterval) => {
+                  if (seenAdsCountInDaysInterval < policy.maxAdsToShowOnInterval) {
+                    let newAdsUserCanSee = policy.maxAdsToShowOnInterval - seenAdsCountInDaysInterval
+                    resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))  
+                  } else {
+                    resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
+                  }
+                  
+                })
+              
+            } else {
+              let newAdsUserCanSee = policy.maxAdsToShowOnRegistration - seenAdsCount
+              resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))
+            }
+          })
+      } else {
+        resolve(posts)
+      }
     }
+    main()
   })
 }
 
@@ -414,6 +436,7 @@ function putAdRestrictions (posts, user) {
 ** is needed to do following-
 **   1) Fixes the Adstats object in posts so that it doesn't have incorrect stats values
 **   2) Adds lastComment field in posts
+**   3) Removes duplicate posts from the given set of posts
 ** 
 */
 
@@ -438,6 +461,22 @@ async function FixPosts (posts, user) {
         }
       }
       return false;
+    }
+
+    /*
+    * function to remove duplicate posts 
+    */
+    function removeDuplicatePosts (posts) {
+      let postJson = toWeb(posts)
+      let postIds = []
+      for (let i in postJson) {
+        if (postIds.indexOf(postJson[i].id) === -1) {
+          postIds.push(postJson[i].id)
+        } else {
+          posts.splice(i, 1)
+        }
+      }
+      return posts
     }
 
     for (let i in posts) {
@@ -465,7 +504,7 @@ async function FixPosts (posts, user) {
             }
           }
         }
-        putAdRestrictions(posts, user)
+        putAdRestrictions(removeDuplicatePosts(posts), user)
           .then((postsUpdated) => {
             resolve(postsUpdated)
           })

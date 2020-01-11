@@ -23,8 +23,8 @@ let ADS = {}
 
 ADS.defaultPricing = {
   defaultCPI: 0.0071,
-  defaultCPC: 0.028,
-  defaultCPV: 0.085,
+  defaultCPC: 0.014,
+  defaultCPV: 0.021,
   defaultImpressionTarget: 500
 }
 
@@ -37,9 +37,9 @@ ADS.actions = {
   videoComment: 'videoComment'
 }
 ADS.adsRestrictionPolicy = {
-  maxAdsToShowOnRegistration: 1,
+  maxAdsToShowOnRegistration: 3,
   daysInterval: 1,
-  maxAdsToShowOnInterval: 1
+  maxAdsToShowOnInterval: 2
 }
 module.exports.ADS = ADS;
 
