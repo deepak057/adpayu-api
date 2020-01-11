@@ -358,18 +358,16 @@ function putAdRestrictions (posts, user) {
       }
       return unseenAds
     }
-    let deleteUnseenAds = (postsJson, adsToDeleteCount, unseenAds) => {
-      console.log('it is here --- '+ adsToDeleteCount+ ' total posts - '+postsJson.length+ ' unseen Ads -'+unseenAds.length+'\n\n\n\n\n')
+    let deleteUnseenAds = (postsJson, adsToDeleteCount, unseenAds) => {      
       let deletedAds = 0;
-      for (let i = (postsJson.length -1); i >= 0; i-- ) {
-        console.log('Deleted ads- ' + deletedAds +'\n')
-        if (deletedAds === adsToDeleteCount) {
-          return posts
-        }
+      for (let i = (postsJson.length -1); i >= 0; i-- ) {        
         for (let j = (unseenAds.length - 1); j >= 0; j--) {
           if (postsJson[i].id === unseenAds[j].id) {
             posts.splice(i, 1)
             deletedAds++
+            if (deletedAds === adsToDeleteCount) {
+              return posts
+            }
           }
         }
       }
@@ -478,7 +476,9 @@ async function FixPosts (posts, user) {
       }
       return posts
     }
-
+    if (!posts.length) {
+      resolve(posts)
+    }
     for (let i in posts) {
       postsArr.push(posts[i].id)
     }
