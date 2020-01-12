@@ -178,72 +178,122 @@ module.exports.create = create;
 */
 
 const get = async function(req, res){
-    let friends;
+  getUserFeed(req, res)
+}
 
-    let user = req.user;
+async function getUserFeed (req, res, nextPage = false) {
+  let friends;
 
-    let tag = req.params.tag || 'all';
+  let user = req.user;
 
-    let page = req.query.page || 1;
+  let tag = req.params.tag || 'all';
 
-    let dbIncludes = getDBInclude(user)
-
-    let limitNOffset = getLimitOffset(page, 25);
-
-    // get current user's friends
-    [err, friends] = await to(User.getFriends(user.id))
-     if(err) {
-       return ReE(res, err, 422);
-     }
-
-     let UIDCondition = getUIDs(friends, req.user);
-
-     /* Condition for shwoing posts 
-     ** from friends and self
-     */
-     let friendsPostsCondition =  {
-            UserId: UIDCondition
-     };
-
-     // Array that will contain all the conditions
-     let condition = []
-
-    //ad location wise ad filtering search criteria
-    condition.push(getAdLocationSearchCriteria(user))
-
-    let criteria = getPostCriteriaObject(user);
-      
-    criteria.order = Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);  
-
-    if(tag === 'all')  {
+  let page = nextPage || (req.query.page || 1);
 
 
-      // get the tags of current user and create an array containing Tag Ids
-      user.getTags()
-        .then ((userTags) => {
-          let tagsId = [];
-          if(userTags) {
-            for(let i in userTags) {
-              tagsId.push(userTags[i].id)
-            }
+  console.log('on page '+ page + '\n\n\n\n\n')
+
+  let dbIncludes = getDBInclude(user)
+
+  let limitNOffset = getLimitOffset(page, 25);
+
+  // get current user's friends
+  [err, friends] = await to(User.getFriends(user.id))
+   if(err) {
+     return ReE(res, err, 422);
+   }
+
+   let UIDCondition = getUIDs(friends, req.user);
+
+   /* Condition for shwoing posts 
+   ** from friends and self
+   */
+   let friendsPostsCondition =  {
+          UserId: UIDCondition
+   };
+
+   // Array that will contain all the conditions
+   let condition = []
+
+  //ad location wise ad filtering search criteria
+  condition.push(getAdLocationSearchCriteria(user))
+
+  let criteria = getPostCriteriaObject(user);
+    
+  criteria.order = Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);  
+
+  if(tag === 'all')  {
+
+    // get the tags of current user and create an array containing Tag Ids
+    user.getTags()
+      .then ((userTags) => {
+        let tagsId = [];
+        if(userTags) {
+          for(let i in userTags) {
+            tagsId.push(userTags[i].id)
           }
+        }
 
 
 
-          // push friends conditions i.e. get posts that are from friends or self
+        // push friends conditions i.e. get posts that are from friends or self
+        condition.push(friendsPostsCondition);
+
+        // push public Posts condition. i.e. get public posts in the tags that 
+        // current user follows
+        condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': tagsId});
+
+        // club all the conditions
+        criteria.where = getWhereCondition (user, condition)
+
+        Posts.scope(getPostScopes(user)).findAll(criteria)
+         .then((posts) => {
+            return sendFeed(req, res, posts, page)
+          })
+         .catch ((error) => {
+           return ReS(res, error);
+          })
+
+      })
+      .catch ((error) => {
+        return ReS(res, error);
+      })
+
+        // update the db include array by passing it TagIds of the tags that
+        // current user follows
+        // criteria.include = getDBInclude(tagsId)
+
+  }  else {
+
+
+      Tags.findOne({where: {name: tag}})
+        .then ((Dbtag) => {
+          
+          /* Friends posts condition i.e. get those posts 
+          * that are from friends or self and belong to 
+          * given tag
+          */
+          friendsPostsCondition =  {
+              UserId: UIDCondition,
+              '$Tags.id$': [Dbtag.id]
+          };
+
           condition.push(friendsPostsCondition);
+          // update the db include array by passing it TagIds of the tag that
+          // has been requested
+          //criteria.include = getDBInclude(user, [Dbtag.id]);
 
-          // push public Posts condition. i.e. get public posts in the tags that 
-          // current user follows
-          condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': tagsId});
+          //condition.push({public: { [op.eq]: true}});
+          
+          // get only those posts that are public and belong to current/given tag
+          condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': [Dbtag.id]});
 
-          // club all the conditions
-          criteria.where = getWhereCondition (user, condition)
+          criteria.where = getWhereCondition(user, condition)
 
           Posts.scope(getPostScopes(user)).findAll(criteria)
-           .then((posts) => {
-              return sendFeed(user, posts, res, page)
-            })
+           .then(posts => {
+              return sendFeed(req, res, posts, page)
+           })
            .catch ((error) => {
              return ReS(res, error);
             })
@@ -252,53 +302,8 @@ const get = async function(req, res){
         .catch ((error) => {
           return ReS(res, error);
         })
-
-          // update the db include array by passing it TagIds of the tags that
-          // current user follows
-          // criteria.include = getDBInclude(tagsId)
-
-    }  else {
-
-
-        Tags.findOne({where: {name: tag}})
-          .then ((Dbtag) => {
-            
-            /* Friends posts condition i.e. get those posts 
-            * that are from friends or self and belong to 
-            * given tag
-            */
-            friendsPostsCondition =  {
-                UserId: UIDCondition,
-                '$Tags.id$': [Dbtag.id]
-            };
-
-            condition.push(friendsPostsCondition);
-            // update the db include array by passing it TagIds of the tag that
-            // has been requested
-            //criteria.include = getDBInclude(user, [Dbtag.id]);
-
-            //condition.push({public: { [op.eq]: true}});
-            
-            // get only those posts that are public and belong to current/given tag
-            condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': [Dbtag.id]});
-
-            criteria.where = getWhereCondition(user, condition)
-
-            Posts.scope(getPostScopes(user)).findAll(criteria)
-             .then(posts => {
-                return sendFeed(user, posts, res, page)
-             })
-             .catch ((error) => {
-               return ReS(res, error);
-              })
-
-          })
-          .catch ((error) => {
-            return ReS(res, error);
-          })
   }
 }
-
 
 function getPostScopes (user) {
   return scopes = [
@@ -329,8 +334,10 @@ function getPostScopes (user) {
 * user feed
 */
 
-function putAdRestrictions (posts, user) {
+function putAdRestrictions (posts, req, res, page) {
   return new Promise(function (resolve, reject) {
+    let user = req.user
+
     let getPosts = ()=> {
       return toWeb(posts)
     }
@@ -349,7 +356,7 @@ function putAdRestrictions (posts, user) {
     let getUnseenAds = (postsJson) => {
       let unseenAds = [];
       for (let i in postsJson) {
-        if (postsJson[i].UserId !== user.id) {
+        if (postsJson[i].UserId !== user.id && postsJson[i].AdOptionId) {
           if (postsJson[i].ConsumedAds && postsJson[i].ConsumedAds.length) {
           } else {
             unseenAds.push(postsJson[i])
@@ -359,18 +366,24 @@ function putAdRestrictions (posts, user) {
       return unseenAds
     }
     let deleteUnseenAds = (postsJson, adsToDeleteCount, unseenAds) => {      
+      console.log("on page " + page + "total: " + postsJson.length + ' Ads to delete '+ adsToDeleteCount + ' Unseen ads' + unseenAds.length+'\n\n\n\n\n')
       let deletedAds = 0;
-      for (let i = (postsJson.length -1); i >= 0; i-- ) {        
-        for (let j = (unseenAds.length - 1); j >= 0; j--) {
-          if (postsJson[i].id === unseenAds[j].id) {
-            posts.splice(i, 1)
-            deletedAds++
-            if (deletedAds === adsToDeleteCount) {
-              return posts
+      if (postsJson.length === adsToDeleteCount) {
+        getUserFeed(req, res, (parseInt(page) + 1))
+      } else {
+        for (let i = (postsJson.length -1); i >= 0; i-- ) {        
+          for (let j = (unseenAds.length - 1); j >= 0; j--) {
+            if (postsJson[i].id === unseenAds[j].id) {
+              posts.splice(i, 1)
+              deletedAds++
+              if (deletedAds === adsToDeleteCount) {
+                return posts
+              }
             }
           }
-        }
+        }  
       }
+      
     }
     let keepTheAdsUsersCanSee = (postsJson, newAdsUserCanSee, unseenAds) => {
       if (!unseenAds.length || unseenAds.length <= newAdsUserCanSee) {
@@ -438,9 +451,9 @@ function putAdRestrictions (posts, user) {
 ** 
 */
 
-async function FixPosts (posts, user) {
+async function FixPosts (posts, req, res, page) {
   return new Promise(function(resolve, reject) {
-    let postsArr = [], postObjs;   
+    let postsArr = [], postObjs, user = req.user;   
     
     /*
     * function to set default comment in the given post
@@ -504,7 +517,7 @@ async function FixPosts (posts, user) {
             }
           }
         }
-        putAdRestrictions(removeDuplicatePosts(posts), user)
+        putAdRestrictions(removeDuplicatePosts(posts), req, res, page)
           .then((postsUpdated) => {
             resolve(postsUpdated)
           })
@@ -523,9 +536,11 @@ async function FixPosts (posts, user) {
 * of the feed of given user
 */
 
-async function sendFeed (user, posts, res, page =1 ) {
+async function sendFeed (req, res, posts, page =1 ) {
   try {
-    if (page == 1 && user.adsEnabled) {
+    let user = req.user
+    page = parseInt(page)
+    if (page === 1 && user.adsEnabled) {
     adsToBePushedToTheTop(user)
       .then((adPosts) => {
         if (adPosts) {
@@ -540,16 +555,16 @@ async function sendFeed (user, posts, res, page =1 ) {
             posts.unshift(adPosts[i])
           }
         }
-        FixPosts(posts, user)
+        FixPosts(posts, req, res, page)
           .then((posts) => {
-            return ReS(res, {posts: toWeb(posts, user)});
+            return ReS(res, {posts: toWeb(posts, user), nextPage: ++page});
           })
         
       })
     } else {
-      FixPosts(posts, user)
+      FixPosts(posts, req, res, page)
         .then((posts) => {
-          return ReS(res, {posts: toWeb(posts, user)});
+          return ReS(res, {posts: toWeb(posts, user), nextPage: ++page });
         })
           
     }
