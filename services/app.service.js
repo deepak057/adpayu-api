@@ -218,7 +218,7 @@ module.exports.getPostCriteriaObject = getPostCriteriaObject;
 ** Convert the posts and include Likes
 **/
 module.exports.toWeb = function(posts, user) {
-  if(posts.constructor !== Array) {
+  if(posts && posts.constructor !== Array) {
     return getWebPost(posts, user)
   }
 

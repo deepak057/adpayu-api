@@ -190,9 +190,6 @@ async function getUserFeed (req, res, nextPage = false) {
 
   let page = nextPage || (req.query.page || 1);
 
-
-  console.log('on page '+ page + '\n\n\n\n\n')
-
   let dbIncludes = getDBInclude(user)
 
   let limitNOffset = getLimitOffset(page, 25);
@@ -366,15 +363,16 @@ function putAdRestrictions (posts, req, res, page) {
       return unseenAds
     }
     let deleteUnseenAds = (postsJson, adsToDeleteCount, unseenAds) => {      
-      console.log("on page " + page + "total: " + postsJson.length + ' Ads to delete '+ adsToDeleteCount + ' Unseen ads' + unseenAds.length+'\n\n\n\n\n')
       let deletedAds = 0;
+      // console.log("Page: " + page + " Total Posts: "+ postsJson.length + ' Ads to delete: '+adsToDeleteCount +'\n\n\n\n')
       if (postsJson.length === adsToDeleteCount) {
+        // console.log('Jumping to next page to get more feed \n\n\n\n\n')
         getUserFeed(req, res, (parseInt(page) + 1))
       } else {
         for (let i = (postsJson.length -1); i >= 0; i-- ) {        
           for (let j = (unseenAds.length - 1); j >= 0; j--) {
             if (postsJson[i].id === unseenAds[j].id) {
-              posts.splice(i, 1)
+              posts = removeObject(posts, unseenAds[j].id)
               deletedAds++
               if (deletedAds === adsToDeleteCount) {
                 return posts
@@ -395,6 +393,7 @@ function putAdRestrictions (posts, req, res, page) {
     let main = ()=> {
       let postsJson = getPosts()
       let ads = getUnseenAds(postsJson)
+      //console.log('Total unseenAds '+ ads.length + '\n\n\n\n')
       //proceed only if ad restriction policy is on and there are ads in the given set of posts
       if (process.env.AD_RESTRICTION === 'true' && ads.length) {
         let policy = ADS.adsRestrictionPolicy
@@ -442,6 +441,22 @@ function putAdRestrictions (posts, req, res, page) {
 
 
 /*
+* function to remove the elements from given array of objects
+* based on the id value of objects
+*/
+function removeObject (arrObj, id) {
+  if (arrObj.length) {
+    for (let i in arrObj) {
+      if (arrObj[i].id === id) {
+        arrObj.splice(i, 1)
+        return arrObj
+      }
+    }  
+  }
+  return arrObj
+}
+
+/*
 ** This method is another layer in feed interpretation and 
 ** manipulation. Since the default SQL retreival has issues, this method 
 ** is needed to do following-
@@ -481,13 +496,24 @@ async function FixPosts (posts, req, res, page) {
       let postJson = toWeb(posts)
       let postIds = []
       for (let i in postJson) {
+        //console.log('Post Id:' + posts[i].id + ', JOSN id: '+ postJson[i].id + '\n\n')
         if (postIds.indexOf(postJson[i].id) === -1) {
           postIds.push(postJson[i].id)
         } else {
-          posts.splice(i, 1)
+          posts = removeObject(posts, postJson[i].id)
         }
       }
       return posts
+      /*
+      let postIds = []
+      for (let i in posts) {
+        if (postIds.indexOf(posts[i].id) === -1) {
+          postIds.push(posts[i].id)
+        } else {
+          posts.splice(i,1)
+        }
+      }
+      return posts*/
     }
     if (!posts.length) {
       resolve(posts)
