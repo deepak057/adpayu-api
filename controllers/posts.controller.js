@@ -5,7 +5,7 @@ const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 const { ADS } = require('../config/app-constants');
 const CommentsController   = require('./comments.controller');
-
+const JUMP_TO_NEXT_PAGE = "jumpToNextPage"
 
 const create = async function(req, res){
       
@@ -231,8 +231,6 @@ async function getUserFeed (req, res, nextPage = false) {
           }
         }
 
-
-
         // push friends conditions i.e. get posts that are from friends or self
         condition.push(friendsPostsCondition);
 
@@ -363,11 +361,16 @@ function putAdRestrictions (posts, req, res, page) {
       return unseenAds
     }
     let deleteUnseenAds = (postsJson, adsToDeleteCount, unseenAds) => {      
-      let deletedAds = 0;
-      // console.log("Page: " + page + " Total Posts: "+ postsJson.length + ' Ads to delete: '+adsToDeleteCount +'\n\n\n\n')
+      let deletedAds = 0      
       if (postsJson.length === adsToDeleteCount) {
-        // console.log('Jumping to next page to get more feed \n\n\n\n\n')
-        getUserFeed(req, res, (parseInt(page) + 1))
+        /*
+        * if all the posts are to be deleted in 
+        * given set of posts, return a string value
+        * instead of Array/Object that will indicate
+        * to recusrsivly jump to next feed page instead of returning
+        * empty array to client 
+        */
+        return JUMP_TO_NEXT_PAGE
       } else {
         for (let i = (postsJson.length -1); i >= 0; i-- ) {        
           for (let j = (unseenAds.length - 1); j >= 0; j--) {
@@ -565,7 +568,19 @@ async function FixPosts (posts, req, res, page) {
 async function sendFeed (req, res, posts, page =1 ) {
   try {
     let user = req.user
+    
     page = parseInt(page)
+    
+    let sendResponse = (posts) => {
+      ++page
+      if (typeof posts === 'string' && posts === JUMP_TO_NEXT_PAGE) {
+        console.log('Jumping to next page ' + page + ' for getting more feed')
+        getUserFeed(req, res, page)
+      } else {
+        return ReS(res, {posts: toWeb(posts, user), nextPage: page})  
+      }
+    }
+
     if (page === 1 && user.adsEnabled) {
     adsToBePushedToTheTop(user)
       .then((adPosts) => {
@@ -583,16 +598,14 @@ async function sendFeed (req, res, posts, page =1 ) {
         }
         FixPosts(posts, req, res, page)
           .then((posts) => {
-            return ReS(res, {posts: toWeb(posts, user), nextPage: ++page});
+            sendResponse(posts)
           })
-        
       })
     } else {
       FixPosts(posts, req, res, page)
         .then((posts) => {
-          return ReS(res, {posts: toWeb(posts, user), nextPage: ++page });
+          sendResponse(posts)
         })
-          
     }
   } catch (e) {
     console.log(e)

@@ -64,6 +64,10 @@ function musicGeneres () {
       id: 11
     },
     {
+      label: 'Sound Effects',
+      id: 13
+    },
+    {
       label: 'My Tracks',
       id: 12
     }
