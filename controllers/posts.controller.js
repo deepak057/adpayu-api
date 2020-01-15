@@ -907,16 +907,17 @@ module.exports.getTimelineFeed = getTimelineFeed;
 
 
 const getPostById = function(req, res){
+  try {
     let postId = req.params.postId || false
     let checkOwner = req.query.checkOwner || false
     let user = req.user || false
-
-    if(postId) {
+    
+    let main = () => {
       let criteria = getPostCriteriaObject(user);
       criteria.where = {id: postId};
 
       /*
-      ** In case of post editin, return data
+      ** In case of post editing, return data
       ** only if current post was created
       ** by current user
       */
@@ -928,12 +929,33 @@ const getPostById = function(req, res){
       .then((post) => {
             return ReS(res, toWeb(post, user), 200);
       })
-      .catch((err) => {
-        return ReE(res, err, 422);
-      })
+    }
+
+    if(postId) {
+      /*
+      * if user is not logged in, the page is most likely being
+      * requested from public pages, in which case, make sure
+      * the content was really shared 
+      */
+      if (!user) {
+        const SocialSharingController   = require('./socialSharing.controller');
+        SocialSharingController.hasContentBeenShared(postId)
+        .then((d) => {
+          if (!d) {
+            return ReE(res, {error: 'This page/post is not shared yet'}, 401)
+          } else {
+            main()
+          }
+        })
+      } else {
+        main()
+      }     
     } else {
       return ReE(res, {'error': 'No Post Id provided'}, 422);
     }
+  } catch(e) {
+    return ReE(res, {error: 'Something went wrong'}, 500)
+  } 
 }
 
 module.exports.getPostById = getPostById;

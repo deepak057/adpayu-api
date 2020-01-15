@@ -17,6 +17,7 @@ const MailsController = require('../controllers/mails.controller');
 const GeneralController = require('../controllers/general.controller');
 const VideoController = require('../controllers/video.controller');
 const AudioController = require('../controllers/audio.controller');
+const SocialSharingController = require('../controllers/socialSharing.controller');
 
 const custom 	        = require('./../middleware/custom');
 
@@ -133,6 +134,8 @@ router.post('/general/fixCommentAssociation', passport.authenticate('jwt', {sess
 router.post('/general/changeCommentAssociation/:commentId', passport.authenticate('jwt', {session:false}), GeneralController.changeCommentAssociation);        // U
 router.post('/general/optimizeImages/', passport.authenticate('jwt', {session:false}), GeneralController.optimizeImages);        // U
 
+/** Social Sharing routes **/
+router.post('/socialSharing/track/', passport.authenticate('jwt', {session:false}), SocialSharingController.trackSharing);        // U
 
 
 //********* API DOCUMENTATION **********

@@ -215,27 +215,49 @@ function setDefaultComment (comments) {
 module.exports.setDefaultComment = setDefaultComment;
 
 const getComment = async function(req, res){
-  try {
+ let showError = (message) => {
+      return ReE(res, {success: false, message: message || 'Somehting went wrong.'}, 500);
+  }
+ try {
     let commentId = req.params.commentId, comment, err, post, user = req.user || false;
-    
-     [err, comment] = await to(Comments.find(getCommentCriteriaObject(user, {id: commentId})));
-     if(err) {
-        console.log(err)
-        throw new Error('error occured trying to get the comment')
-     }
-      
-      [err, post] = await to(Posts.find({where: {id: comment.PostId}, include: [{model: Questions},{model: Videos}]}));
-      if(err) {
-        console.log(err)
-        throw new Error('error occured trying to get the post')
+
+    let main = async () => {
+      [err, comment] = await to(Comments.find(getCommentCriteriaObject(user, {id: commentId})));
+       if(err) {
+          console.log(err)
+          throw new Error('error occured trying to get the comment')
        }
+        
+        [err, post] = await to(Posts.find({where: {id: comment.PostId}, include: [{model: Questions},{model: Videos}]}));
+        if(err) {
+          console.log(err)
+          throw new Error('error occured trying to get the post')
+         }
 
-      return ReS(res, {comment: getSingleComment(comment, user), post: post}, 200);      
+        return ReS(res, {comment: getSingleComment(comment, user), post: post}, 200);
+    }
 
+    /*
+    * if user is not logged in, the page is most likely being
+    * requested from public pages, in which case, make sure
+    * the content was really shared 
+    */
+    if (!user) {
+      const SocialSharingController   = require('./socialSharing.controller');
+      SocialSharingController.hasContentBeenShared(commentId)
+      .then((d) => {
+        if (!d) {
+          showError('This response/comment is not shared yet')
+        } else {
+          main()
+        }
+      })
+    } else {
+      main()
+    }
   } catch (e) {
     console.log(e)
-    return ReE(res, {success: false, message: 'Somehting went wrong while getting the comment.'});
-
+    showError()
   }
       
 }
