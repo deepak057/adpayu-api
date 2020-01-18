@@ -43,6 +43,7 @@ router.post(    '/users/login',     UserController.login);
 router.get(    '/users/updateAccountStatus/:userId',     UserController.updateAccountStatus); 
 router.post(     '/users/getUserRevenue',           passport.authenticate('jwt', {session:false}), UserController.getUserRevenue);        // R
 router.put('/users/markAsViewed/', passport.authenticate('jwt', {session:false}), UserController.markAsViewed);        //U
+router.put('/users/public/markAsViewed/', UserController.markAsViewed);        //U
 
 /** Posts routes **/
 router.post('/posts',           passport.authenticate('jwt', {session:false}), PostsController.create);        // C

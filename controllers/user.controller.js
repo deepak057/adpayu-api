@@ -316,27 +316,49 @@ function getPasswordResetMailBody (user, url) {
 }
 
 const getUserRevenue = async function(req, res) {
-    let err, user = req.user, amount;
+    let showErr = () => {
+      return ReE(res, {error: 'Something went wrong'}, 500);
+    }
+    try {
+      let err, user = req.user, amount, guestUserId = req.body.guestUserId || false;
 
-    //get total amount of money that user has accumlated
-    [err, amount] = await to(ConsumedAds.getUserTotal(user.id));
-    if(err) return ReE(res, err);
+      //get total amount of money that user has accumlated
+      [err, amount] = await to(ConsumedAds.getUserTotal(user.id));
+      if(err) {
+        showErr()
+      }
 
-    return ReS(res, {
-        totalRevenue: amount
-    });
+      if (guestUserId && req.user.guestUserId !== String(guestUserId)) {
+        req.user.guestUserId = guestUserId
+        req.user.save()
+      }
+
+      return ReS(res, {
+          totalRevenue: amount
+      });
+
+    } catch (e) {
+      showErr()
+    }
+    
 }
 
 module.exports.getUserRevenue = getUserRevenue;
 
 const markAsViewed = function (req, res) {
   try {
-    let user = req.user;
+    let user = req.user || false;
     let id = req.body.id;
     let type = req.body.entityType;
+    let guestUserId = req.body.guestUserId || false;
     let data = {
-      UserId: user.id
-    };
+    }
+    if (user) {
+      data.UserId = user.id
+    }
+    if (guestUserId) {
+      data.guestUserId = String(guestUserId)
+    }
     if (type === 'post') {
       data.PostId = id;
     } else {
