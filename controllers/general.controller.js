@@ -621,3 +621,35 @@ function optimizeImages (req, res) {
 }
 
 module.exports.optimizeImages = optimizeImages;
+
+/*
+module.exports.fakeIpRequests = async function (req, res) {
+  var http = require('http');
+
+  try {
+    var options = {
+    host: '159.89.245.63',
+    port: 3128,
+    path: 'http://frendsdom.com/test/IPTest.php',
+    headers: {
+      Host: "frendsdom.com/test/IPTest.php",     
+    }
+  };
+
+  var req = http.request(options, function(response) {
+    response.on('data', function (chunk) {
+      console.log(chunk.toString());
+    });
+    response.on('error', function (e) {
+      console.log(e);
+    });
+
+  }).end()
+  } catch (e) {
+    console.log(e)
+  }
+
+  
+
+  return ReS(res, {message: 'Operation in progress..'});
+}*/

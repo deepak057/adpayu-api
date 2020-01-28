@@ -129,6 +129,37 @@ const create =  function(req, res){
 }
 module.exports.create = create;
 
+module.exports.edit = async function (req, res) {
+  let showError = (msg = false) => {
+    return ReE(res, {error: msg || 'An error occured while saving the comment/details'}, 500)
+  }
+  try {
+    let commentId = req.params.commentId || false, user = req.user, comment = req.body.comment || ''
+    if (!commentId) {
+      showError('No comment Id provided')
+    } else {
+      Comments.update({
+        comment: comment
+      },{
+        where: {
+          id: commentId,
+          UserId: user.id
+        }
+      })
+        .then((comntObj) => {
+          if (comntObj) {
+            return ReS(res, {message: 'Comment/details saved successfully'}, 200);
+          } else {
+            showError()
+          }
+        })
+    }
+  } catch (e) {
+    console.log(e)
+    showError()
+  }
+}
+
 const remove = async function(req, res){
     try {
       let comment, err, post, commentId = parseInt(req.params.commentId), user = req.user;

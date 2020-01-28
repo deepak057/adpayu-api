@@ -64,6 +64,7 @@ router.delete('/tags/unfollow/:tagId',           passport.authenticate('jwt', {s
 /** Comments routes**/
 router.get('/comments/:postId', passport.authenticate('jwt', {session:false}), CommentsController.get);        // R
 router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C
+router.put('/comments/edit/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.edit);        // U
 router.delete('/comments/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // D
 router.get('/comments/getComment/:commentId', passport.authenticate('jwt', {session:false}), CommentsController.getComment);        // R
 router.get('/comments/public/getComment/:commentId', CommentsController.getComment);        // R
@@ -134,6 +135,7 @@ router.post('/general/moveContentToS3', passport.authenticate('jwt', {session:fa
 router.post('/general/fixCommentAssociation', passport.authenticate('jwt', {session:false}), GeneralController.fixCommentAssociation);        // U
 router.post('/general/changeCommentAssociation/:commentId', passport.authenticate('jwt', {session:false}), GeneralController.changeCommentAssociation);        // U
 router.post('/general/optimizeImages/', passport.authenticate('jwt', {session:false}), GeneralController.optimizeImages);        // U
+//router.get('/general/fakeIpRequests/', GeneralController.fakeIpRequests);        // R
 
 /** Social Sharing routes **/
 router.post('/socialSharing/track/', passport.authenticate('jwt', {session:false}), SocialSharingController.trackSharing);        // U
