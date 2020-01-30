@@ -162,13 +162,24 @@ module.exports.edit = async function (req, res) {
 
 const remove = async function(req, res){
     try {
-      let comment, err, post, commentId = parseInt(req.params.commentId), user = req.user;
+      let comment, err, post, commentId = parseInt(req.params.commentId), user = req.user, consumedAd = false;
 
       [err, comment] = await to(Comments.findOne({where: {id: commentId, UserId: user.id}}));
       if(err) return ReE(res, 'error occured trying to delete the comment');
       
       [err, post] = await to(Posts.findOne({where: {id: comment.PostId}}));
       if(err) return ReE(res, 'error occured trying to delete the comment');
+      
+      /*
+      * if it's a video comment and is approved for payment
+      * then this comment can not be deleted
+      */
+      if (comment.videoPath) {
+        [err, consumedAd] = await to(ConsumedAds.findOne({where: {CommentId: commentId}}));
+        if(err || consumedAd) {
+          return ReE(res, 'Sorry, you can not delete this video response as it has been approved for payment.')
+        }  
+      }
       
       comment.deleted = true;
       comment.save()
