@@ -336,30 +336,49 @@ function captureVideoPoster (videoFileName) {
       // replace the extension of given video file with ".png"
       let posterImageName = videoFileName.substr(0, videoFileName.lastIndexOf(".")) + ".png";
       let posterPath = screenshotFolder + '/' + posterImageName;
+      let screenshotSecond = 4;
 
-      // create the screenshot only if it doesn't already exist
-      if (!fs.existsSync(posterPath)) {
-        ffmpeg(videoPath)
-        .on('end', function() {
-          console.log('Screenshot taken');
-          optimizeImage(posterPath)
-            .then((stats) => {
-              S3Controller.uploadToS3(posterPath, 'public/thumbs/')
-                .then((data) => {
-                  resolve(data)
-                })
-            })
-        })
-        .on('error', function(err) {
-          console.error(err);
-          reject(err)
-        })
-        .screenshots({
-          timestamps: [4],
-          folder: screenshotFolder,
-          filename: posterImageName
-        });
+      let main = (customSecond = false) => {
+        // create the screenshot only if it doesn't already exist
+        if (!fs.existsSync(posterPath)) {
+          ffmpeg(videoPath)
+          .on('end', function() {
+            console.log('Screenshot taken');
+            optimizeImage(posterPath)
+              .then((stats) => {
+                S3Controller.uploadToS3(posterPath, 'public/thumbs/')
+                  .then((data) => {
+                    resolve(data)
+                  })
+              })
+          })
+          .on('error', function(err) {
+            console.error(err);
+            reject(err)
+          })
+          .screenshots({
+            timestamps: [(customSecond || screenshotSecond)],
+            folder: screenshotFolder,
+            filename: posterImageName
+          });
+        }
       }
+      /*
+      * probe the video file and depending upon it's length
+      * calculate at what moment, the screenshot will be captured
+      */
+      ffmpeg.ffprobe(videoPath, function(err, metadata) {
+        if (metadata) {
+          if (metadata.format.duration >= screenshotSecond) {
+            main()
+          } else {
+            main(Math.floor(metadata.format.duration))
+          }
+        } else {
+          main()
+        }
+      })
+
     } catch (e) {
       reject(e)
     }
