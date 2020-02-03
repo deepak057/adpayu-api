@@ -46,6 +46,19 @@ module.exports = (sequelize, DataTypes) => {
                     }
                 }
             },
+            
+            /*
+            * This scope excludes the Posts that have been marked
+            * as seen i.e. posts that are sent into user's feed but 
+            * they might or might not have be viewed yet
+            */
+            ExcludSeenPosts: function (user) {
+                return {
+                    where: {
+                        'xyz': Sequelize.literal("(Posts.id NOT IN (select PostId from SeenPosts where UserId = " + user.id + "))")
+                    }
+                }
+            },
             defaultScopeCopy : function () {
                 return defaultScope()
             }

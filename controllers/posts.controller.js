@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders, PushedAds, ConsumedAds } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders, PushedAds, ConsumedAds, SeenPosts } = require('../models');
 const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset, removeBlankParagraphs, videoToPNG, cloneOject } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject } = require('../services/app.service');
 const Sequelize = require('sequelize');
@@ -310,6 +310,16 @@ function getPostScopes (user) {
         method: ['ExcludedViewedPosts', user]
       },
 
+      {
+        /*
+        * This scope excludes the Posts that have been marked
+        * as seen for current user i.e. posts that are sent into 
+        * user's feed but they might or might not have be viewed yet
+        */
+            
+        method: ['ExcludSeenPosts', user]
+      },
+
       /*
       * using scope array seems to ignore the default Posts scope
       * so use the copy of default scope as well to keep the 
@@ -559,6 +569,44 @@ async function FixPosts (posts, req, res, page) {
 
 }
 
+/*
+* This method helps implement the Dynamic Feed
+* It records the Seen Posts by given user so those
+* posts don't show up in feed for a given period 
+* of time
+*/
+function markSeenPosts (posts, user) {
+  try {
+    let getPostIdsToSave = () => {
+      let seenPosts = []
+      if (posts.length) {
+        for (let i in posts) {
+          if (posts[i].type !== 'text' && posts[i].UserId !== user.id && !posts[i].AdOptionId) {
+            seenPosts.push({
+              PostId: posts[i].id,
+              UserId: user.id
+            })
+          }
+        }
+      }
+      return seenPosts
+    }
+    let main = () => {
+      let seenPosts = getPostIdsToSave()
+      if (seenPosts && seenPosts.length) {
+        SeenPosts.bulkCreate(seenPosts, {
+          updateOnDuplicate: ['updatedAt']
+        })
+      }
+    }
+    main()
+  } catch (e) {
+    return posts
+  }
+  
+  return posts
+}
+
 
 /*
 ** this method adds Top Posts or Ads to the top
@@ -577,7 +625,7 @@ async function sendFeed (req, res, posts, page =1 ) {
         console.log('Jumping to next page ' + page + ' for getting more feed')
         getUserFeed(req, res, page)
       } else {
-        return ReS(res, {posts: toWeb(posts, user), nextPage: page})  
+        return ReS(res, {posts: toWeb(markSeenPosts(posts, user), user), nextPage: page})  
       }
     }
 
