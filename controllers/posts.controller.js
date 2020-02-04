@@ -6,6 +6,7 @@ const op = Sequelize.Op;
 const { ADS } = require('../config/app-constants');
 const CommentsController   = require('./comments.controller');
 const JUMP_TO_NEXT_PAGE = "jumpToNextPage"
+const moment = require('moment')
 
 const create = async function(req, res){
       
@@ -181,12 +182,16 @@ const get = async function(req, res){
   getUserFeed(req, res)
 }
 
+function getTag (req) {
+  return req.params.tag || 'all'
+}
+
 async function getUserFeed (req, res, nextPage = false) {
   let friends;
 
   let user = req.user;
 
-  let tag = req.params.tag || 'all';
+  let tag = getTag(req)
 
   let page = nextPage || (req.query.page || 1);
 
@@ -418,7 +423,6 @@ function putAdRestrictions (posts, req, res, page) {
         })
           .then((seenAdsCount) => {
             if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
-              let moment = require('moment')
               ConsumedAds.count({
                 where: {
                   UserId: user.id,
@@ -607,9 +611,132 @@ function markSeenPosts (posts, user) {
   return posts
 }
 
+module.exports.cleanSeenPosts = function () {
+  // records older than below specified number of minutes will be deleted
+  let minutesToDeleteSeenPosts = 360
+  console.log("Deleting seen posts that are older than " + minutesToDeleteSeenPosts + ' minutes..')
+  SeenPosts.destroy({
+    where: {
+      updatedAt: {
+        [op.lte]: moment().subtract(minutesToDeleteSeenPosts, 'minutes').toDate()            
+      }
+    }
+  })
+    .then((d) => {
+      if (d) {
+        console.log("Deleted " + d + ' seen posts..')
+      }
+    })
+    .catch((e) => {
+      console.log(e)
+    })
+  
+}
 
 /*
-** this method adds Top Posts or Ads to the top
+* this function adds additional Posts such as Content Video or
+* some random posts in given set of Posts
+*/
+
+function smartFeed (posts, user, tag) {
+  return new Promise(function (resolve, reject) {
+    let getContentVideo = () => {
+      for (let i in posts) {
+        if (posts[i].type === 'video' && posts[i].UserId !== user.id) {
+          return false
+        }
+      }
+      return true
+    }
+    let getPostsIds = () => {
+      let ids = []
+      for (let i in posts) {
+        ids.push(posts[i].id)
+      }
+      return ids
+    }
+    let getPostCriteria = () => {
+      let criteria = getPostCriteriaObject(user)
+      criteria.where = {
+        AdOptionId: {
+          [op.eq]: null
+        },
+        UserId: {
+          [op.ne]: user.id
+        },
+        public: {
+          [op.eq]: true
+        },
+        id: {
+          [op.notIn]: getPostsIds()
+        }
+      }        
+      if (tag !== 'all') {
+        criteria.where['$Tags.name$'] = tag
+      }
+      return criteria
+    }
+    let getRandomPosts = (criteria) => {
+      /* criteria.order = [
+        [Sequelize.literal('RAND()')]
+      ]*/
+      criteria.order = Sequelize.literal('RAND() LIMIT 3')
+
+      criteria.type = {
+        [op.ne]: 'video'
+      }
+      // criteria.limt = 3
+      return Posts.scope(getPostScopes(user)).findAll(criteria)
+    }
+    let getVideos = (criteria) => {
+      criteria.type = {
+        [op.eq]: 'video'
+      }
+      // criteria.limt = 1
+      criteria.order = Sequelize.literal('updatedAt LIMIT 1')
+      return Posts.scope(getPostScopes(user)).findAll(criteria)
+    }
+    let main = () => {
+      if (!posts.length) {
+        resolve(posts)
+      }
+      let criteria = getPostCriteria()
+      if (getContentVideo()) {
+        getVideos(criteria)
+          .then((videoPosts) => {
+            if (videoPosts) {
+              posts.concat(videoPosts)
+            }
+            getRandomPosts(criteria)
+              .then((randomPosts) => {
+                if (randomPosts) {
+                  posts.concat(randomPosts)
+                }
+                resolve(posts)
+              })
+          })
+          .catch ((e) => {
+            reject(e)
+          })
+      } else {
+        getRandomPosts(criteria)
+          .then((randomPosts) => {
+            if (randomPosts) {
+              posts.concat(randomPosts)
+            }
+            resolve(posts)
+          })
+          .catch ((e) => {
+            reject(e)
+          })
+      }
+    }
+    main()
+  })
+}
+
+/*
+** this function adds Top Posts or Ads to the top
 * of the feed of given user
 */
 
@@ -619,13 +746,16 @@ async function sendFeed (req, res, posts, page =1 ) {
     
     page = parseInt(page)
     
-    let sendResponse = (posts) => {
+    let sendResponse = (posts) => { 
       ++page
       if (typeof posts === 'string' && posts === JUMP_TO_NEXT_PAGE) {
         console.log('Jumping to next page ' + page + ' for getting more feed')
         getUserFeed(req, res, page)
       } else {
-        return ReS(res, {posts: toWeb(markSeenPosts(posts, user), user), nextPage: page})  
+        smartFeed(posts, user, getTag(req))
+          .then((updatedPosts) => {
+            return ReS(res, {posts: toWeb(markSeenPosts(updatedPosts, user), user), nextPage: page})
+          })
       }
     }
 

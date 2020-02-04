@@ -69,6 +69,14 @@ function dbBackup () {
   dbbackupController.backupDb()
 }
 
+/*
+* function for cleaning up SeenPosts records
+*/
+
+function cleanSeenPosts () {
+  const postsController   = require('./controllers/posts.controller');
+  postsController.cleanSeenPosts()
+}
 
 //Log Env
 console.log("Environment:", CONFIG.app)
@@ -145,6 +153,11 @@ cron.schedule("0 0 */12 * * *", function() {
 // optimizing the videos   
 cron.schedule("0 */10 * * * *", function() {
   optimizeVideos();
+});
+
+//cron job running once in every minutes for cleaning the SeenPosts records
+cron.schedule("0 */1 * * * *", function() {
+  cleanSeenPosts();
 });
 
 /*
