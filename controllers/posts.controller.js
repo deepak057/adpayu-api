@@ -649,15 +649,16 @@ function smartFeed (posts, user, tag) {
       }
       return true
     }
-    let getPostsIds = () => {
+    let getPostsIds = (postsArr = false) => {
       let ids = []
-      for (let i in posts) {
-        ids.push(posts[i].id)
+      let postsNewArr = postsArr || posts
+      for (let i in postsNewArr) {
+        ids.push(postsNewArr[i].id)
       }
       return ids
     }
     let getPostCriteria = () => {
-      let criteria = getPostCriteriaObject(user)
+      let criteria = {}
       criteria.where = {
         AdOptionId: {
           [op.eq]: null
@@ -678,43 +679,60 @@ function smartFeed (posts, user, tag) {
       return criteria
     }
     let getRandomPosts = (criteria) => {
-      /* criteria.order = [
+      criteria.order = [
         [Sequelize.literal('RAND()')]
-      ]*/
-      criteria.order = Sequelize.literal('RAND() LIMIT 3')
+      ]
+      // criteria.order = Sequelize.literal('RAND() LIMIT 3')
 
       criteria.where.type = {
         [op.ne]: 'video'
       }
-      // criteria.limt = 3
+      criteria.limit = 3
       return Posts.scope(getPostScopes(user)).findAll(criteria)
     }
     let getVideos = (criteria) => {
       criteria.where.type = {
         [op.eq]: 'video'
       }
-      // criteria.limt = 1
-      criteria.order = Sequelize.literal('updatedAt LIMIT 1')
+      criteria.limit = 1
+      //criteria.order = Sequelize.literal('updatedAt LIMIT 1')
       return Posts.scope(getPostScopes(user)).findAll(criteria)
+    }
+    let fetchNewPostsAndMerge = (newPosts) => {
+      if (newPosts && newPosts.length) {
+        let criteria = getPostCriteriaObject(user)
+        criteria.where.id = getPostsIds(newPosts)
+        Posts.findAll(criteria)
+          .then((newPosts) => {
+            if (newPosts) {
+              posts.concat(newPosts)
+            }
+            resolve(posts)
+          })
+
+      } else {
+        resolve(posts)
+      }
     }
     let main = () => {
       if (!posts || !posts.length || !user.feedEnabled) {
         resolve(posts)
         return 
       }
+      let postsToAdd = []
       let criteria = getPostCriteria()
       if (getContentVideo()) {
         getVideos(criteria)
           .then((videoPosts) => {
             if (videoPosts) {
-              posts.concat(videoPosts)
+              postsToAdd.concat(videoPosts)
             }
             getRandomPosts(criteria)
               .then((randomPosts) => {
                 if (randomPosts) {
-                  posts.concat(randomPosts)
+                  postsToAdd.concat(randomPosts)
                 }
-                resolve(posts)
+                fetchNewPostsAndMerge(postsToAdd)
               })
           })
           .catch ((e) => {
@@ -724,9 +742,9 @@ function smartFeed (posts, user, tag) {
         getRandomPosts(criteria)
           .then((randomPosts) => {
             if (randomPosts) {
-              posts.concat(randomPosts)
+              postsToAdd.concat(randomPosts)
             }
-            resolve(posts)
+            fetchNewPostsAndMerge(postsToAdd)
           })
           .catch ((e) => {
             reject(e)
