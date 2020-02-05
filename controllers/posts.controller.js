@@ -643,7 +643,7 @@ function smartFeed (posts, user, tag) {
   return new Promise(function (resolve, reject) {
     let getContentVideo = () => {
       for (let i in posts) {
-        if (posts[i].type === 'video' && posts[i].UserId !== user.id) {
+        if (posts[i].type === 'video' && !posts[i].AdOptionId && posts[i].UserId !== user.id) {
           return false
         }
       }
