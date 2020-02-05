@@ -699,6 +699,7 @@ function smartFeed (posts, user, tag) {
       return Posts.scope(getPostScopes(user)).findAll(criteria)
     }
     let fetchNewPostsAndMerge = (newPosts) => {
+      console.log('\n\n\n\n\n Length new posts- '+ newPosts.length + '\n\n\n\n\n')
       if (newPosts && newPosts.length) {
         let criteria = getPostCriteriaObject(user)
         criteria.where.id = getPostsIds(newPosts)
