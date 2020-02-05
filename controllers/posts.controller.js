@@ -705,6 +705,7 @@ function smartFeed (posts, user, tag) {
         Posts.findAll(criteria)
           .then((newPosts) => {
             if (newPosts) {
+              console.log("\n\n\n\n\n original posts - " + posts.length + ' added Posts -' + newPosts.length +"\n\n")
               posts.concat(newPosts)
             }
             resolve(posts)
@@ -725,13 +726,13 @@ function smartFeed (posts, user, tag) {
         getVideos(criteria)
           .then((videoPosts) => {
             if (videoPosts) {
-              console.log('\n\n\n\n Videos found ' + videoPosts + '\n\n\n\n\n')
+              // console.log('\n\n\n\n Videos found ' + videoPosts + '\n\n\n\n\n')
               postsToAdd.concat(videoPosts)
             }
             getRandomPosts(criteria)
               .then((randomPosts) => {
                 if (randomPosts) {
-                  console.log('\n\n\n\n Random Posts found ' + randomPosts + '\n\n\n\n\n')
+                  // console.log('\n\n\n\n Random Posts found ' + randomPosts + '\n\n\n\n\n')
                   postsToAdd.concat(randomPosts)
                 }
                 fetchNewPostsAndMerge(postsToAdd)
@@ -745,7 +746,7 @@ function smartFeed (posts, user, tag) {
           .then((randomPosts) => {
             if (randomPosts) {
               postsToAdd.concat(randomPosts)
-              console.log('\n\n\n\n Random Posts found ' + randomPosts + '\n\n\n\n\n')
+              //console.log('\n\n\n\n Random Posts found ' + randomPosts + '\n\n\n\n\n')
             }
             fetchNewPostsAndMerge(postsToAdd)
           })
