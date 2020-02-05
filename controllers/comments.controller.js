@@ -139,7 +139,7 @@ module.exports.edit = async function (req, res) {
       showError('No comment Id provided')
     } else {
       Comments.update({
-        comment: comment
+        comment: removeBlankParagraphs(comment.trim())
       },{
         where: {
           id: commentId,

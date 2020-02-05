@@ -532,8 +532,9 @@ async function FixPosts (posts, req, res, page) {
       }
       return posts*/
     }
-    if (!posts.length) {
+    if (!posts || !posts.length) {
       resolve(posts)
+      return
     }
     for (let i in posts) {
       postsArr.push(posts[i].id)
@@ -682,14 +683,14 @@ function smartFeed (posts, user, tag) {
       ]*/
       criteria.order = Sequelize.literal('RAND() LIMIT 3')
 
-      criteria.type = {
+      criteria.where.type = {
         [op.ne]: 'video'
       }
       // criteria.limt = 3
       return Posts.scope(getPostScopes(user)).findAll(criteria)
     }
     let getVideos = (criteria) => {
-      criteria.type = {
+      criteria.where.type = {
         [op.eq]: 'video'
       }
       // criteria.limt = 1
@@ -697,8 +698,9 @@ function smartFeed (posts, user, tag) {
       return Posts.scope(getPostScopes(user)).findAll(criteria)
     }
     let main = () => {
-      if (!posts.length) {
+      if (!posts || !posts.length || !user.feedEnabled) {
         resolve(posts)
+        return 
       }
       let criteria = getPostCriteria()
       if (getContentVideo()) {
