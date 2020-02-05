@@ -702,7 +702,9 @@ function smartFeed (posts, user, tag) {
       // console.log('\n\n\n\n\n Length new posts- '+ newPosts.length + '\n\n\n\n\n')
       if (newPosts && newPosts.length) {
         let criteria = getPostCriteriaObject(user)
-        criteria.where.id = getPostsIds(newPosts)
+        criteria.where = {
+          id: getPostsIds(newPosts)
+        }
         Posts.findAll(criteria)
           .then((newPosts) => {
             if (newPosts) {
