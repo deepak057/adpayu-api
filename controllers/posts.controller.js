@@ -1,5 +1,5 @@
 const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders, PushedAds, ConsumedAds, SeenPosts } = require('../models');
-const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset, removeBlankParagraphs, videoToPNG, cloneOject } = require('../services/util.service');
+const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset, removeBlankParagraphs, videoToPNG, cloneOject, getIdsArray } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -202,107 +202,252 @@ async function getUserFeed (req, res, nextPage = false) {
   // get current user's friends
   [err, friends] = await to(User.getFriends(user.id))
    if(err) {
-     return ReE(res, err, 422);
+     return ReE(res, err, 500);
    }
 
-   let UIDCondition = getUIDs(friends, req.user);
+   let getMainFeedPosts = () => {
+     return new Promise(function(resolve, reject) {
+        let UIDCondition = getUIDs(friends, user);
 
-   /* Condition for shwoing posts 
-   ** from friends and self
-   */
-   let friendsPostsCondition =  {
-          UserId: UIDCondition
-   };
+       /* Condition for showing posts 
+       ** from friends and self
+       */
+       let friendsPostsCondition =  {
+              UserId: UIDCondition
+       };
 
-   // Array that will contain all the conditions
-   let condition = []
+       // Array that will contain all the conditions
+       let condition = []
 
-  //ad location wise ad filtering search criteria
-  condition.push(getAdLocationSearchCriteria(user))
+      //ad location wise ad filtering search criteria
+      condition.push(getAdLocationSearchCriteria(user))
 
-  let criteria = getPostCriteriaObject(user);
-    
-  criteria.order = Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);  
+      let criteria = getPostCriteriaObject(user);
+        
+      criteria.order = Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);  
 
-  if(tag === 'all')  {
+      if(tag === 'all')  {
 
-    // get the tags of current user and create an array containing Tag Ids
-    user.getTags()
-      .then ((userTags) => {
-        let tagsId = [];
-        if(userTags) {
-          for(let i in userTags) {
-            tagsId.push(userTags[i].id)
+        // get the tags of current user and create an array containing Tag Ids
+        user.getTags()
+          .then ((userTags) => {
+            let tagsId = [];
+            if(userTags) {
+              for(let i in userTags) {
+                tagsId.push(userTags[i].id)
+              }
+            }
+
+            // push friends conditions i.e. get posts that are from friends or self
+            condition.push(friendsPostsCondition);
+
+            // push public Posts condition. i.e. get public posts in the tags that 
+            // current user follows
+            condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': tagsId});
+
+            // club all the conditions
+            criteria.where = getWhereCondition (user, condition)
+
+            Posts.scope(getPostScopes(user)).findAll(criteria)
+             .then((posts) => {
+                resolve(posts)
+              })
+             .catch ((error) => {
+               reject(error)
+              })
+
+          })
+          .catch ((error) => {
+            reject(error)
+          })
+
+            // update the db include array by passing it TagIds of the tags that
+            // current user follows
+            // criteria.include = getDBInclude(tagsId)
+
+      }  else {
+
+
+          Tags.findOne({where: {name: tag}})
+            .then ((Dbtag) => {
+              
+              /* Friends posts condition i.e. get those posts 
+              * that are from friends or self and belong to 
+              * given tag
+              */
+              friendsPostsCondition =  {
+                  UserId: UIDCondition,
+                  '$Tags.id$': [Dbtag.id]
+              };
+
+              condition.push(friendsPostsCondition);
+              // update the db include array by passing it TagIds of the tag that
+              // has been requested
+              //criteria.include = getDBInclude(user, [Dbtag.id]);
+
+              //condition.push({public: { [op.eq]: true}});
+              
+              // get only those posts that are public and belong to current/given tag
+              condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': [Dbtag.id]});
+
+              criteria.where = getWhereCondition(user, condition)
+
+              Posts.scope(getPostScopes(user)).findAll(criteria)
+               .then((posts) => {
+                  resolve(posts)
+               })
+               .catch ((error) => {
+                 reject(error)
+                })
+
+            })
+            .catch ((error) => {
+              reject(error)
+            })
+      }
+     })
+   }
+    /*
+    * this function adds additional Posts such as Content Video or
+    * some random posts in original set of Posts
+    */
+
+    function smartFeed (posts) {
+      return new Promise(function (resolve, reject) {
+        let getContentVideo = () => {
+          for (let i in posts) {
+            if (posts[i].type === 'video' && !posts[i].AdOptionId && posts[i].UserId !== user.id) {
+              return false
+            }
+          }
+          return true
+        }
+        let getPostsIds = (postsArr = false) => {
+          return getIdsArray((postsArr ? posts.concat(postsArr) : posts))
+        }
+        let getPostsIdNotInCondition = (postsToExclude = false) => {
+          return {
+              [op.notIn]: getPostsIds(postsToExclude)
           }
         }
+        let getPostCriteria = () => {
+          let criteria = {}
+          criteria.where = {
+            AdOptionId: {
+              [op.eq]: null
+            },
+            UserId: {
+              [op.ne]: user.id
+            },
+            public: {
+              [op.eq]: true
+            },
+            id: getPostsIdNotInCondition()
+          }        
+          if (tag !== 'all') {
+            criteria.where['$Tags.name$'] = tag
+          }
+          return criteria
+        }
+        let getRandomPosts = (criteria, postsToExclude = false) => {
+          criteria.where.id = getPostsIdNotInCondition(postsToExclude)
+          criteria.order = [
+            [Sequelize.literal('RAND()')]
+          ]
+          /*criteria.where.type = {
+            [op.ne]: 'video'
+          }*/
+          criteria.limit = 4
+          return Posts.scope(getPostScopes(user)).findAll(criteria)
+        }
+        let getVideos = (criteria) => {
+          criteria.where.type = {
+            [op.eq]: 'video'
+          }
+          criteria.order = [
+            ['updatedAt', 'DESC']
+          ]
+          criteria.limit = 1
+          return Posts.scope(getPostScopes(user)).findAll(criteria)
+        }
+        let mergeAndFetchPosts = (newPosts) => {
+          if (!newPosts || !newPosts.length) {
+            resolve(newPosts)
+            return
+          }
+          let criteria = getPostCriteriaObject(user)
+          criteria.where = {
+            id: getIdsArray(newPosts)
+          }
+          Posts.findAll(criteria)
+            .then((updatedPosts) => {
+              if (updatedPosts && updatedPosts.length) {
+                resolve(updatedPosts)
+              } else {
+                resolve(posts)
+              }
+            })
+            .catch((pErr) => {
+              reject(pErr)
+            })
+        }
+        let main = () => {
+          if (!posts || !posts.length || !user.feedEnabled) {
+            resolve(posts)
+            return 
+          }
+          let postsToAdd = []
+          let criteria = getPostCriteria()
+          if (getContentVideo()) {
+            getVideos(criteria)
+              .then((videoPosts) => {
+                if (videoPosts) {
+                  postsToAdd = postsToAdd.concat(videoPosts)
+                }
+                getRandomPosts(criteria, (postsToAdd.length ? postsToAdd : false))
+                  .then((randomPosts) => {
+                    if (randomPosts) {
+                      postsToAdd = postsToAdd.concat(randomPosts)
+                    }
+                    mergeAndFetchPosts(postsToAdd)
+                  })
+              })
+              .catch ((e) => {
+                reject(e)
+              })
+          } else {
+            getRandomPosts(criteria)
+              .then((randomPosts) => {
+                if (randomPosts) {
+                  postsToAdd = postsToAdd.concat(randomPosts)
+                }
+                mergeAndFetchPosts(postsToAdd)
+              })
+              .catch ((e) => {
+                reject(e)
+              })
+          }
+        }
+        main()
+      })
+    }
 
-        // push friends conditions i.e. get posts that are from friends or self
-        condition.push(friendsPostsCondition);
 
-        // push public Posts condition. i.e. get public posts in the tags that 
-        // current user follows
-        condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': tagsId});
-
-        // club all the conditions
-        criteria.where = getWhereCondition (user, condition)
-
-        Posts.scope(getPostScopes(user)).findAll(criteria)
-         .then((posts) => {
+   getMainFeedPosts()
+     .then((posts) => {
+        smartFeed(posts)
+          .then((smartFeedPosts) => {
+            if (smartFeedPosts) {
+              posts = posts.concat(smartFeedPosts)
+            }
             return sendFeed(req, res, posts, page)
           })
-         .catch ((error) => {
-           return ReS(res, error);
-          })
-
-      })
-      .catch ((error) => {
-        return ReS(res, error);
-      })
-
-        // update the db include array by passing it TagIds of the tags that
-        // current user follows
-        // criteria.include = getDBInclude(tagsId)
-
-  }  else {
-
-
-      Tags.findOne({where: {name: tag}})
-        .then ((Dbtag) => {
-          
-          /* Friends posts condition i.e. get those posts 
-          * that are from friends or self and belong to 
-          * given tag
-          */
-          friendsPostsCondition =  {
-              UserId: UIDCondition,
-              '$Tags.id$': [Dbtag.id]
-          };
-
-          condition.push(friendsPostsCondition);
-          // update the db include array by passing it TagIds of the tag that
-          // has been requested
-          //criteria.include = getDBInclude(user, [Dbtag.id]);
-
-          //condition.push({public: { [op.eq]: true}});
-          
-          // get only those posts that are public and belong to current/given tag
-          condition.push({AdOptionId: {[op.eq]: null}, public: { [op.eq]: true},'$Tags.id$': [Dbtag.id]});
-
-          criteria.where = getWhereCondition(user, condition)
-
-          Posts.scope(getPostScopes(user)).findAll(criteria)
-           .then(posts => {
-              return sendFeed(req, res, posts, page)
-           })
-           .catch ((error) => {
-             return ReS(res, error);
-            })
-
-        })
-        .catch ((error) => {
-          return ReS(res, error);
-        })
-  }
+     })
+     .catch((pErr) => {
+        console.log(pErr)
+        return ReE(res, {message: 'Something went wrong.'}, 500);
+     })
+   
 }
 
 function getPostScopes (user) {
@@ -634,128 +779,6 @@ module.exports.cleanSeenPosts = function () {
   
 }
 
-/*
-* this function adds additional Posts such as Content Video or
-* some random posts in given set of Posts
-*/
-
-function smartFeed (posts, user, tag) {
-  return new Promise(function (resolve, reject) {
-    let getContentVideo = () => {
-      for (let i in posts) {
-        if (posts[i].type === 'video' && !posts[i].AdOptionId && posts[i].UserId !== user.id) {
-          return false
-        }
-      }
-      return true
-    }
-    let getPostsIds = (postsArr = false) => {
-      let ids = []
-      let postsNewArr = postsArr || posts
-      for (let i in postsNewArr) {
-        ids.push(postsNewArr[i].id)
-      }
-      return ids
-    }
-    let getPostCriteria = () => {
-      let criteria = {}
-      criteria.where = {
-        AdOptionId: {
-          [op.eq]: null
-        },
-        UserId: {
-          [op.ne]: user.id
-        },
-        public: {
-          [op.eq]: true
-        },
-        id: {
-          [op.notIn]: getPostsIds()
-        }
-      }        
-      if (tag !== 'all') {
-        criteria.where['$Tags.name$'] = tag
-      }
-      return criteria
-    }
-    let getRandomPosts = (criteria) => {
-      criteria.order = [
-        [Sequelize.literal('RAND()')]
-      ]
-      // criteria.order = Sequelize.literal('RAND() LIMIT 3')
-
-      criteria.where.type = {
-        [op.ne]: 'video'
-      }
-      criteria.limit = 3
-      return Posts.scope(getPostScopes(user)).findAll(criteria)
-    }
-    let getVideos = (criteria) => {
-      criteria.where.type = {
-        [op.eq]: 'video'
-      }
-      criteria.limit = 1
-      //criteria.order = Sequelize.literal('updatedAt LIMIT 1')
-      return Posts.scope(getPostScopes(user)).findAll(criteria)
-    }
-    let fetchNewPostsAndMerge = (newPosts) => {
-      if (newPosts && newPosts.length) {
-        let criteria = getPostCriteriaObject(user)
-        criteria.where = {
-          id: getPostsIds(newPosts)
-        }
-        Posts.findAll(criteria)
-          .then((newPosts) => {
-            if (newPosts) {
-              posts = posts.concat(newPosts)
-            }
-            resolve(posts)
-          })
-
-      } else {
-        resolve(posts)
-      }
-    }
-    let main = () => {
-      if (!posts || !posts.length || !user.feedEnabled) {
-        resolve(posts)
-        return 
-      }
-      let postsToAdd = []
-      let criteria = getPostCriteria()
-      if (getContentVideo()) {
-        getVideos(criteria)
-          .then((videoPosts) => {
-            if (videoPosts) {
-              postsToAdd = postsToAdd.concat(videoPosts)
-            }
-            getRandomPosts(criteria)
-              .then((randomPosts) => {
-                if (randomPosts) {
-                  postsToAdd = postsToAdd.concat(randomPosts)
-                }
-                fetchNewPostsAndMerge(postsToAdd)
-              })
-          })
-          .catch ((e) => {
-            reject(e)
-          })
-      } else {
-        getRandomPosts(criteria)
-          .then((randomPosts) => {
-            if (randomPosts) {
-              postsToAdd = postsToAdd.concat(randomPosts)
-            }
-            fetchNewPostsAndMerge(postsToAdd)
-          })
-          .catch ((e) => {
-            reject(e)
-          })
-      }
-    }
-    main()
-  })
-}
 
 /*
 ** this function adds Top Posts or Ads to the top
@@ -774,10 +797,7 @@ async function sendFeed (req, res, posts, page =1 ) {
         console.log('Jumping to next page ' + page + ' for getting more feed')
         getUserFeed(req, res, page)
       } else {
-        smartFeed(posts, user, getTag(req))
-          .then((updatedPosts) => {
-            return ReS(res, {posts: toWeb(markSeenPosts(updatedPosts, user), user), nextPage: page})
-          })
+        return ReS(res, {posts: toWeb(markSeenPosts(posts, user), user), nextPage: page})  
       }
     }
 

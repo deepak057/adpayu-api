@@ -127,3 +127,12 @@ module.exports.removeLastOccuranceOf = function (str, char) {
   let n = str.lastIndexOf(char)
   return str.slice(0, n) + str.slice(n).replace(char, '')
 }
+module.exports.getIdsArray = function(arr) {
+  let ids = []
+  if (arr && arr.length) {
+    for (let i in arr) {
+      ids.push(arr[i].id)
+    }  
+  }
+  return ids
+}
