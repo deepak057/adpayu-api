@@ -354,9 +354,9 @@ async function getUserFeed (req, res, nextPage = false) {
           criteria.order = [
             [Sequelize.literal('RAND()')]
           ]
-          /*criteria.where.type = {
+          criteria.where.type = {
             [op.ne]: 'video'
-          }*/
+          }
           criteria.limit = 4
           return Posts.scope(getPostScopes(user)).findAll(criteria)
         }
@@ -797,11 +797,12 @@ async function sendFeed (req, res, posts, page =1 ) {
         console.log('Jumping to next page ' + page + ' for getting more feed')
         getUserFeed(req, res, page)
       } else {
-        return ReS(res, {posts: sortByDate(toWeb(markSeenPosts(posts, user), user)), nextPage: page})  
+        return ReS(res, {posts: toWeb(markSeenPosts(posts, user), user), nextPage: page})  
       }
     }
 
     let sortByDate = (posts) => {
+      return posts
       if (user.recentActivitiesEnabled) {
         posts.sort(function (a, b) {
           return new Date(b.updatedAt) - new Date(a.updatedAt)
