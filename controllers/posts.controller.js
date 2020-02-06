@@ -345,7 +345,14 @@ async function getUserFeed (req, res, nextPage = false) {
             id: getPostsIdNotInCondition()
           }        
           if (tag !== 'all') {
-            criteria.where['$Tags.name$'] = tag
+            criteria.include = [ 
+              {
+                model: Tags,
+                where: {
+                  name: tag
+                }
+              }
+            ]
           }
           return criteria
         }
