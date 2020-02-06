@@ -797,8 +797,17 @@ async function sendFeed (req, res, posts, page =1 ) {
         console.log('Jumping to next page ' + page + ' for getting more feed')
         getUserFeed(req, res, page)
       } else {
-        return ReS(res, {posts: toWeb(markSeenPosts(posts, user), user), nextPage: page})  
+        return ReS(res, {posts: sortByDate(toWeb(markSeenPosts(posts, user), user)), nextPage: page})  
       }
+    }
+
+    let sortByDate = (posts) => {
+      if (user.recentActivitiesEnabled) {
+        posts.sort(function (a, b) {
+          return new Date(b.updatedAt) - new Date(a.updatedAt)
+        })
+      }
+      return posts
     }
 
     if (page === 1 && user.adsEnabled) {
