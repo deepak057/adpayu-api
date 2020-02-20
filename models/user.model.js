@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
         feedEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
         adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
         recentActivitiesEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
+        unCommentedEnabled: {type: DataTypes.BOOLEAN, defaultValue: false},
         bankDetails: DataTypes.TEXT,
         passwordResetKey: DataTypes.TEXT,
         locationCords: {type: DataTypes.STRING, defaultValue: ''},

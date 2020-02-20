@@ -39,10 +39,10 @@ module.exports = (sequelize, DataTypes) => {
             /* This scope will ommit the posts on which all the 
             *  answers or comments have been viewed by the given user
             */
-            ExcludedViewedPosts: function (user) {
+            ExcludedViewedPosts: function (uid, showUnAnswerdQuestions = false) {
                 return {
                     where: {
-                        'abc': Sequelize.literal(" (case when (Posts.type = 'question') then ((select count(*) from ViewedEntities where ViewedEntities.CommentId In (select id from Comments where Comments.PostId = Posts.id AND Comments.deleted = 0) AND ViewedEntities.UserId = " + user.id + ") != (select count(*) from Comments where Comments.PostId = Posts.id AND Comments.deleted = 0)) else 1 end) AND (case when (Posts.type != 'question' AND Posts.AdOptionId IS NULL) then ( (select count(*) from ViewedEntities where ViewedEntities.PostId = Posts.id && ViewedEntities.UserId=" + user.id + ") = 0) else 1 end)")
+                        'abc': Sequelize.literal(" (case when (Posts.type = 'question') then (" + (showUnAnswerdQuestions ? "((select count(*) from Comments where Comments.PostId = Posts.id AND Comments.deleted = 0) = 0) OR " : "") + "(select count(*) from ViewedEntities where ViewedEntities.CommentId In (select id from Comments where Comments.PostId = Posts.id AND Comments.deleted = 0) AND ViewedEntities.UserId = " + uid + ") != (select count(*) from Comments where Comments.PostId = Posts.id AND Comments.deleted = 0)) else 1 end) AND (case when (Posts.type != 'question' AND Posts.AdOptionId IS NULL) then ( (select count(*) from ViewedEntities where ViewedEntities.PostId = Posts.id && ViewedEntities.UserId=" + uid + ") = 0) else 1 end)")
                     }
                 }
             },
@@ -52,10 +52,10 @@ module.exports = (sequelize, DataTypes) => {
             * as seen i.e. posts that are sent into user's feed but 
             * they might or might not have be viewed yet
             */
-            ExcludSeenPosts: function (user) {
+            ExcludSeenPosts: function (uid) {
                 return {
                     where: {
-                        'xyz': Sequelize.literal("(Posts.id NOT IN (select PostId from SeenPosts where UserId = " + user.id + "))")
+                        'xyz': Sequelize.literal("(Posts.id NOT IN (select PostId from SeenPosts where UserId = " + uid + "))")
                     }
                 }
             },

@@ -464,7 +464,7 @@ function getPostScopes (user) {
         * this scope will ommit the posts on which all the 
         * answers or comments have been viewed by current user
         */
-        method: ['ExcludedViewedPosts', user]
+        method: ['ExcludedViewedPosts', user.id, user.unCommentedEnabled]
       },
 
       {
@@ -474,7 +474,7 @@ function getPostScopes (user) {
         * user's feed but they might or might not have be viewed yet
         */
             
-        method: ['ExcludSeenPosts', user]
+        method: ['ExcludSeenPosts', user.id]
       },
 
       /*
@@ -738,7 +738,7 @@ function markSeenPosts (posts, user) {
       let seenPosts = []
       if (posts.length) {
         for (let i in posts) {
-          if (posts[i].type !== 'text' && posts[i].UserId !== user.id && !posts[i].AdOptionId) {
+          if (posts[i].type !== 'text' && posts[i].UserId !== user.id && !posts[i].AdOptionId && (posts[i].type === 'question' && user.unCommentedEnabled ? posts[i].Comments.length : true)) {
             seenPosts.push({
               PostId: posts[i].id,
               UserId: user.id
