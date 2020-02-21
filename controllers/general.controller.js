@@ -538,7 +538,7 @@ module.exports.updateVideoThumb = function (req, res) {
                   fs.unlink(localVideoFile)
                   return ReS(res, {
                     message: 'Screenshot captured successfully at '+ sec + ' second',
-                    newScreenshot: 'https://svanq-test.s3.ap-south-1.amazonaws.com/public/thumbs/' + videoToPNG(videoName) + '?' + (new Date().getTime())
+                    newScreenshot: 'https://svanq.s3.ap-south-1.amazonaws.com/public/thumbs/' + videoToPNG(videoName) + '?' + (new Date().getTime())
                   });
                 })
             })
