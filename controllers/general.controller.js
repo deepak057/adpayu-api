@@ -1,5 +1,5 @@
 const { Likes, User, Comments, Posts, Tags, Videos } = require('../models');
-const { to, ReE, ReS, uniqeFileName, getDirectory} = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName, getDirectory, videoToPNG} = require('../services/util.service');
 const { captureVideoPoster, optimizeVideoFile, optimizeImage } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -538,7 +538,7 @@ module.exports.updateVideoThumb = function (req, res) {
                   fs.unlink(localVideoFile)
                   return ReS(res, {
                     message: 'Screenshot captured successfully at '+ sec + ' second',
-                    newScreenshot: 'https://svanq-test.s3.ap-south-1.amazonaws.com/public/' + videoName + '?' + (new Date().getTime())
+                    newScreenshot: 'https://svanq-test.s3.ap-south-1.amazonaws.com/public/thumbs/' + videoToPNG(videoName) + '?' + (new Date().getTime())
                   });
                 })
             })
