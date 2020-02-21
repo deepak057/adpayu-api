@@ -1,11 +1,12 @@
 const { Likes, User, Comments, Posts, Tags, Videos } = require('../models');
-const { to, ReE, ReS, uniqeFileName } = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName, getDirectory} = require('../services/util.service');
 const { captureVideoPoster, optimizeVideoFile, optimizeImage } = require('../services/app.service');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 const appRoot = require('app-root-path');
 const fs = require('fs');
 const path = require('path'); 
+const S3Controller   = require('./s3.controller');
 
 const fakeCommentsLike =  async function(req, res){
     let commentId = req.params.commentId, err, user = req.user, comment, n = parseInt(req.query.n || 100 ), likes = [], users = [];
@@ -512,10 +513,79 @@ const fixCommentAssociation = async function (req, res) {
 
 module.exports.fixCommentAssociation = fixCommentAssociation;
 
+module.exports.updateVideoThumb = function (req, res) {
+    if (req.user.id === 1) {
+      try {
+        let videoType = req.params.videoType,
+        id = req.params.id,
+        sec = req.query.sec || 4,
+        isPost = () => {
+          return videoType === 'post'
+        },
+        showErr = () => {
+          return ReE(res, {message:'Something went wrong'}, 500)
+        }
+        getFilePath = (fileName) => {
+          let dir = getDirectory(appRoot + '/uploads')
+          return dir + '/' + fileName
+        },
+        main = (videoName) => {
+          let localVideoFile = getFilePath(videoName)
+          S3Controller.downloadS3Object('public/' + videoName, localVideoFile)
+            .then((d) => {
+              captureVideoPoster(videoName, sec)
+                .then((d1) => {
+                  fs.unlink(localVideoFile)
+                  return ReS(res, {message: 'Screenshot captured successfully at '+ sec + ' second'});
+                })
+            })
+        }
+        if (isPost()) {
+          Posts.find({
+            where: {
+              id: id
+            },
+            include: [
+              {
+                model: Videos
+              }
+            ]
+          })
+            .then((obj) => {
+              main(obj.Video.path)
+            })
+            .catch ((pErr) => {
+              showErr()
+            })
+        } else {
+          Comments.find({
+            where: {
+              id: id,
+              videoPath: {
+                [op.ne]: ''
+              }
+            }
+          })
+            .then((obj) => {
+              main(obj.videoPath)
+            })
+            .catch((pErr) => {
+              showErr()
+            })
+        }
+        
+      } catch (e) {
+        showErr()
+      }
+    } else {
+      return ReE(res, {message:'Unathorized user'}, 401);
+    }
+
+}
+
 function optimizeImages (req, res) {
   if (req.user.id === 1) {
     try {
-      const S3Controller   = require('./s3.controller');
       let s3 = S3Controller.getS3Config();
       let prefix = 'public/thumbs/';
       let params = {

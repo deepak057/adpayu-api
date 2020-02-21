@@ -327,7 +327,7 @@ module.exports.canUpdatePost = function (post, comment) {
 
 
 
-function captureVideoPoster (videoFileName) {
+function captureVideoPoster (videoFileName, sec = 4) {
   return new Promise(function(resolve, reject) {
     try {
       let ffmpeg = require('fluent-ffmpeg');
@@ -336,7 +336,7 @@ function captureVideoPoster (videoFileName) {
       // replace the extension of given video file with ".png"
       let posterImageName = videoFileName.substr(0, videoFileName.lastIndexOf(".")) + ".png";
       let posterPath = screenshotFolder + '/' + posterImageName;
-      let screenshotSecond = 4;
+      let screenshotSecond = sec;
 
       let main = (customSecond = false) => {
         // create the screenshot only if it doesn't already exist
