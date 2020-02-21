@@ -536,7 +536,10 @@ module.exports.updateVideoThumb = function (req, res) {
               captureVideoPoster(videoName, sec)
                 .then((d1) => {
                   fs.unlink(localVideoFile)
-                  return ReS(res, {message: 'Screenshot captured successfully at '+ sec + ' second'});
+                  return ReS(res, {
+                    message: 'Screenshot captured successfully at '+ sec + ' second',
+                    newScreenshot: 'https://svanq-test.s3.ap-south-1.amazonaws.com/public/' + videoName + '?' + (new Date().getTime())
+                  });
                 })
             })
         }
