@@ -590,12 +590,17 @@ const edit = async function(req, res) {
       return videoSrc
     }
 
-    model.find({
+    let criteria = {
       where: {
-        id: config.videoObj.id,
-        UserId: user.id
+        id: config.videoObj.id
       }
-    })
+    }
+
+    if (!user.isAdmin) {
+      criteria.where.UserId = user.id
+    }
+
+    model.find(criteria)
       .then((video) => {
         let videoSrc = getVideoSources(video)
         let videosEdited = 0

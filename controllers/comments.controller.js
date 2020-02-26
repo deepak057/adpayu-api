@@ -138,13 +138,16 @@ module.exports.edit = async function (req, res) {
     if (!commentId) {
       showError('No comment Id provided')
     } else {
+      let condition = {
+        id: commentId
+      }
+      if (!user.isAdmin) {
+        condition.UserId = user.id
+      }
       Comments.update({
         comment: removeBlankParagraphs(comment.trim())
       },{
-        where: {
-          id: commentId,
-          UserId: user.id
-        }
+        where: condition
       })
         .then((comntObj) => {
           if (comntObj) {

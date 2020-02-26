@@ -1158,7 +1158,7 @@ const getPostById = function(req, res){
       ** only if current post was created
       ** by current user
       */
-      if (checkOwner === 'true') {
+      if (checkOwner === 'true' && !user.isAdmin) {
         criteria.where.UserId = user.id;
       }
       
@@ -1200,10 +1200,15 @@ module.exports.getPostById = getPostById;
 const update = async function(req, res){
     try {
       let post = req.body;
-      Posts.find({where: {
-        id: post.id,
-        UserId: req.user.id
-      }})
+      let criteria = {
+        where: {
+          id: post.id
+        }
+      }
+      if (!req.user.isAdmin) {
+        criteria.where.UserId = req.user.id
+      }
+      Posts.find(criteria)
         .then ((postRecord) => {
           if (post) {
             if (post.type === 'text'){
@@ -1223,7 +1228,7 @@ const update = async function(req, res){
               }, {
                 where: {
                   id: postRecord.QuestionId,
-                  UserId: req.user.id
+                  //UserId: req.user.id
                 }
               })
                 .then((updatedPostRecord) => {
@@ -1236,7 +1241,7 @@ const update = async function(req, res){
               }, {
                 where: {
                   id: postRecord.VideoId,
-                  UserId: req.user.id
+                  //UserId: req.user.id
                 }
               })
                 .then((updatedPostRecord) => {
@@ -1271,7 +1276,7 @@ const remove = async function(req, res){
       };
       let criteria = {
         where: {
-          id: postId, UserId: req.user.id
+          id: postId
         },
         include: [
           {
@@ -1282,6 +1287,11 @@ const remove = async function(req, res){
           }
         ]
       }
+      
+      if (!req.user.isAdmin) {
+        criteria.where.UserId = req.user.id
+      }
+
       Posts.find(criteria)
         .then((post) => {
           // soft delete the post by just updating Deleted flag
@@ -1291,7 +1301,6 @@ const remove = async function(req, res){
               const MailsController   = require('./mails.controller');
               //notify site admin about the deletion of this post
               MailsController.sendMail("Post id: " + post.id + "\nPost: " + JSON.stringify(post), "Post (id: " + post.id + ") deleted by " + req.user.first + ' ' + req.user.last, false, false);
-
               deletePostMedia(post)
               const NotificationsController   = require('./notifications.controller');
               NotificationsController.removePostNotifications(postId); //remove all the notifications record associated with this post
