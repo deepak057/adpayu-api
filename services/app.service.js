@@ -91,7 +91,7 @@ module.exports.getCommentCriteriaObject = getCommentCriteriaObject;
 ** Get default DB Include models
 */
 
-function getDBInclude(user = false, tagIds = [], pushModel = {}) {
+function getDBInclude(user = false, tagIds = [], pushModel = {}, disableCommentsOnMainFeed = false) {
   let tags = {
     model: Tags,
   }
@@ -119,8 +119,12 @@ function getDBInclude(user = false, tagIds = [], pushModel = {}) {
     }
   }
 
-  let commentObj = getCommentCriteriaObject(user);
-  commentObj.model = Comments;
+  let commentObj = getCommentCriteriaObject(user, false);
+    
+    console.log("here " + disableCommentsOnMainFeed + " \n\n\n\n")
+
+  commentObj.model = disableCommentsOnMainFeed ? Comments.scope(['ExcludedCommentsOnMainFeed','defaultScopeCopy']) : Comments;
+
 
   let return_ = [
 
@@ -188,9 +192,9 @@ function getDBInclude(user = false, tagIds = [], pushModel = {}) {
 module.exports.getDBInclude = getDBInclude;
 
 
-function getPostCriteriaObject (user = false, tagIds = []) {
+function getPostCriteriaObject (user = false, tagIds = [], disableCommentsOnMainFeed = false) {
   let includes = [
-    [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id && deleted = 0)'), 'CommentsCount'],
+    [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id AND deleted = 0 ' + (disableCommentsOnMainFeed ? ' AND disableOnMainFeed = false ' : '') + ')'), 'CommentsCount'],
     [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id)'), 'LikesCount']
   ]
   
@@ -200,7 +204,7 @@ function getPostCriteriaObject (user = false, tagIds = []) {
   }
 
   return {
-      include: getDBInclude(user, tagIds) ,
+      include: getDBInclude(user, tagIds, {}, disableCommentsOnMainFeed),
       
       /*
       Include comments count 

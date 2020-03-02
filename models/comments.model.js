@@ -7,6 +7,16 @@ const CONFIG            = require('../config/config');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 
+function defaultScope () {
+  return {
+    where: {
+      deleted: {
+        [op.eq]: false
+      }
+    }
+ }
+}
+
 module.exports = (sequelize, DataTypes) => {
     var Model = sequelize.define('Comments', {
         type     : DataTypes.STRING,
@@ -15,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
         videoOptimized: {type: DataTypes.BOOLEAN, defaultValue: false},
         failedProcessingAttempts: {type: DataTypes.INTEGER, defaultValue: 0},
         deleted: {type: DataTypes.BOOLEAN, defaultValue: false},
+        disableOnMainFeed: {type: DataTypes.BOOLEAN, defaultValue: false}
         /*setDefault: {
           type: Sequelize.VIRTUAL,
           get () {
@@ -22,13 +33,24 @@ module.exports = (sequelize, DataTypes) => {
           }
         }*/
     }, {
-         defaultScope: {
-            where: {
-              deleted: {
-                [op.eq]: false
-              }
-            }
-         } 
+         defaultScope: defaultScope(),
+         scopes: {
+
+            /* This scope will ommit the comments which are  
+            *  not enabled on Main Feed
+            */
+            ExcludedCommentsOnMainFeed: function () {
+                return {
+                    where: {
+                      disableOnMainFeed: {
+                        [op.eq]: false
+                      } 
+                    }
+                }
+            },
+            defaultScopeCopy: defaultScope()
+          }  
+        
        });
 
     Model.associate = function(models){

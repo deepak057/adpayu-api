@@ -222,7 +222,7 @@ async function getUserFeed (req, res, nextPage = false) {
       //ad location wise ad filtering search criteria
       condition.push(getAdLocationSearchCriteria(user))
 
-      let criteria = getPostCriteriaObject(user);
+      let criteria = getPostCriteriaObject(user, [], true);
         
       criteria.order = Sequelize.literal(getOrderByCondition(user) + ' LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);  
 
@@ -382,7 +382,7 @@ async function getUserFeed (req, res, nextPage = false) {
             resolve(newPosts)
             return
           }
-          let criteria = getPostCriteriaObject(user)
+          let criteria = getPostCriteriaObject(user, [], true)
           criteria.where = {
             id: getIdsArray(newPosts)
           }
@@ -695,7 +695,7 @@ async function FixPosts (posts, req, res, page) {
       where: { 
         id: postsArr
       },
-      include: getDBInclude(user)
+      include: getDBInclude(user, [], {}, true)
     })
      .then((postObjs) => {
         //only replace the properties that have incorrect values in Original SQL retrieve
@@ -862,7 +862,7 @@ function adsToBePushedToTheTop(user) {
     return new Promise(function(resolve, reject) { 
 
         try {
-          let criteria = getPostCriteriaObject (user);
+          let criteria = getPostCriteriaObject (user, [], true);
           criteria.where = {
             [op.and]: [
               {

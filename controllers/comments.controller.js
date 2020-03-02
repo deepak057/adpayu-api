@@ -20,9 +20,10 @@ function getCommentURL (comment) {
 
 const get = function(req, res){
   try {
-    let postId = req.params.postId || false, user = req.user;
+    let postId = req.params.postId || false, user = req.user, userFeed = req.query.userFeed && req.query.userFeed === 'true';
     if (postId) {
-      Comments.findAll(getCommentCriteriaObject (user, {PostId: postId}))
+      let model = userFeed ? Comments.scope(['ExcludedCommentsOnMainFeed','defaultScopeCopy']) : Comments
+      model.findAll(getCommentCriteriaObject (user, {PostId: postId}))
         .then((comments) => {
           if (comments) {
             comments = formatComments(comments, user)
@@ -165,9 +166,17 @@ module.exports.edit = async function (req, res) {
 
 const remove = async function(req, res){
     try {
-      let comment, err, post, commentId = parseInt(req.params.commentId), user = req.user, consumedAd = false;
+      let comment, err, post, commentId = parseInt(req.params.commentId), 
+      user = req.user, 
+      consumedAd = false,
+      whereCond = {
+        id: commentId
+      };
+      if (!user.isAdmin) {
+        whereCond.UserId = user.id
+      }
 
-      [err, comment] = await to(Comments.findOne({where: {id: commentId, UserId: user.id}}));
+      [err, comment] = await to(Comments.findOne({where: whereCond}))
       if(err) return ReE(res, 'error occured trying to delete the comment');
       
       [err, post] = await to(Posts.findOne({where: {id: comment.PostId}}));
@@ -199,7 +208,7 @@ const remove = async function(req, res){
       
     } catch (e) {
       console.log(e);
-      return ReE(res, 'error occured trying to delete the comment', 204);
+      return ReE(res, 'error occured trying to delete the comment');
     }
 
 }
