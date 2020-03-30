@@ -1304,7 +1304,7 @@ const remove = async function(req, res){
               deletePostMedia(post)
               const NotificationsController   = require('./notifications.controller');
               NotificationsController.removePostNotifications(postId); //remove all the notifications record associated with this post
-              return ReS(res, {success: true, message: 'Post successfully deleted'}, 201);
+              return ReS(res, {success: true, message: 'Post successfully deleted'}, 200);
             })
         })
         .catch((e) => {
@@ -1317,3 +1317,34 @@ const remove = async function(req, res){
     }
 }
 module.exports.remove = remove;
+
+const getPublicPosts =  function(req, res) {
+  let page = req.query.page || 1
+
+  let limitNOffset = getLimitOffset(page)
+
+  let criteria = {
+    include: getDBInclude()
+  }
+
+  criteria.order = Sequelize.literal(' updatedAt DESC LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);
+
+  criteria.where = {
+    type: {
+      [op.ne]: 'text'
+    },
+    public: {
+      [op.eq]: true
+    },
+    AdOptionId: {
+      [op.eq]: null
+    }
+  }
+
+  Posts.scope('PostsWithVideoComments', 'defaultScopeCopy').findAll(criteria)
+    .then((d) => {
+      return ReS(res, {posts: d}, 200);    
+    })
+}
+
+module.exports.getPublicPosts = getPublicPosts;

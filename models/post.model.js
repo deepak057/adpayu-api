@@ -59,6 +59,17 @@ module.exports = (sequelize, DataTypes) => {
                     }
                 }
             },
+            /*
+            * this scope only returns the posts that have at least one video comment
+            */
+            PostsWithVideoComments: function () {
+                return {
+                    where: {
+                        'xyz': Sequelize.literal("(select count(*) from Comments where Comments.PostId = Posts.id AND Comments.videoPath IS NOT NULL AND Comments.deleted = 0 AND Comments.disableOnMainFeed = 0) > 0")
+                    }
+                }
+            },
+            
             defaultScopeCopy : function () {
                 return defaultScope()
             }

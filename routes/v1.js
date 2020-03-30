@@ -52,6 +52,7 @@ router.get('/post/:postId',  passport.authenticate('jwt', {session:false}), Post
 router.get('/post/public/:postId',  PostsController.getPostById);        	   // R
 router.get('/posts/timelineFeed/:userId',           passport.authenticate('jwt', {session:false}), PostsController.getTimelineFeed);        	   // R
 router.put('/posts',           passport.authenticate('jwt', {session:false}), PostsController.update);         // U
+router.get('/getPublicPosts', PostsController.getPublicPosts);        	   // R
 router.delete('/posts/:postId',           passport.authenticate('jwt', {session:false}), PostsController.remove);        // D
 
 /** Tags routes**/
