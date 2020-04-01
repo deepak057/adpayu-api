@@ -121,8 +121,6 @@ function getDBInclude(user = false, tagIds = [], pushModel = {}, disableComments
 
   let commentObj = getCommentCriteriaObject(user, false);
     
-    console.log("here " + disableCommentsOnMainFeed + " \n\n\n\n")
-
   commentObj.model = disableCommentsOnMainFeed ? Comments.scope(['ExcludedCommentsOnMainFeed','defaultScopeCopy']) : Comments;
 
 

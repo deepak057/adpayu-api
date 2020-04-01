@@ -1323,15 +1323,21 @@ const getPublicPosts =  function(req, res) {
 
   let limitNOffset = getLimitOffset(page)
 
-  let criteria = {
-    include: getDBInclude()
-  }
+  let criteria = {}
 
-  criteria.order = Sequelize.literal(' updatedAt DESC LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);
+  // criteria.order = Sequelize.literal(' updatedAt DESC LIMIT '+ limitNOffset.offset + ',' + limitNOffset.limit);
+
+  criteria.order = [
+    ['updatedAt', 'DESC'],
+  ]
+
+  criteria.limit = limitNOffset.limit
+
+  criteria.offset = limitNOffset.offset
 
   criteria.where = {
     type: {
-      [op.ne]: 'text'
+      [op.eq]: 'question'
     },
     public: {
       [op.eq]: true
@@ -1343,7 +1349,22 @@ const getPublicPosts =  function(req, res) {
 
   Posts.scope('PostsWithVideoComments', 'defaultScopeCopy').findAll(criteria)
     .then((d) => {
-      return ReS(res, {posts: d}, 200);    
+      
+      let newCriteria = {
+        include: getDBInclude(),
+        where: {
+          id: getIdsArray(d)
+        },
+        order: [
+            ['updatedAt', 'DESC'],
+        ],
+      }
+
+      Posts.findAll(newCriteria)
+        .then((d1) => {
+          return ReS(res, {posts: d1}, 200);
+        })
+          
     })
 }
 
