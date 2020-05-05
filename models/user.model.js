@@ -35,13 +35,14 @@ module.exports = (sequelize, DataTypes) => {
         perVideoPriceINR: {type: DataTypes.FLOAT, defaultValue: 0},
         guestUserId: {type: DataTypes.TEXT, allowNull: true},
         isAdmin: {type: DataTypes.BOOLEAN, defaultValue: false},
+        refCode: {type: DataTypes.STRING, defaultValue: '' }
     },{
         defaultScope: {
           attributes: { exclude: [] },
         },
         scopes: {
           public: {
-           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin', 'refCode'] },
           },
           visible: {
             where: {

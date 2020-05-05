@@ -18,6 +18,8 @@ const GeneralController = require('../controllers/general.controller');
 const VideoController = require('../controllers/video.controller');
 const AudioController = require('../controllers/audio.controller');
 const SocialSharingController = require('../controllers/socialSharing.controller');
+const ReferralController = require('../controllers/ref.controller');
+
 
 const custom 	        = require('./../middleware/custom');
 
@@ -142,6 +144,9 @@ router.post('/general/updateVideoThumb/:videoType/:id', passport.authenticate('j
 
 /** Social Sharing routes **/
 router.post('/socialSharing/track/', passport.authenticate('jwt', {session:false}), SocialSharingController.trackSharing);        // U
+
+/** Referral routes **/
+router.get('/referral/getRefCode', passport.authenticate('jwt', {session:false}), ReferralController.getRefCode);        // R
 
 
 //********* API DOCUMENTATION **********
