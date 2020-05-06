@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         scopes: {
           public: {
-           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled','gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin', 'refCode'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled', 'unCommentedEnabled', 'gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin', 'refCode', 'ReferredById'] },
           },
           visible: {
             where: {
@@ -69,6 +69,7 @@ module.exports = (sequelize, DataTypes) => {
         this.Notifications = this.hasMany(models.Notifications, {as: 'receiver', foreignKey: 'toId', onDelete: 'CASCADE'});
         this.ConsumedAds = this.hasMany(models.ConsumedAds, {onDelete: 'CASCADE'});
         this.ViewedEntities = this.hasMany(models.ViewedEntities, {onDelete: 'CASCADE'});
+        this.ReferredBy = this.hasOne(models.User, {as: 'ReferredBy'});
     };
 
     Model.getFriends = function (uid, acceptedOnly= true) {

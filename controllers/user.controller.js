@@ -18,12 +18,31 @@ const create = async function(req, res){
     } else if(!body.password){
         return ReE(res, 'Please enter a password to register.');
     }else{
-        let err, user;
+        let err, user, refCode = false;
+
+        if (body.refCode) {
+          refCode = body.refCode
+          delete body.refCode
+        }
 
         [err, user] = await to(authService.createUser(body));
 
         //associate this user with default tag
         TagsController.associateWithDefaultTag(user);
+
+        // of there is any referral code, associate that user with this one
+        if (refCode) {
+          User.find({
+            where: {
+              refCode: refCode
+            }
+          })
+            .then((u) => {
+              if (u) {
+                u.setReferredBy(user)
+              }
+            })
+        }
 
         if(err) return ReE(res, err, 422);
         return ReS(res, {message:'Successfully created new user.', user:user.toWeb(), token:user.getJWT()}, 201);

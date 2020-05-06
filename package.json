@@ -26,6 +26,7 @@
     "express-fileupload": "^1.0.0",
     "find-process": "^1.4.2",
     "fluent-ffmpeg": "^2.1.2",
+    "hashids": "^2.2.1",
     "http": "0.0.0",
     "https": "^1.0.0",
     "jade": "~1.11.0",
