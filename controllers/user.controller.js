@@ -5,6 +5,8 @@ const TagsController   = require('./tags.controller');
 const crypto = require('crypto');
 require('dotenv').config();//instatiate environment variables
 const MailsController   = require('./mails.controller');
+const Sequelize = require('sequelize');
+const op = Sequelize.Op;
 
 const create = async function(req, res){
     const body = req.body;
@@ -30,7 +32,7 @@ const create = async function(req, res){
         //associate this user with default tag
         TagsController.associateWithDefaultTag(user);
 
-        // of there is any referral code, associate that user with this one
+        // if there is any referral code, associate that user with this one
         if (refCode) {
           User.find({
             where: {
@@ -398,3 +400,63 @@ const markAsViewed = function (req, res) {
 }
 
 module.exports.markAsViewed = markAsViewed;
+
+const getUserDetails = async function (req, res) {
+  try {
+    let user = req.user || false;
+    if (user.isAdmin) {
+      let userId = req.params.userId;
+      User.find({
+        where: {
+          id: userId
+        }
+      })
+        .then((u) => {
+          if (u) {
+            User.find({
+              where: {
+                guestUserId: u.guestUserId,
+                id: {
+                  [op.ne]: u.id
+                }
+              }
+            })
+              .then((u1) => {
+                let unique = false
+                if (!u1) {
+                  unique = true
+                }
+                ViewedEntities.count({
+                  where: {
+                    CommentId: {
+                      [op.ne]: null
+                    },
+                    UserId: u.id
+                  }
+                })
+                  .then((c) => {
+                    return ReS(res, {
+                      name: u.first + ' ' + u.last,
+                      id: u.id,
+                      Unique: unique ? 'Yes': 'No',
+                      'Watched Video Answer': c
+                    }, 200); 
+        
+                  })
+                
+              })
+          } else {
+            return ReE(res, {message: 'User not found'}, 404);
+          }
+        }) 
+    } else {
+      return ReE(res, {message: 'You are not authorised'}, 403);
+    }
+    
+  } catch (e) {
+    console.log(e);
+    return ReE(res, {message: 'Somehting went wrong'}, 500);
+  }
+}
+
+module.exports.getUserDetails = getUserDetails;

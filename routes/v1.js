@@ -46,6 +46,7 @@ router.get(    '/users/updateAccountStatus/:userId',     UserController.updateAc
 router.post(     '/users/getUserRevenue',           passport.authenticate('jwt', {session:false}), UserController.getUserRevenue);        // R
 router.put('/users/markAsViewed/', passport.authenticate('jwt', {session:false}), UserController.markAsViewed);        //U
 router.put('/users/public/markAsViewed/', UserController.markAsViewed);        //U
+router.post('/users/getUserDetails/:userId', passport.authenticate('jwt', {session:false}), UserController.getUserDetails);        //R
 
 /** Posts routes **/
 router.post('/posts',           passport.authenticate('jwt', {session:false}), PostsController.create);        // C
@@ -147,7 +148,7 @@ router.post('/socialSharing/track/', passport.authenticate('jwt', {session:false
 
 /** Referral routes **/
 router.get('/referral/getRefCode', passport.authenticate('jwt', {session:false}), ReferralController.getRefCode);        // R
-
+router.get('/referral/getUserReferralDetails', passport.authenticate('jwt', {session:false}), ReferralController.getUserReferralDetails);        // R
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));

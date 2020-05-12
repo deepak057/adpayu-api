@@ -33,3 +33,16 @@ const getRefCode = async function(req, res){
 }
 
 module.exports.getRefCode = getRefCode;
+
+const getUserReferralDetails = async function (req, res) {
+  try {
+    let user = req.user;
+    let 
+
+  } catch (e) {
+    console.log(e)
+    return Ree(res, {error: 'Something went wrong'}, 500) 
+  }
+}
+
+module.exports.getUserReferralDetails = getUserReferralDetails;
