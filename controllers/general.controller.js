@@ -388,7 +388,7 @@ module.exports.moveContentToS3 = moveContentToS3;
 */
 
 const changeCommentAssociation = async function (req, res) {
-    if (req.user.id === 1) {
+    if (req.user.isAdmin) {
       try {
         let commentId = req.params.commentId;
         let newPostId = req.query.postId;
@@ -442,6 +442,18 @@ const changeCommentAssociation = async function (req, res) {
                 })
                   .then((newPost) => {
                     comment.PostId = newPostId;
+                    
+                    /*Update the updatedAt date of the new post
+                    * so it starts showing on the top of the feed
+                    */
+                    Posts.update({
+                      'updatedAt': new Date()
+                    }, {
+                      where: {
+                        id: newPost.id
+                      }
+                    })
+                    
                     comment.save()
                       .then((comment) => {
                         newPost.addComments(comment);
@@ -452,8 +464,8 @@ const changeCommentAssociation = async function (req, res) {
                   })
               })
             
-            post.removeComment(comment);
-            comment
+            //post.removeComment(comment);
+            //comment
           })
             
       } catch (e) {
