@@ -341,7 +341,7 @@ const getUserRevenue = async function(req, res) {
       return ReE(res, {error: 'Something went wrong'}, 500);
     }
     try {
-      let err, user = req.user, amount, guestUserId = req.body.guestUserId || false;
+      let err, user = req.user, amount, guestUserId = req.body.guestUserId || false, lastLoginFrom = getWebView(req);
 
       //get total amount of money that user has accumlated
       [err, amount] = await to(ConsumedAds.getUserTotal(user.id));
