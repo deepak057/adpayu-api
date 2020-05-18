@@ -1,6 +1,6 @@
 const { User, Friendship, ConsumedAds, ViewedEntities }          = require('../models');
 const authService       = require('../services/auth.service');
-const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces}  = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces, getWebView}  = require('../services/util.service');
 const TagsController   = require('./tags.controller');
 const crypto = require('crypto');
 require('dotenv').config();//instatiate environment variables
@@ -341,7 +341,7 @@ const getUserRevenue = async function(req, res) {
       return ReE(res, {error: 'Something went wrong'}, 500);
     }
     try {
-      let err, user = req.user, amount, guestUserId = req.body.guestUserId || false;
+      let err, user = req.user, amount, guestUserId = req.body.guestUserId || false, lastLoginFrom = getWebView(req);
 
       //get total amount of money that user has accumlated
       [err, amount] = await to(ConsumedAds.getUserTotal(user.id));
@@ -351,8 +351,16 @@ const getUserRevenue = async function(req, res) {
 
       if (guestUserId && req.user.guestUserId !== String(guestUserId)) {
         req.user.guestUserId = guestUserId
-        req.user.save()
       }
+
+      /*
+      * update current user's Last Device info
+      */
+      if (lastLoginFrom) {
+        req.user.lastLoginFrom = lastLoginFrom  
+      }
+      
+      req.user.save()
 
       return ReS(res, {
           totalRevenue: amount

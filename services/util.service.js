@@ -136,3 +136,45 @@ module.exports.getIdsArray = function(arr) {
   }
   return ids
 }
+
+function isIOSWebView (req) {
+  var userAgent = req.headers['user-agent'].toLowerCase(),
+    safari = /safari/.test( userAgent ),
+    ios = /iphone|ipod|ipad/.test( userAgent );
+
+  if( ios ) {
+      if ( safari ) {
+          false
+      } else if ( !safari ) {
+          true
+      };
+  } else {
+      false
+  };  
+}
+
+module.exports.isIOSWebView = isIOSWebView;
+
+function isAndroidWebView (req) {
+  require('dotenv').config();//instatiate environment variables
+  req.headers['HTTP_X_REQUESTED_WITH'] === process.env.ANDROID_APP_ID || req.headers['user-agent'].includes('wv')
+}
+
+module.exports.isAndroidWebView =  isAndroidWebView;
+
+module.exports.getWebView = (req) => {
+  try {
+    let view = false
+    if (isIOSWebView(req)) {
+      view = 'ios'
+    } 
+    if (isAndroidWebView(req)) {
+      view = 'Android'
+    }
+    return view
+  } catch (e) {
+    console.log(e)
+    return false
+  }
+ 
+}

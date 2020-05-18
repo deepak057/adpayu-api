@@ -35,14 +35,15 @@ module.exports = (sequelize, DataTypes) => {
         perVideoPriceINR: {type: DataTypes.FLOAT, defaultValue: 0},
         guestUserId: {type: DataTypes.TEXT, allowNull: true},
         isAdmin: {type: DataTypes.BOOLEAN, defaultValue: false},
-        refCode: {type: DataTypes.STRING, defaultValue: '' }
+        refCode: {type: DataTypes.STRING, defaultValue: '' },
+        lastLoginFrom: {type: DataTypes.STRING, allowNull: true}
     },{
         defaultScope: {
           attributes: { exclude: [] },
         },
         scopes: {
           public: {
-           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled', 'unCommentedEnabled', 'gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin', 'refCode', 'ReferredById'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled', 'unCommentedEnabled', 'gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin', 'refCode', 'ReferredById', 'lastLoginFrom'] },
           },
           visible: {
             where: {
