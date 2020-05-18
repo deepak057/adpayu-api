@@ -144,12 +144,12 @@ function isIOSWebView (req) {
 
   if( ios ) {
       if ( safari ) {
-          false
+        return false
       } else if ( !safari ) {
-          true
+        return true
       };
   } else {
-      false
+    return false
   };  
 }
 
@@ -157,7 +157,7 @@ module.exports.isIOSWebView = isIOSWebView;
 
 function isAndroidWebView (req) {
   require('dotenv').config();//instatiate environment variables
-  req.headers['HTTP_X_REQUESTED_WITH'] === process.env.ANDROID_APP_ID || req.headers['user-agent'].includes('wv')
+  return req.headers['HTTP_X_REQUESTED_WITH'] === process.env.ANDROID_APP_ID || req.headers['user-agent'].includes('wv')
 }
 
 module.exports.isAndroidWebView =  isAndroidWebView;
