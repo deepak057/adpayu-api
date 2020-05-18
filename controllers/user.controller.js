@@ -341,7 +341,7 @@ const getUserRevenue = async function(req, res) {
       return ReE(res, {error: 'Something went wrong'}, 500);
     }
     try {
-      let err, user = req.user, amount, guestUserId = req.body.guestUserId || false, lastLoginFrom = getWebView(req);
+      let err, user = req.user, amount, guestUserId = req.body.guestUserId || false;
 
       //get total amount of money that user has accumlated
       [err, amount] = await to(ConsumedAds.getUserTotal(user.id));
@@ -349,12 +349,16 @@ const getUserRevenue = async function(req, res) {
         showErr()
       }
 
+      /*
+      * Save GuestUserId for the current user
+      */
+
       if (guestUserId && req.user.guestUserId !== String(guestUserId)) {
         req.user.guestUserId = guestUserId
       }
 
       /*
-      * update current user's Last Device info
+      * Spdate current user's Current Device info
       */
       if (lastLoginFrom) {
         req.user.lastLoginFrom = lastLoginFrom  
@@ -447,7 +451,8 @@ const getUserDetails = async function (req, res) {
                       name: u.first + ' ' + u.last,
                       id: u.id,
                       Unique: unique ? 'Yes': 'No',
-                      'Watched Video Answer': c
+                      'Watched Video Answer': c,
+                      Platform: u.lastLoginFrom
                     }, 200); 
         
                   })
