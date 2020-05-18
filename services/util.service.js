@@ -164,12 +164,12 @@ module.exports.isAndroidWebView =  isAndroidWebView;
 
 module.exports.getWebView = (req) => {
   try {
-    let view = false
+    let view = 'Website'
     if (isIOSWebView(req)) {
-      view = 'ios'
+      view = 'iOS App'
     } 
     if (isAndroidWebView(req)) {
-      view = 'Android'
+      view = 'Android App'
     }
     return view
   } catch (e) {
