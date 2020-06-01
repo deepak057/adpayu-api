@@ -59,6 +59,7 @@ module.exports = (sequelize, DataTypes) => {
         this.Likes = this.belongsToMany(models.Likes, {through: 'CommentLikes', onDelete: 'CASCADE'});
         this.ConsumedAds = this.hasMany(models.ConsumedAds, { onDelete: 'CASCADE'});
         this.ViewedEntities = this.hasMany(models.ViewedEntities, {onDelete: 'CASCADE'});
+        this.Reactions = this.hasMany(models.Reactions, {onDelete: 'CASCADE'});
     };
    
 

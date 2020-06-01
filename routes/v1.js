@@ -19,6 +19,7 @@ const VideoController = require('../controllers/video.controller');
 const AudioController = require('../controllers/audio.controller');
 const SocialSharingController = require('../controllers/socialSharing.controller');
 const ReferralController = require('../controllers/ref.controller');
+const ReactionsController = require('../controllers/reactions.controller');
 
 
 const custom 	        = require('./../middleware/custom');
@@ -149,6 +150,10 @@ router.post('/socialSharing/track/', passport.authenticate('jwt', {session:false
 /** Referral routes **/
 router.get('/referral/getRefCode', passport.authenticate('jwt', {session:false}), ReferralController.getRefCode);        // R
 router.get('/referral/getUserReferralDetails', passport.authenticate('jwt', {session:false}), ReferralController.getUserReferralDetails);        // R
+
+/** Reactions routes **/
+router.get('/reactions/:commentId', passport.authenticate('jwt', {session:false}), ReactionsController.get);        // R
+
 
 //********* API DOCUMENTATION **********
 router.use('/docs/api.json',            express.static(path.join(__dirname, '/../public/v1/documentation/api.json')));
