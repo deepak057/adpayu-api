@@ -153,6 +153,7 @@ router.get('/referral/getUserReferralDetails', passport.authenticate('jwt', {ses
 
 /** Reactions routes **/
 router.get('/reactions/:commentId', passport.authenticate('jwt', {session:false}), ReactionsController.get);        // R
+router.post('/reactions/:commentId', passport.authenticate('jwt', {session:false}), ReactionsController.create);        // P
 
 
 //********* API DOCUMENTATION **********
