@@ -67,7 +67,8 @@ module.exports.getCommentIncludes = getCommentIncludes;
 
 function getCommentCriteriaObject (user = false, where = false) {
   let includes = [
-    [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount']
+    [Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id)'), 'CommentsLikesCount'],
+    [Sequelize.literal('(SELECT COUNT(*) FROM Reactions WHERE Reactions.CommentId = Comments.id AND deleted = 0)'), 'ReactionsCount']
   ]
   if (user) {
     includes.push([Sequelize.literal('(SELECT COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id AND Likes.UserId = '+ user.id +')'), 'HasLiked'])
