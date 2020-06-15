@@ -70,3 +70,33 @@ const create = function (req, res) {
 }
 
 module.exports.create = create;
+
+const remove = function (req, res) {
+  try {
+    let reactionId = req.params.reactionId || false,
+    user = req.user;
+
+    if (reactionId) {
+      Reactions.destroy({
+        where: {
+          id: reactionId,
+          UserId: user.id
+        }
+      })
+        .then((d) => {
+          return ReS(res, {message: ' Reaction Deleted'})
+        })
+        .catch((err) => {
+          console.log(e)
+          return ReE(res, {error: 'Something went wrong'}, 500);
+        })
+    } else {
+      return ReE(res, {error: 'Missing parameters'}, 404);
+    }
+  } catch (e) {
+    console.log(e)
+    return ReE(res, {error: 'Something went wrong'}, 500);
+  }
+}
+
+module.exports.remove = remove;
