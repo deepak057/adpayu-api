@@ -1,5 +1,6 @@
 const { Comments, Reactions, User} = require('../models');
 const { to, ReE, ReS, getLimitOffset} = require('../services/util.service');
+const { NOTIFICATIONS } = require('../config/app-constants');
 
 const get = function(req, res){
   try {  
