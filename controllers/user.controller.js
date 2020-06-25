@@ -1,4 +1,4 @@
-const { User, Friendship, ConsumedAds, ViewedEntities }          = require('../models');
+const { User, Friendship, ConsumedAds, ViewedEntities,Reactions }          = require('../models');
 const authService       = require('../services/auth.service');
 const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces, getWebView}  = require('../services/util.service');
 const TagsController   = require('./tags.controller');
@@ -447,14 +447,23 @@ const getUserDetails = async function (req, res) {
                   }
                 })
                   .then((c) => {
-                    return ReS(res, {
-                      name: u.first + ' ' + u.last,
-                      id: u.id,
-                      Unique: unique ? 'Yes': 'No',
-                      'Watched Video Answer': c,
-                      Platform: u.lastLoginFrom
-                    }, 200); 
+                    Reactions.count({
+                      where: {
+                        UserId: u.id
+                      }
+                    })
+                      .then((rC) => {
+                        return ReS(res, {
+                          name: u.first + ' ' + u.last,
+                          id: u.id,
+                          Unique: unique ? 'Yes': 'No',
+                          'Watched Video Answer': c,
+                          'Reactions': rC,
+                          Platform: u.lastLoginFrom
+                        }, 200); 
         
+                      })
+                    
                   })
                 
               })

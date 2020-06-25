@@ -10,7 +10,7 @@ const S3Controller   = require('./s3.controller');
 
 const fakeCommentsLike =  async function(req, res){
     let commentId = req.params.commentId, err, user = req.user, comment, n = parseInt(req.query.n || 100 ), likes = [], users = [];
-  	if (user.id === 1) {
+  	if (user.isAdmin) {
 
       [err, comment] = await to(Comments.findOne({where: {id: commentId}}));  
 
@@ -43,7 +43,7 @@ module.exports.fakeCommentsLike = fakeCommentsLike;
 
 const fakePostLike =  async function(req, res){
     let postId = req.params.postId, err, user = req.user, post, n = parseInt(req.query.n || 100), likes = [], users = [];
-  	if (user.id === 1) {
+  	if (user.isAdmin) {
   	  
       [err, post] = await to(Posts.findOne({where: {id: postId}}));	
   	 
@@ -76,7 +76,7 @@ module.exports.fakePostLike = fakePostLike;
 
 
 const captureScreenshots =  async function(req, res){
-    if (req.user.id === 1) {
+    if (user.isAdmin) {
 
       // List all files in a directory in Node.js recursively in a synchronous fashion
        var walkSync = function(dir, filelist) {
@@ -107,7 +107,7 @@ const captureScreenshots =  async function(req, res){
 module.exports.captureScreenshots = captureScreenshots;
 
 const putDefaultTagInAllPosts =  async function(req, res){
-    if (req.user.id === 1) {
+    if (req.user.isAdmin) {
       let defaultTagName = 'general', defaultTag;
 
        [err, defaultTag] = await to(Tags.find({where: {name: defaultTagName}}));
@@ -148,7 +148,7 @@ const putDefaultTagInAllPosts =  async function(req, res){
 module.exports.putDefaultTagInAllPosts = putDefaultTagInAllPosts;
 
 const importNames =  async function(req, res){
-    if (req.user.id === 1) {
+    if (req.user.isAdmin) {
       
       const csv = require('csv-parser');  
       const authService       = require('../services/auth.service');
@@ -273,7 +273,7 @@ const importNames =  async function(req, res){
 module.exports.importNames = importNames;
 
 const putRandomProfilePics =  async function(req, res){
-      if (req.user.id === 1) {
+      if (req.user.isAdmin) {
         const https = require('https');
         const request = require('request');
         let gender = req.query.gender || 'female';
@@ -345,7 +345,7 @@ module.exports.putRandomProfilePics = putRandomProfilePics;
 
 const moveContentToS3 = async function (req, res) {
 
-  if (req.user.id === 1) {
+  if (req.user.isAdmin) {
     var level = require('level')
     , s3sync = require('s3-sync-aws')
     , readdirp = require('readdirp')
@@ -487,7 +487,7 @@ module.exports.changeCommentAssociation = changeCommentAssociation;
 * This method deletes the invalid records in PostComments table
 */
 const fixCommentAssociation = async function (req, res) {
-    if (req.user.id === 1) {
+    if (req.user.isAdmin) {
       const CONFIG = require('../config/config');
 
       const sequelize = new Sequelize(CONFIG.db_name, CONFIG.db_user, CONFIG.db_password, {
@@ -526,7 +526,7 @@ const fixCommentAssociation = async function (req, res) {
 module.exports.fixCommentAssociation = fixCommentAssociation;
 
 module.exports.updateVideoThumb = function (req, res) {
-    if (req.user.id === 1) {
+    if (req.user.isAdmin) {
       try {
         let videoType = req.params.videoType,
         id = req.params.id,
@@ -599,7 +599,7 @@ module.exports.updateVideoThumb = function (req, res) {
 }
 
 function optimizeImages (req, res) {
-  if (req.user.id === 1) {
+  if (req.user.isAdmin) {
     try {
       let s3 = S3Controller.getS3Config();
       let prefix = 'public/thumbs/';
