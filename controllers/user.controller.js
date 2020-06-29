@@ -1,6 +1,6 @@
-const { User, Friendship, ConsumedAds, ViewedEntities,Reactions }          = require('../models');
+const { User, Friendship, ConsumedAds, ViewedEntities, Reactions, SocialShares}          = require('../models');
 const authService       = require('../services/auth.service');
-const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces, getWebView}  = require('../services/util.service');
+const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces, getWebView, cloneOject}  = require('../services/util.service');
 const TagsController   = require('./tags.controller');
 const crypto = require('crypto');
 require('dotenv').config();//instatiate environment variables
@@ -413,6 +413,7 @@ const markAsViewed = function (req, res) {
 
 module.exports.markAsViewed = markAsViewed;
 
+/*
 const getUserDetails = async function (req, res) {
   try {
     let user = req.user || false;
@@ -467,6 +468,73 @@ const getUserDetails = async function (req, res) {
                   })
                 
               })
+          } else {
+            return ReE(res, {message: 'User not found'}, 404);
+          }
+        }) 
+    } else {
+      return ReE(res, {message: 'You are not authorised'}, 403);
+    }
+    
+  } catch (e) {
+    console.log(e);
+    return ReE(res, {message: 'Somehting went wrong'}, 500);
+  }
+}
+*/
+const getUserDetails = async function (req, res) {
+  try {
+    let user = req.user || false;
+    if (user.isAdmin) {
+      let userId = req.params.userId;
+      let includes = 
+      User.find({
+        attributes: { 
+          include: [
+            [Sequelize.literal('(SELECT COUNT(*) FROM Reactions WHERE Reactions.UserId = ' + userId + ' AND deleted = 0)'), 'ReactionsCount'],
+            [Sequelize.literal('(SELECT COUNT(*) FROM SocialShares WHERE SocialShares.UserId = ' + userId + ')'), 'SocialSharesCount'],
+            [Sequelize.literal('(SELECT COUNT(*) FROM ViewedEntities WHERE ViewedEntities.UserId = ' + userId + ' AND CommentId IS NOT NULL)'), 'ViewedEntitiesCount']
+          ]
+        },
+        where: {
+          id: userId
+        }
+      })
+        .then((u) => {
+          if (u) {
+            User.find({
+              where: {
+                guestUserId: u.guestUserId,
+                id: {
+                  [op.ne]: u.id
+                }
+              }
+            })
+              .then((u1) => {
+                let unique = false
+                if (!u1) {
+                  unique = true
+                }
+
+                /*
+                * for some reasons, the Attributes property are
+                * not being accessible through this User Object
+                * so using a Hack way to convert this Sequelize object
+                * to a plain object to access those attribute properties
+                */
+                u = cloneOject(u)
+                
+                return ReS(res, {
+                  name: u.first + ' ' + u.last,
+                  id: u.id,
+                  Unique: unique ? 'Yes': 'No',
+                  'Watched Video Answer': u.ViewedEntitiesCount,
+                  'Reactions': u.ReactionsCount,
+                  'Social Shares': u.SocialSharesCount,
+                  Platform: u.lastLoginFrom
+                }, 200); 
+                
+                })
           } else {
             return ReE(res, {message: 'User not found'}, 404);
           }

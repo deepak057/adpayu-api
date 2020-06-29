@@ -72,6 +72,7 @@ module.exports = (sequelize, DataTypes) => {
         this.ViewedEntities = this.hasMany(models.ViewedEntities, {onDelete: 'CASCADE'});
         this.ReferredBy = this.hasOne(models.User, {as: 'ReferredBy'});
         this.Reactions = this.hasMany(models.Reactions, {onDelete: 'CASCADE'});
+        this.SocialShares = this.hasMany(models.SocialShares, {onDelete: 'CASCADE'});
     };
 
     Model.getFriends = function (uid, acceptedOnly= true) {
