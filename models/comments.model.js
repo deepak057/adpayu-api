@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
         videoOptimized: {type: DataTypes.BOOLEAN, defaultValue: false},
         failedProcessingAttempts: {type: DataTypes.INTEGER, defaultValue: 0},
         deleted: {type: DataTypes.BOOLEAN, defaultValue: false},
-        disableOnMainFeed: {type: DataTypes.BOOLEAN, defaultValue: false}
+        disableOnMainFeed: {type: DataTypes.BOOLEAN, defaultValue: true}
         /*setDefault: {
           type: Sequelize.VIRTUAL,
           get () {

@@ -70,6 +70,7 @@ router.delete('/tags/unfollow/:tagId',           passport.authenticate('jwt', {s
 router.get('/comments/:postId', passport.authenticate('jwt', {session:false}), CommentsController.get);        // R
 router.post('/comments/:postId',           passport.authenticate('jwt', {session:false}), CommentsController.create);        // C
 router.put('/comments/edit/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.edit);        // U
+router.put('/comments/commentOnMainFeed/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.commentOnMainFeed);        // U
 router.delete('/comments/:commentId',           passport.authenticate('jwt', {session:false}), CommentsController.remove);        // D
 router.get('/comments/getComment/:commentId', passport.authenticate('jwt', {session:false}), CommentsController.getComment);        // R
 router.get('/comments/public/getComment/:commentId', CommentsController.getComment);        // R

@@ -390,8 +390,14 @@ const reviewVideoComment = async function (req, res) {
       let contentHead = 'Hi ' + ucFirst(comment.User.first) + ',\n\nYour video comment (' + getCommentURL(comment) + ') has been reviewed and been ' + actionText() + '.';
       let contentFooter = '\n\nWe will be very happy to help you if you have any questions or queries, please feel free to contact us.\n\nThank you.\n\n\n\nSincerely,\n\nTeam '+ process.env.SITE_NAME;
       let contentBody = '\n\n';
-
+      
+      //enable the approved comment on the Main feed
+      let EnableCommentOnMainFeed = () => {
+        comment.disableOnMainFeed = false
+        comment.save()
+      }
       if (action === 'approve') {
+        EnableCommentOnMainFeed()
         Forex.getUSD2INR()
           .then((forex) => {
               let videoPayment = paymentObj.getVideoPayment(forex, comment.User);
@@ -436,3 +442,35 @@ const reviewVideoComment = async function (req, res) {
 }
 
 module.exports.reviewVideoComment = reviewVideoComment;
+
+const commentOnMainFeed = async function (req, res) {
+  try {
+    if (req.user.isAdmin) {
+      let commentId = req.params.commentId,
+      action = req.query.action && req.query.action === 'disable' ? true : false;
+      Comments.update({
+        disableOnMainFeed: action
+      }, {
+        where: {
+          id: commentId
+        }
+      })
+        .then((d) => {
+          if (d) {
+            return ReS(res, {message: 'Comment successfully ' + (action ? 'disabled': 'enabled') + ' on main feed'})
+          }
+        })
+        .catch((e) => {
+          console.log(e)
+          return ReE(res, {message: 'Somehting went wrong'}, 500);
+        })
+    } else {
+      return ReE(res, {message: 'Anauthorized User'}, 403);   
+    }
+  } catch (e) {
+    console.log(e)
+    return ReE(res, {message: 'Somehting went wrong'}, 500);
+  }
+}
+
+module.exports.commentOnMainFeed = commentOnMainFeed;
