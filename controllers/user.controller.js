@@ -1,4 +1,4 @@
-const { User, Friendship, ConsumedAds, ViewedEntities, Reactions, SocialShares}          = require('../models');
+const { User, Friendship, ConsumedAds, ViewedEntities, Reactions, SocialShares, Forex}          = require('../models');
 const authService       = require('../services/auth.service');
 const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces, getWebView, cloneOject}  = require('../services/util.service');
 const TagsController   = require('./tags.controller');
@@ -91,20 +91,34 @@ module.exports.updateAccountPassword = updateAccountPassword;
 
 const get = async function(req, res){
     try{
-      let user, err, friendship;
+      let user, err, friendship, forex;
       if(req.params.uid && parseInt(req.params.uid) !== req.user.id) {
         [err, user] = await to (User.scope('public').findOne({ where: {id: req.params.uid}}))
-        if(err) return ReE(res, err, 422);
+        if(err) return ReE(res, err, 500);
         [err, friendship] = await to (Friendship.getFriendship(req.user.id, req.params.uid))
-        if(err) return ReE(res, err, 422);
+        if(err) return ReE(res, err, 500);
 
       } else {
+        /*
+        * if current user requests their own info
+        * then it is assumed, that request will be 
+        * invoked when that user signs on to the platform
+        * and in which case, pass all their data and 
+        * send other info such as Forex rate etc 
+        * needed on client side to show Revenue in local
+        * currency, and update local data for the logged in user
+        */
+        [err, forex] = await to(Forex.getUSD2INR());
+        if(err) return ReE(res, err, 500);
+
         user = req.user
+        
       }
-      return ReS(res, {user:user, friendship: friendship}); 
+      
+      return ReS(res, {user:user, friendship: friendship, forex: forex}); 
     } catch (e) {
       console.log(e);
-      return ReE(res, {message: 'Something went wrong'}, 422);
+      return ReE(res, {message: 'Something went wrong'}, 500);
     }
 
 }

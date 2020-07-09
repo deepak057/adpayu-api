@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
         })
           .then ((data) => {
             return new Promise((resolve) => { 
-                //fixing the toal to 4 decimal places
+                //fixing the total to 4 decimal places
                 resolve(data.total? data.total.toFixed(4) : 0) 
             })
           })
