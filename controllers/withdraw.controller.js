@@ -479,14 +479,14 @@ async function getTransactionDetails (user, mode = 'bank') {
       }
     }
 
-    siteFeeUSD = roundTwoDecimalPlaces( (amountUSD / 100 ) * siteFeePercentage )
+    siteFeeUSD = (amountUSD / 100 ) * siteFeePercentage 
 
     siteFeeINR = roundTwoDecimalPlaces( (amountINR / 100 ) * siteFeePercentage )
 
     /*
     * total payable charges
     */
-    totalUSD = roundTwoDecimalPlaces(amountUSD - siteFeeUSD);
+    totalUSD = amountUSD - siteFeeUSD;
     totalINR = roundTwoDecimalPlaces(amountINR - siteFeeINR);
 
     return addPaymentGatewayCharges({
@@ -515,9 +515,9 @@ async function addPaymentGatewayCharges (transactionDetails, mode) {
     transactionDetails.totalINR -= charges
     transactionDetails.totalINR = roundTwoDecimalPlaces(transactionDetails.totalINR)
     transactionDetails.paymentGatewayChargeINR = charges
-    transactionDetails.paymentGatewayChargeUSD = roundTwoDecimalPlaces(transactionDetails.paymentGatewayChargeINR/parseFloat(transactionDetails.forex))
+    transactionDetails.paymentGatewayChargeUSD = transactionDetails.paymentGatewayChargeINR/parseFloat(transactionDetails.forex)
     transactionDetails.totalUSD -= transactionDetails.paymentGatewayChargeUSD
-    transactionDetails.totalUSD = roundTwoDecimalPlaces(transactionDetails.totalUSD)
+    transactionDetails.totalUSD = transactionDetails.totalUSD
     // transactionDetails.siteFeePercentage = roundTwoDecimalPlaces((transactionDetails.siteFeeINR * 100) / transactionDetails.amountAccumulatedINR);
 
     return transactionDetails
