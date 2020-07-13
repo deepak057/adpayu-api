@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         about     : {type: DataTypes.TEXT, defaultValue: ''},
         tagline   : {type: DataTypes.STRING, defaultValue: ''},
         feedEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
-        adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: false},
+        adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
         recentActivitiesEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
         unCommentedEnabled: {type: DataTypes.BOOLEAN, defaultValue: false},
         bankDetails: DataTypes.TEXT,
