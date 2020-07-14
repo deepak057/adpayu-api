@@ -115,6 +115,7 @@ router.post('/ad/adConsumed/:action/:postId',   passport.authenticate('jwt', {se
 /** Withdraw routes **/
 router.get('/withdraw/overview',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdrawOverview);        // R
 router.post('/withdraw',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdraw);        // C
+router.get('/withdraw/withdrawalStats',   passport.authenticate('jwt', {session:false}),  WithdrawController.overallWithdrawalStats);        // R
 
 /** Video routes **/
 router.put('/video/edit',   passport.authenticate('jwt', {session:false}),  VideoController.edit);        // U

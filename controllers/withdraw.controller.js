@@ -526,3 +526,29 @@ async function addPaymentGatewayCharges (transactionDetails, mode) {
   }
 
 }
+
+const overallWithdrawalStats = async (req, res) => {
+  try {
+    /*
+    * generate fake stats data
+    */
+    let currentTimestamp = Math.floor(Date.now() / 1000)
+    let totalUsers = currentTimestamp - 1594560787
+    let totalMoneyMadeUSD = totalUsers * 3
+
+    let formatNumber = (number) => {
+      return Math.ceil(parseInt(number)/100)*100
+    }
+    return ReS(res, {
+      stats: {
+        totalUsers: formatNumber(totalUsers),
+        totalMoneyMadeUSD: formatNumber(totalMoneyMadeUSD)
+      }
+    })        
+  } catch (e) {
+    console.log(e)
+    return ReE(res, {success: false, message: 'Something went wrong.'}, 500);
+  }
+}
+
+module.exports.overallWithdrawalStats = overallWithdrawalStats;
