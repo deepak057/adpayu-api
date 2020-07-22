@@ -857,7 +857,7 @@ async function sendFeed (req, res, posts, page =1 ) {
 * for the given user which will be
 * pushed to the top of the feed
 */
-function adsToBePushedToTheTop(user) {
+function adsToBePushedToTheTop(user, limit = false) {
   
     return new Promise(function(resolve, reject) { 
 
@@ -871,7 +871,7 @@ function adsToBePushedToTheTop(user) {
               getAdLocationSearchCriteria (user)
             ]
           }
-          criteria.order = Sequelize.literal('Posts.createdAt DESC limit ' + ADS.maxAdsToBePushedToTop);
+          criteria.order = Sequelize.literal('Posts.createdAt DESC limit ' + (limit || ADS.maxAdsToBePushedToTop));
           Posts.findAll(criteria)
             .then((posts) => {
               if (posts) {
@@ -1369,3 +1369,15 @@ const getPublicPosts =  function(req, res) {
 }
 
 module.exports.getPublicPosts = getPublicPosts;
+
+
+module.exports.getAds = async (req, res) => {
+  let user = req.user
+  adsToBePushedToTheTop(user, 1)
+    .then((ads) => {
+      return ReS(res, {ads: ads}, 200);
+    })
+    .catch((aErr) => {
+      return ReE(res, {'error': 'Something went wrong'}, 500);
+    })
+}
