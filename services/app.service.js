@@ -67,7 +67,7 @@ module.exports.getCommentIncludes = getCommentIncludes;
 
 function getCommentCriteriaObject (user = false, where = false) {
   let includes = [
-    [Sequelize.literal('(SELECT COALESCE((select COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id), 0) + COALESCE((select SUM(DummyLikes.likesCount) from DummyLikes where DummyLikes.CommentId = Comments.id order by DummyLikes.createdAt DESC limit 1), 0))'), 'CommentsLikesCount'],
+    [Sequelize.literal('(SELECT COALESCE((select COUNT(*) FROM Likes WHERE Likes.CommentId = Comments.id), 0) + COALESCE((select SUM(DummyLikes.likesCount) from DummyLikes where DummyLikes.CommentId = Comments.id), 0))'), 'CommentsLikesCount'],
     [Sequelize.literal('(SELECT COUNT(*) FROM Reactions WHERE Reactions.CommentId = Comments.id AND deleted = 0)'), 'ReactionsCount']
   ]
   if (user) {
@@ -194,7 +194,7 @@ module.exports.getDBInclude = getDBInclude;
 function getPostCriteriaObject (user = false, tagIds = [], disableCommentsOnMainFeed = false) {
   let includes = [
     [Sequelize.literal('(SELECT COUNT(*) FROM Comments WHERE Comments.PostId = Posts.id AND deleted = 0 ' + (disableCommentsOnMainFeed ? ' AND disableOnMainFeed = false ' : '') + ')'), 'CommentsCount'],
-    [Sequelize.literal('(SELECT COALESCE((select COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id), 0) + COALESCE((select SUM(DummyLikes.likesCount) from DummyLikes where DummyLikes.PostId = Posts.id order by DummyLikes.createdAt DESC limit 1), 0))'), 'LikesCount']
+    [Sequelize.literal('(SELECT COALESCE((select COUNT(*) FROM Likes WHERE Likes.PostId = Posts.id), 0) + COALESCE((select SUM(DummyLikes.likesCount) from DummyLikes where DummyLikes.PostId = Posts.id), 0))'), 'LikesCount']
   ]
   
   if (user) {
