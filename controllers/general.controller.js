@@ -1,4 +1,4 @@
-const { Likes, User, Comments, Posts, Tags, Videos } = require('../models');
+const { Likes, User, Comments, Posts, Tags, Videos, DummyLikes } = require('../models');
 const { to, ReE, ReS, uniqeFileName, getDirectory, videoToPNG} = require('../services/util.service');
 const { captureVideoPoster, optimizeVideoFile, optimizeImage } = require('../services/app.service');
 const Sequelize = require('sequelize');
@@ -8,7 +8,45 @@ const fs = require('fs');
 const path = require('path'); 
 const S3Controller   = require('./s3.controller');
 
-const fakeCommentsLike =  async function(req, res){
+const addDummyLikes = async function (req, res) {
+  let id = req.params.id, err, user = req.user, comment, post, n = req.query.n || false, entityType = req.query.type || 'comment', model;
+  if (user.isAdmin && n) {
+    let pushLikes = (entity, id) => {
+      let obj = {
+        likesCount: n,
+          UserId: req.user.id
+      }
+      obj[entity] = id
+      DummyLikes.create(obj)
+        .then((d) => {
+          return ReS(res, {message: n + ' Likes added successfully'}, 200);
+        })
+    }
+    if (entityType === 'comment') {
+      [err, comment] = await to(Comments.findOne({where: {id: id}}))
+      if (comment) {
+        pushLikes('CommentId', id)
+      } else {
+        return ReE(res, {message:'Comment not found'}, 400);
+      }
+    } else {
+      [err, post] = await to(Posts.findOne({where: {id: id}}))
+      if (post) {
+        pushLikes('PostId', id)
+      } else {
+        return ReE(res, {message:'Unathorized user'}, 401);
+      }
+    }
+    
+  } else {
+    return ReE(res, {message:'Something went wrong'}, 500);
+  }
+  
+}
+
+module.exports.addDummyLikes = addDummyLikes;
+
+/*(const fakeCommentsLike =  async function(req, res){
     let commentId = req.params.commentId, err, user = req.user, comment, n = parseInt(req.query.n || 100 ), likes = [], users = [];
   	if (user.isAdmin) {
 
@@ -73,7 +111,7 @@ const fakePostLike =  async function(req, res){
 }
 
 module.exports.fakePostLike = fakePostLike;
-
+*/
 
 const captureScreenshots =  async function(req, res){
     if (user.isAdmin) {

@@ -133,8 +133,9 @@ router.post('/audio/save',   passport.authenticate('jwt', {session:false}),  Aud
 router.post('/mails/sendContactMail',  MailsController.sendContactMail);        // P
 
 /** General routes **/
-router.post('/general/fakeCommentsLike/:commentId', passport.authenticate('jwt', {session:false}), GeneralController.fakeCommentsLike);        // C
-router.post('/general/fakePostLike/:postId', passport.authenticate('jwt', {session:false}), GeneralController.fakePostLike);        // C
+//router.post('/general/fakeCommentsLike/:commentId', passport.authenticate('jwt', {session:false}), GeneralController.fakeCommentsLike);        // C
+//router.post('/general/fakePostLike/:postId', passport.authenticate('jwt', {session:false}), GeneralController.fakePostLike);        // C
+router.post('/general/addDummyLikes/:id', passport.authenticate('jwt', {session:false}), GeneralController.addDummyLikes);        // C
 router.post('/general/captureScreenshots', passport.authenticate('jwt', {session:false}), GeneralController.captureScreenshots);        // C
 router.post('/general/putDefaultTagInAllPosts', passport.authenticate('jwt', {session:false}), GeneralController.putDefaultTagInAllPosts);        // C
 router.post('/general/importNames', passport.authenticate('jwt', {session:false}), GeneralController.importNames);        // C
