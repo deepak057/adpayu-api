@@ -507,7 +507,7 @@ const getUserDetails = async function (req, res) {
           include: [
             [Sequelize.literal('(SELECT COUNT(*) FROM Reactions WHERE Reactions.UserId = ' + userId + ' AND deleted = 0)'), 'ReactionsCount'],
             [Sequelize.literal('(SELECT COUNT(*) FROM SocialShares WHERE SocialShares.UserId = ' + userId + ')'), 'SocialSharesCount'],
-            [Sequelize.literal('(SELECT COUNT(*) FROM ViewedEntities WHERE ViewedEntities.UserId = ' + userId + ' AND CommentId IS NOT NULL)'), 'ViewedEntitiesCount']
+            [Sequelize.literal('(SELECT COUNT(DISTINCT(ViewedEntities.CommentId)) FROM ViewedEntities WHERE ViewedEntities.UserId = ' + userId + ' AND CommentId IS NOT NULL)'), 'ViewedEntitiesCount']
           ]
         },
         where: {
