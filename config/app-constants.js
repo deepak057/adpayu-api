@@ -78,3 +78,18 @@ let VIDEO_PAYMENT_CONFIG = {
 }
 
 module.exports.VIDEO_PAYMENT_CONFIG = VIDEO_PAYMENT_CONFIG;
+
+GENERAL = {
+  CASHBACK: {
+    KYC: {
+      enable: true,
+      priceINR: 10
+    },
+    FirstAd: {
+      enable: true,
+      priceINR: 10
+    }
+  }
+}
+
+module.exports.GENERAL = GENERAL;

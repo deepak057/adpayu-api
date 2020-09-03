@@ -1,5 +1,6 @@
 const { ConsumedAds, Forex, Withdrawals} = require('../models');
 const { to, ReE, ReS, roundTwoDecimalPlaces } = require('../services/util.service');
+const { getCashBackConfig } = require('../services/app.service');
 const { MONEY_WITHDRAWL_CONFIG } = require('../config/app-constants');
 const NotificationsController   = require('./notifications.controller');
 const MailsController   = require('./mails.controller');
@@ -535,14 +536,23 @@ const overallWithdrawalStats = async (req, res) => {
     let currentTimestamp = Math.floor(Date.now() / 1000)
     let totalUsers = currentTimestamp - 1594560787
     let totalMoneyMadeUSD = totalUsers * 3
+    let err, forex
 
     let formatNumber = (number) => {
       return Math.ceil(parseInt(number)/100)*100
     }
+    /*
+    * Get USD to INR forex rate
+    */
+    [err, forex] = await to(Forex.getUSD2INR());
+    if(err) return ReE(res, err, 422);
+
+
     return ReS(res, {
       stats: {
         totalUsers: formatNumber(totalUsers),
-        totalMoneyMadeUSD: formatNumber(totalMoneyMadeUSD)
+        totalMoneyMadeUSD: formatNumber(totalMoneyMadeUSD),
+        cashBack: getCashBackConfig(forex)
       }
     })        
   } catch (e) {

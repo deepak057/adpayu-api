@@ -1,5 +1,6 @@
 const { Posts, Comments, User, Questions, AdOptions, AdStats, ConsumedAds, ViewedEntities, Images, Imgs, Tags, Likes, Videos, Friendship } = require('../models');
 const { isEmptyObject } = require('./util.service');
+const { GENERAL } = require('../config/app-constants');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 const S3Controller   = require('../controllers/s3.controller');
@@ -545,3 +546,10 @@ function optimizeImage (imagePath) {
 }
 
 module.exports.optimizeImage = optimizeImage;
+
+module.exports.getCashBackConfig = function (forex) {
+  let cashBackConfig = GENERAL.CASHBACK
+  cashBackConfig.KYC.priceUSD = (cashBackConfig.KYC.priceINR / forex)
+  cashBackConfig.FirstAd.priceUSD = (cashBackConfig.FirstAd.priceINR / forex)
+  return cashBackConfig
+};
