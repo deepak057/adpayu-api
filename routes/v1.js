@@ -112,6 +112,7 @@ router.get('/payment/checkOrderStatus/:orderId',   passport.authenticate('jwt', 
 /** Ads routes**/
 router.get('/ad/defaultOptions',  AdsController.defaultOptions);        // R
 router.post('/ad/adConsumed/:action/:postId',   passport.authenticate('jwt', {session:false}),  AdsController.adConsumed);        // C
+router.post('/ad/setCashback/:userId',   passport.authenticate('jwt', {session:false}),  AdsController.setCashback);        // C
 
 /** Withdraw routes **/
 router.get('/withdraw/overview',   passport.authenticate('jwt', {session:false}),  WithdrawController.withdrawOverview);        // R

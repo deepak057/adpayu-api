@@ -317,7 +317,7 @@ async function postAdConsumptionChecks (postId, user) {
 	  }
   } catch (err) {
 	console.log(err)
-	return ReE(res, {success: false, error: 'Something went wrong while doing the post ad asumption checks'}, 422);
+	return ReE(res, {success: false, error: 'Something went wrong while doing the post ad consumption checks'}, 422);
   }
 }
 
@@ -402,4 +402,22 @@ function getNotification(postId, adOptionId, targetsManipulation =  false) {
   	return_.meta = JSON.stringify(return_.meta)
 
   	return return_
+}
+
+
+module.exports.setCashback = async function (req, res) {
+	let CBid = req.body.CBId || false
+	if (CBid) {
+		/*ConsumedAds.findOrCreate({
+			where: {
+				UserId: 
+			},
+			default: {
+
+			}
+		}) */
+		return ReS(res, {message: 'looking good'}, 200);		
+	} else {
+	  return ReE(res, {error: 'Missing parameters'}, 404);
+	}
 }

@@ -82,10 +82,12 @@ module.exports.VIDEO_PAYMENT_CONFIG = VIDEO_PAYMENT_CONFIG;
 GENERAL = {
   CASHBACK: {
     KYC: {
+      id: 'CB_KYC',
       enable: true,
       priceINR: 10
     },
     FirstAd: {
+      id: 'CB_FIRST_AD',
       enable: true,
       priceINR: 10
     }
