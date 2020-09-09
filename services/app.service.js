@@ -547,9 +547,24 @@ function optimizeImage (imagePath) {
 
 module.exports.optimizeImage = optimizeImage;
 
-module.exports.getCashBackConfig = function (forex) {
+function getCashBackConfig(forex = false) {
   let cashBackConfig = GENERAL.CASHBACK
-  cashBackConfig.KYC.priceUSD = (cashBackConfig.KYC.priceINR / forex)
-  cashBackConfig.FirstAd.priceUSD = (cashBackConfig.FirstAd.priceINR / forex)
+  if (forex) {
+    cashBackConfig.KYC.priceUSD = (cashBackConfig.KYC.priceINR / forex)
+    cashBackConfig.FirstAd.priceUSD = (cashBackConfig.FirstAd.priceINR / forex)  
+  }
   return cashBackConfig
-};
+}
+
+module.exports.getCashBackConfig = getCashBackConfig;
+
+module.exports.getCashBackConfigById = function (CBid, forex = false) {
+  let config = getCashBackConfig(forex)
+  if (CBid === config.KYC.id) {
+    return config.KYC
+  } else if (CBid === config.FirstAd.id) {
+    return config.FirstAd
+  } else {
+    return false
+  }
+}

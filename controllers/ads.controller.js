@@ -1,5 +1,6 @@
 const { ConsumedAds, Posts, AdOptions, AdArchives, Orders, AdStats, Forex } = require('../models');
 const { to, ReE, ReS, roundTwoDecimalPlaces } = require('../services/util.service');
+const { getCashBackConfigById } = require('../services/app.service');
 const { ADS } = require('../config/app-constants');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
@@ -405,19 +406,75 @@ function getNotification(postId, adOptionId, targetsManipulation =  false) {
 }
 
 
-module.exports.setCashback = async function (req, res) {
-	let CBid = req.body.CBId || false
-	if (CBid) {
-		/*ConsumedAds.findOrCreate({
-			where: {
-				UserId: 
-			},
-			default: {
+async function giveCashback (userId, CBid, postId = false) {
+	return new Promise((resolve, reject) => {
+		try {
+			if (CBid) {
+				let CBConfig = getCashBackConfigById(CBid)
+				if (CBConfig && CBConfig.enable) {
+	    			Forex.getUSD2INR()
+	    				.then((forex) => {
+	    					CBConfig = getCashBackConfigById(CBid, forex)
+			    			ConsumedAds.findOrCreate({
+								where: {
+									UserId: userId,
+									action: CBid,
 
+								},
+								defaults: {
+									UserId: userId,
+									action: CBid,
+									PostId: postId,
+									amountUSD: CBConfig.priceUSD
+								}
+							})
+								.spread((d, created) => {
+									resolve({
+										obj: d,
+										message: created ? 'Cashback added successfully' : 'Cashback given already'
+									})
+								})
+								.catch((err) => {
+									console.log(err)
+									reject(new Error('Something went wrong'))
+								})
+	    				})
+	    			
+				} else {
+					reject(new Error('This option is not available'));
+				}
+						
+			} else {
+			  reject(new Error('Missing or incorrect parameters'))
 			}
-		}) */
-		return ReS(res, {message: 'looking good'}, 200);		
-	} else {
-	  return ReE(res, {error: 'Missing parameters'}, 404);
+		} catch (e) {
+			console.log(e)
+			reject(new Error('Something went wrong'));
+		}
+		
+	})
+}
+
+module.exports.giveCashback = giveCashback;
+
+module.exports.setCashback = async function (req, res) {
+	try {
+		let CBid = req.body.CBId || false
+		let postId = req.body.postId || false
+		if (CBid && postId) {
+			giveCashback(req.user.id, CBid, postId)
+				.then((d) => {
+					return ReS(res, {message: d.message}, 200);
+				})
+				.catch((e) => {
+					return ReE(res, {error: e.message}, 500);
+				})
+		} else {
+		  return ReE(res, {error: 'Missing or incorrect parameters'}, 404);
+		}
+	} catch (e) {
+		console.log(e)
+		return ReE(res, {error: 'Something went wrong'}, 500);
 	}
+	
 }

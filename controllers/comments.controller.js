@@ -353,27 +353,21 @@ const reviewVideoComment = async function (req, res) {
       addMoneyToUserAccount: function (comment, amount) {
         return new Promise(function(resolve, reject) {
           try {
-            ConsumedAds.find({
+            ConsumedAds.findOrCreate({
               where: {
+                UserId: comment.User.id,
+                CommentId: comment.id,
+                action: 'videoComment'
+              },
+              defaults: {
+                action: 'videoComment',
+                amountUSD: amount,
                 UserId: comment.User.id,
                 CommentId: comment.id
               }
             })
-              .then((consumedAd) => {
-                if (!consumedAd) {
-                  ConsumedAds.create({
-                    action: 'videoComment',
-                    amountUSD: amount,
-                    UserId: comment.User.id,
-                    CommentId: comment.id
-                  })
-                    .then((consumedAd) => {
-                      resolve(consumedAd)
-                    })
-                  
-                } else {
-                  resolve(consumedAd)
-                }
+              .spread((consumedAd, created) => {
+                resolve(consumedAd)
               })  
           } catch (e) {
             reject(e)
