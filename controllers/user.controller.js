@@ -1,6 +1,7 @@
 const { User, Friendship, ConsumedAds, ViewedEntities, Reactions, SocialShares, Forex}          = require('../models');
 const authService       = require('../services/auth.service');
 const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces, getWebView, cloneOject}  = require('../services/util.service');
+const { getCashBackConfig }  = require('../services/app.service');
 const TagsController   = require('./tags.controller');
 const crypto = require('crypto');
 require('dotenv').config();//instatiate environment variables
@@ -270,34 +271,68 @@ const updateAccountStatus = async function (req, res) {
     let action = req.query.action;
     const NotificationsController   = require('./notifications.controller');
     const { NOTIFICATIONS } = require('../config/app-constants');
+    const AdsController   = require('./ads.controller');
+
+    
+    let addCashback = (cashback = false) => {
+      return new Promise((resolve, reject) => {
+        let CBConfig = getCashBackConfig()['KYC']
+        if (cashback && CBConfig.enable) {
+          AdsController.giveCashback(userId, CBConfig.id)
+            .then((d) => {
+              resolve(d.cashback)
+            })
+            .catch((cErr) => {
+              resolve(cErr)
+            })
+        } else {
+          resolve(false)
+        } 
+      })
+    }
 
     let sendMailToUser = function (user) {
-      let subject = process.env.SITE_NAME + "- ";
+      let subject = process.env.SITE_NAME + " - ";
       let content = 'Dear ' + user.first + ",\n\n";
       let notiType = false;
-      if (action === 'verified') {
-          subject += 'Congratulations, your identity is verified'
-          content += 'Your account is successfully verified. \n\nWe are glad to inform you that you can now withdraw money from your ' + process.env.SITE_NAME + ' account.\n\nPlease feel free to contact us if you have any questions or still face any difficulties withdrawing money. \n\nP.S. Make sure to refresh the site or re-open the mobile app if you are still not able to withdraw the money.';
-          notiType = NOTIFICATIONS.types.IDENTITY_DOCS_APPROVED;
-      } else if (action === 'unverified') {
-        subject += 'Account not verified';
-        content += 'We reviewd your documents but unfortuantly, we are not able to verify your indentity.\n\nIt could be due to any of following reasons- \n\n1. The name on your document and the name on your ' + process.env.SITE_NAME + ' account do not match.\n2. The document is invalid or ambiguous.\n3. The same document has already been uploaded by someone else.\n\n\nPlease take the appropriate actions to fix the issue and then re-upload the documents on ' + process.env.SITE_NAME + ' for review.\n\nWe will be very happy to help you if you have any questions or queries, please feel free to contact us.';
-        notiType = NOTIFICATIONS.types.IDENTITY_DOCS_REJECTED;
-      }
+      let notiMeta = '';
+      let cashbackText = ''
+      // check for cashback
+      addCashback((action === 'verified'))
+        .then((cashbackAdded) => {
+          if (cashbackAdded) {
+            notiMeta = JSON.stringify({
+              amountUSD: cashbackAdded.priceUSD,
+              amountINR: cashbackAdded.priceINR,
+              cashback: 'KYC'
+            })
+            cashbackText = ' and you have also got cashback of $' + roundTwoDecimalPlaces(cashbackAdded.priceUSD) + ' (' + cashbackAdded.priceINR + ' INR) for completing your KYC'
+          }
+          if (action === 'verified') {
+            subject += 'Congratulations, your KYC is completed'
+            content += 'Your account is successfully verified' + cashbackText + '. \n\nWe are glad to inform you that you can now withdraw money from your ' + process.env.SITE_NAME + ' account.\n\nPlease feel free to contact us if you have any questions or still face any difficulties withdrawing money. \n\nP.S. Make sure to refresh the site or re-open the mobile app if you are still not able to withdraw the money.';
+            notiType = NOTIFICATIONS.types.IDENTITY_DOCS_APPROVED;
+          } else if (action === 'unverified') {
+            subject += 'Your KYC verification failed';
+            content += 'We reviewd your documents but unfortuantly, we are not able to approve your KYC.\n\nIt could be due to any of following reasons- \n\n1. The name on your document and the name on your ' + process.env.SITE_NAME + ' account do not match.\n2. The document is invalid or ambiguous.\n3. The same document has already been uploaded by someone else.\n\n\nPlease take the appropriate actions to fix the issue and then re-upload the documents on ' + process.env.SITE_NAME + ' for review.\n\nWe will be very happy to help you if you have any questions or queries, please feel free to contact us.';
+            notiType = NOTIFICATIONS.types.IDENTITY_DOCS_REJECTED;
+          }
 
-      /*
-      * send an onsite notification to the user
-      * about the status of their account verification
-      */
-      if (notiType) {
-        NotificationsController.create({
-          type: notiType
-        }, user.id, user.id)
-      }
-      if (action !== 'pending') {
-        content += '\n\n\n\nSincerely,\n\nTeam '+ process.env.SITE_NAME;
-        MailsController.sendMail(content, subject, user.email, false)  
-      }
+          /*
+          * send an onsite notification to the user
+          * about the status of their account verification
+          */
+          if (notiType) {
+            NotificationsController.create({
+              type: notiType,
+              meta: notiMeta
+            }, user.id, user.id)
+          }
+          if (action !== 'pending') {
+            content += '\n\n\n\nSincerely,\n\nTeam '+ process.env.SITE_NAME;
+            MailsController.sendMail(content, subject, user.email, false)  
+          }
+        })
     };
 
     User.find({where: {

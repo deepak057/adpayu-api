@@ -146,7 +146,7 @@ const accountIdentityDocs = async function(req, res){
   }
 
   let sendMailToUser = function () {
-    let subject = process.env.SITE_NAME + "- We received your identity verification documents ";
+    let subject = process.env.SITE_NAME + " - Documents received for your KYC";
 
     let content = "Dear " + user.first + ", \n\nWe have received your documents for the verification of your identity for your " + process.env.SITE_NAME + " account.\n\nWe are reviewing the documents. You will get an email from us regarding the status of your verification as soon as we have completed the review process. \n\nThank you.\n\n\n\nSincerely,\n\nTeam "+ process.env.SITE_NAME;
 

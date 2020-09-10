@@ -424,13 +424,14 @@ async function giveCashback (userId, CBid, postId = false) {
 								defaults: {
 									UserId: userId,
 									action: CBid,
-									PostId: postId,
+									PostId: postId || null,
 									amountUSD: CBConfig.priceUSD
 								}
 							})
 								.spread((d, created) => {
 									resolve({
 										obj: d,
+										cashback: CBConfig,
 										message: created ? 'Cashback added successfully' : 'Cashback given already'
 									})
 								})

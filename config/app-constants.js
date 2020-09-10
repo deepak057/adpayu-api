@@ -83,7 +83,7 @@ GENERAL = {
   CASHBACK: {
     KYC: {
       id: 'CB_KYC',
-      enable: true,
+      enable: false,
       priceINR: 10
     },
     FirstAd: {
