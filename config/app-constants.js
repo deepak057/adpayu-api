@@ -42,6 +42,7 @@ ADS.adsRestrictionPolicy = {
   daysInterval: 1,
   maxAdsToShowOnInterval: 2
 }
+
 module.exports.ADS = ADS;
 
 let TAGS = {}
@@ -83,7 +84,7 @@ GENERAL = {
   CASHBACK: {
     KYC: {
       id: 'CB_KYC',
-      enable: false,
+      enable: true,
       priceINR: 10
     },
     FirstAd: {
@@ -91,7 +92,8 @@ GENERAL = {
       enable: true,
       priceINR: 10
     }
-  }
+  },
+
 }
 
 module.exports.GENERAL = GENERAL;

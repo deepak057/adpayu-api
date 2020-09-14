@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         about     : {type: DataTypes.TEXT, defaultValue: ''},
         tagline   : {type: DataTypes.STRING, defaultValue: ''},
         feedEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
-        adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
+        adsEnabled: {type: DataTypes.BOOLEAN, defaultValue: false},
         recentActivitiesEnabled: {type: DataTypes.BOOLEAN, defaultValue: true},
         unCommentedEnabled: {type: DataTypes.BOOLEAN, defaultValue: false},
         bankDetails: DataTypes.TEXT,
@@ -36,14 +36,15 @@ module.exports = (sequelize, DataTypes) => {
         guestUserId: {type: DataTypes.TEXT, allowNull: true},
         isAdmin: {type: DataTypes.BOOLEAN, defaultValue: false},
         refCode: {type: DataTypes.STRING, defaultValue: '' },
-        lastLoginFrom: {type: DataTypes.STRING, allowNull: true}
+        lastLoginFrom: {type: DataTypes.STRING, allowNull: true},
+        adTutorialTaken: {type: DataTypes.BOOLEAN, defaultValue: false},
     },{
         defaultScope: {
           attributes: { exclude: [] },
         },
         scopes: {
           public: {
-           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled', 'unCommentedEnabled', 'gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin', 'refCode', 'ReferredById', 'lastLoginFrom'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled', 'unCommentedEnabled', 'gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin', 'refCode', 'ReferredById', 'lastLoginFrom', 'adTutorialTaken'] },
           },
           visible: {
             where: {
