@@ -565,7 +565,7 @@ function putAdRestrictions (posts, req, res, page) {
       //console.log('Total unseenAds '+ ads.length + '\n\n\n\n')
       //proceed only if ad restriction policy is on and there are ads in the given set of posts
       if (process.env.AD_RESTRICTION === 'true' && ads.length) {
-        let execute = () => {
+        let execute = (max = false) => {
           ConsumedAds.count({
             where: {
               UserId: user.id,
@@ -586,7 +586,7 @@ function putAdRestrictions (posts, req, res, page) {
                 })
                   .then((seenAdsCountInDaysInterval) => {
                     if (seenAdsCountInDaysInterval < policy.maxAdsToShowOnInterval) {
-                      let newAdsUserCanSee = policy.maxAdsToShowOnInterval - seenAdsCountInDaysInterval
+                      let newAdsUserCanSee = !max ? (policy.maxAdsToShowOnInterval - seenAdsCountInDaysInterval) : max
                       resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))  
                     } else {
                       resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
@@ -595,7 +595,7 @@ function putAdRestrictions (posts, req, res, page) {
                   })
                 
               } else {
-                let newAdsUserCanSee = policy.maxAdsToShowOnRegistration - seenAdsCount
+                let newAdsUserCanSee = !max ? (policy.maxAdsToShowOnRegistration - seenAdsCount) : max
                 resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))
               }
             })
@@ -619,20 +619,26 @@ function putAdRestrictions (posts, req, res, page) {
                 const db  = require('../models/index')
 
                 /*
+                * convert the Sequzlie date back to Mysql DateTime Format and in UTC
+                */
+                let lastSeenAdDateUTC = moment.utc(cA.createdAt).format("YYYY-MM-DD HH:mm:ss");
+                /*
                 * Now get the total watched videos that have been watched since when the last was ad was seen
                 * using a hacky way to write raw query
                 */
-                db.sequelize.query("SELECT ( (select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > STR_TO_DATE('" + cA.createdAt + "')) + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > STR_TO_DATE('" + cA.createdAt + "'))  ) as total")
+                db.sequelize.query("SELECT ( (select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ lastSeenAdDateUTC +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + lastSeenAdDateUTC + "')  ) as total")
                   .then((r) => {
-                    if (r.length && r[0].total >= policy.watchedVideosCountToShowAds) {
-                      execute()
+                    if (r.length && (parseInt(r[0][0].total) >= policy.watchedVideosCountToShowAds)) {
+                      // unlock only one ad
+                      execute(1)
                     } else {
+                      // don't unlock new ads
                       resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
                     }
                   })
     
               } else {
-                execute()
+                execute(1)
               }
               
             })
