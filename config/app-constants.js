@@ -40,7 +40,8 @@ ADS.actions = {
 ADS.adsRestrictionPolicy = {
   maxAdsToShowOnRegistration: 3,
   daysInterval: 1,
-  maxAdsToShowOnInterval: 2
+  maxAdsToShowOnInterval: 2,
+  watchedVideosCountToShowAds: 10
 }
 
 module.exports.ADS = ADS;

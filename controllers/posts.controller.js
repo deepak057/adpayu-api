@@ -1,4 +1,4 @@
-const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders, PushedAds, ConsumedAds, SeenPosts } = require('../models');
+const { Posts, Comments, User, Questions, AdOptions, Images, Imgs, Tags, Likes, Videos, Friendship, Orders, PushedAds, ConsumedAds, SeenPosts, ViewedEntities } = require('../models');
 const { to, ReE, ReS, isEmptyObject, sleep, getLimitOffset, removeBlankParagraphs, videoToPNG, cloneOject, getIdsArray } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject } = require('../services/app.service');
 const Sequelize = require('sequelize');
@@ -499,7 +499,7 @@ function getPostScopes (user) {
 function putAdRestrictions (posts, req, res, page) {
   return new Promise(function (resolve, reject) {
     let user = req.user
-
+    let policy = ADS.adsRestrictionPolicy
     let getPosts = ()=> {
       return toWeb(posts)
     }
@@ -534,8 +534,8 @@ function putAdRestrictions (posts, req, res, page) {
         * if all the posts are to be deleted in 
         * given set of posts, return a string value
         * instead of Array/Object that will indicate
-        * to recusrsivly jump to next feed page instead of returning
-        * empty array to client 
+        * to recursively jump to next feed page instead of returning
+        * empty array to client side
         */
         return JUMP_TO_NEXT_PAGE
       } else {
@@ -551,7 +551,6 @@ function putAdRestrictions (posts, req, res, page) {
           }
         }  
       }
-      
     }
     let keepTheAdsUsersCanSee = (postsJson, newAdsUserCanSee, unseenAds) => {
       if (!unseenAds.length || unseenAds.length <= newAdsUserCanSee) {
@@ -566,40 +565,82 @@ function putAdRestrictions (posts, req, res, page) {
       //console.log('Total unseenAds '+ ads.length + '\n\n\n\n')
       //proceed only if ad restriction policy is on and there are ads in the given set of posts
       if (process.env.AD_RESTRICTION === 'true' && ads.length) {
-        let policy = ADS.adsRestrictionPolicy
-        ConsumedAds.count({
-          where: {
-            UserId: user.id,
-            action: ADS.actions.impression
-          }
-        })
-          .then((seenAdsCount) => {
-            if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
-              ConsumedAds.count({
-                where: {
-                  UserId: user.id,
-                  action: ADS.actions.impression,
-                  updatedAt: {
-                    [op.gte]: moment().subtract(policy.daysInterval, 'days').toDate()
-                    // [op.gte]: Sequelize.literal('NOW() - INTERVAL "' + policy.daysInterval + 'd"')
-                  }
-                }
-              })
-                .then((seenAdsCountInDaysInterval) => {
-                  if (seenAdsCountInDaysInterval < policy.maxAdsToShowOnInterval) {
-                    let newAdsUserCanSee = policy.maxAdsToShowOnInterval - seenAdsCountInDaysInterval
-                    resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))  
-                  } else {
-                    resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
-                  }
-                  
-                })
-              
-            } else {
-              let newAdsUserCanSee = policy.maxAdsToShowOnRegistration - seenAdsCount
-              resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))
+        let execute = () => {
+          ConsumedAds.count({
+            where: {
+              UserId: user.id,
+              action: ADS.actions.impression
             }
           })
+            .then((seenAdsCount) => {
+              if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
+                ConsumedAds.count({
+                  where: {
+                    UserId: user.id,
+                    action: ADS.actions.impression,
+                    updatedAt: {
+                      [op.gte]: moment().subtract(policy.daysInterval, 'days').toDate()
+                      // [op.gte]: Sequelize.literal('NOW() - INTERVAL "' + policy.daysInterval + 'd"')
+                    }
+                  }
+                })
+                  .then((seenAdsCountInDaysInterval) => {
+                    if (seenAdsCountInDaysInterval < policy.maxAdsToShowOnInterval) {
+                      let newAdsUserCanSee = policy.maxAdsToShowOnInterval - seenAdsCountInDaysInterval
+                      resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))  
+                    } else {
+                      resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
+                    }
+                    
+                  })
+                
+              } else {
+                let newAdsUserCanSee = policy.maxAdsToShowOnRegistration - seenAdsCount
+                resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))
+              }
+            })
+        }
+        if (policy.watchedVideosCountToShowAds) {
+          
+          /*
+          * first get the last seen ad by the current user
+          */
+
+          ConsumedAds.find({
+            where: {
+              UserId: user.id,
+              action: 'impression'
+            },
+            order: [['createdAt', 'DESC']],
+            limit: 1
+          })
+            .then((cA) => {
+              if (cA) {
+                const db  = require('../models/index')
+
+                /*
+                * Now get the total watched videos that have been watched since when the last was ad was seen
+                * using a hacky way to write raw query
+                */
+                db.sequelize.query("SELECT ( (select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > STR_TO_DATE('" + cA.createdAt + "')) + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > STR_TO_DATE('" + cA.createdAt + "'))  ) as total")
+                  .then((r) => {
+                    if (r.length && r[0].total >= policy.watchedVideosCountToShowAds) {
+                      execute()
+                    } else {
+                      resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
+                    }
+                  })
+    
+              } else {
+                execute()
+              }
+              
+            })
+          
+        } else {
+          execute()
+        }
+        
       } else {
         resolve(posts)
       }
@@ -817,8 +858,11 @@ async function sendFeed (req, res, posts, page =1 ) {
       }
       return posts
     }
-
-    if (page === 1 && user.adsEnabled) {
+    FixPosts(posts, req, res, page)
+      .then((posts) => {
+        sendResponse(posts)
+      })
+    /*if (page === 1 && user.adsEnabled) {
     adsToBePushedToTheTop(user)
       .then((adPosts) => {
         if (adPosts) {
@@ -838,12 +882,12 @@ async function sendFeed (req, res, posts, page =1 ) {
             sendResponse(posts)
           })
       })
-    } else {
+    } else { 
       FixPosts(posts, req, res, page)
         .then((posts) => {
           sendResponse(posts)
         })
-    }
+    }*/
   } catch (e) {
     console.log(e)
     return ReE(res, {message: 'Something went wrong.'});
