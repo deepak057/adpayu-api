@@ -562,7 +562,6 @@ function putAdRestrictions (posts, req, res, page) {
     let main = ()=> {
       let postsJson = getPosts()
       let ads = getUnseenAds(postsJson)
-      //console.log('Total unseenAds '+ ads.length + '\n\n\n\n')
       //proceed only if ad restriction policy is on and there are ads in the given set of posts
       if (process.env.AD_RESTRICTION === 'true' && ads.length) {
         let execute = (max = false) => {
@@ -574,12 +573,27 @@ function putAdRestrictions (posts, req, res, page) {
           })
             .then((seenAdsCount) => {
               if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
+                
+                let getDateRange = () => {
+                  if (policy.daysInterval === 1) {
+                    return [
+                      moment.utc().startOf('day').toDate(),
+                      moment.utc().endOf('day').toDate()
+                    ]
+                  } else {
+                    return [
+                      moment.utc().subtract((policy.daysInterval -1), 'days').startOf('day').toDate(),
+                      moment.utc().endOf('day').toDate()
+                    ]
+                  }
+                }
+
                 ConsumedAds.count({
                   where: {
                     UserId: user.id,
                     action: ADS.actions.impression,
                     updatedAt: {
-                      [op.gte]: moment().subtract(policy.daysInterval, 'days').toDate()
+                      [op.between]: getDateRange()
                       // [op.gte]: Sequelize.literal('NOW() - INTERVAL "' + policy.daysInterval + 'd"')
                     }
                   }
