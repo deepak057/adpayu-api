@@ -576,11 +576,14 @@ function putAdRestrictions (posts, req, res, page) {
                 
                 let getDateRange = () => {
                   if (policy.daysInterval === 1) {
+                    // get date range between current day's begginning to its end
                     return [
                       moment.utc().startOf('day').toDate(),
                       moment.utc().endOf('day').toDate()
                     ]
                   } else {
+                    //get date range between n days in past from the current day and to the end of the current 
+                    // date
                     return [
                       moment.utc().subtract((policy.daysInterval -1), 'days').startOf('day').toDate(),
                       moment.utc().endOf('day').toDate()
@@ -637,12 +640,18 @@ function putAdRestrictions (posts, req, res, page) {
                 */
                 let lastSeenAdDateUTC = moment.utc(cA.createdAt).format("YYYY-MM-DD HH:mm:ss");
                 /*
+                * Get the start of current day
+                */
+                let dayStartDate = moment.utc().startOf('day').format("YYYY-MM-DD HH:mm:ss");
+                /*
                 * Now get the total watched videos that have been watched since when the last was ad was seen
+                * Also total number of videos watched in the current day, it is to make sure that user doesn't
+                * see the ads before watching n videos every day
                 * using a hacky way to write raw query
                 */
-                db.sequelize.query("SELECT ( (select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ lastSeenAdDateUTC +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + lastSeenAdDateUTC + "')  ) as total")
+                db.sequelize.query("SELECT ((select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ lastSeenAdDateUTC +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + lastSeenAdDateUTC + "')  ) as total, ((select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ dayStartDate +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + dayStartDate + "')  ) as totalSinceDayStart")
                   .then((r) => {
-                    if (r.length && (parseInt(r[0][0].total) >= policy.watchedVideosCountToShowAds)) {
+                    if (r.length && (parseInt(r[0][0].total) >= policy.watchedVideosCountToShowAds) && (parseInt(r[0][0].totalSinceDayStart) >= policy.watchedVideosCountToShowAds)) {
                       // unlock only one ad
                       execute(1)
                     } else {
