@@ -562,9 +562,31 @@ function putAdRestrictions (posts, req, res, page) {
     let main = ()=> {
       let postsJson = getPosts()
       let ads = getUnseenAds(postsJson)
-      //proceed only if ad restriction policy is on and there are ads in the given set of posts
-      if (process.env.AD_RESTRICTION === 'true' && ads.length) {
-        let execute = (max = false) => {
+      //proceed only if ad restriction policy is on
+      if (process.env.AD_RESTRICTION === 'true') {
+        let resolution = (adsToShow, addAd = false) => {
+          if (adsToShow) {
+            if (ads.length) {
+              resolve(keepTheAdsUsersCanSee(postsJson, adsToShow, ads))
+            } else if (!ads.length && addAd) {
+              // get the new ads
+              adsToBePushedToTheTop(user, adsToShow)
+                .then((newAdsToShow) => {
+                  if (newAdsToShow) {
+                    newAdsToShow = newAdsToShow.concat(posts)
+                    resolve(newAdsToShow)
+                  } else {
+                    resolve(posts)
+                  }
+                })
+            } else {
+              resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))  
+            }
+          } else {
+            resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
+          }
+        }
+        let execute = (max = false, addAd = false) => {
           ConsumedAds.count({
             where: {
               UserId: user.id,
@@ -573,7 +595,6 @@ function putAdRestrictions (posts, req, res, page) {
           })
             .then((seenAdsCount) => {
               if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
-                
                 let getDateRange = () => {
                   if (policy.daysInterval === 1) {
                     // get date range between current day's begginning to its end
@@ -604,16 +625,16 @@ function putAdRestrictions (posts, req, res, page) {
                   .then((seenAdsCountInDaysInterval) => {
                     if (seenAdsCountInDaysInterval < policy.maxAdsToShowOnInterval) {
                       let newAdsUserCanSee = !max ? (policy.maxAdsToShowOnInterval - seenAdsCountInDaysInterval) : max
-                      resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))  
+                      resolution(newAdsUserCanSee. addAd)  
                     } else {
-                      resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
+                      resolution(0, addAd)
                     }
-                    
                   })
                 
               } else {
-                let newAdsUserCanSee = !max ? (policy.maxAdsToShowOnRegistration - seenAdsCount) : max
-                resolve(keepTheAdsUsersCanSee(postsJson, newAdsUserCanSee, ads))
+                let newAdsUserCanSee = policy.maxAdsToShowOnRegistration - seenAdsCount
+                newAdsUserCanSee = max > newAdsUserCanSee ? newAdsUserCanSee: max
+                resolution(newAdsUserCanSee, addAd)
               }
             })
         }
@@ -652,8 +673,9 @@ function putAdRestrictions (posts, req, res, page) {
                 db.sequelize.query("SELECT ((select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ lastSeenAdDateUTC +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + lastSeenAdDateUTC + "')  ) as total, ((select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ dayStartDate +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + dayStartDate + "')  ) as totalSinceDayStart")
                   .then((r) => {
                     if (r.length && (parseInt(r[0][0].total) >= policy.watchedVideosCountToShowAds) && (parseInt(r[0][0].totalSinceDayStart) >= policy.watchedVideosCountToShowAds)) {
-                      // unlock only one ad
-                      execute(1)
+                      // unlock only one ad and pull new ad if there is no ad in 
+                      // the given set of ads
+                      execute(1, true)
                     } else {
                       // don't unlock new ads
                       resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
@@ -661,11 +683,11 @@ function putAdRestrictions (posts, req, res, page) {
                   })
     
               } else {
-                execute(1)
+                execute(1, true)
               }
               
             })
-          
+              
         } else {
           execute()
         }
@@ -928,7 +950,6 @@ async function sendFeed (req, res, posts, page =1 ) {
 /*
 * fuction to return unseen ad posts
 * for the given user which will be
-* pushed to the top of the feed
 */
 function adsToBePushedToTheTop(user, limit = false) {
   
