@@ -625,7 +625,7 @@ function putAdRestrictions (posts, req, res, page) {
                   .then((seenAdsCountInDaysInterval) => {
                     if (seenAdsCountInDaysInterval < policy.maxAdsToShowOnInterval) {
                       let newAdsUserCanSee = !max ? (policy.maxAdsToShowOnInterval - seenAdsCountInDaysInterval) : max
-                      resolution(newAdsUserCanSee. addAd)  
+                      resolution(newAdsUserCanSee, addAd)  
                     } else {
                       resolution(0, addAd)
                     }
