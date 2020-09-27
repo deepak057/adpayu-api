@@ -1475,3 +1475,18 @@ module.exports.getAds = async (req, res) => {
       return ReE(res, {'error': 'Something went wrong'}, 500);
     })
 }
+
+module.exports.getAdStats = (req, res) => {
+    try {
+      let policy = ADS.adsRestrictionPolicy
+      let user = req.user
+      if (user.adsEnabled && process.env.AD_RESTRICTION === 'true' && policy.watchedVideosCountToShowAds) {
+        
+      } else {
+        return ReS(res, {clearInterval: true}, 200);  
+      }
+    } catch (e) {
+      console.log(e)
+      return ReE(res, {'error': 'Something went wrong'}, 500)
+    }
+}
