@@ -568,7 +568,7 @@ function putAdRestrictions (posts, req, res, page) {
           if (adsToShow) {
             if (ads.length) {
               resolve(keepTheAdsUsersCanSee(postsJson, adsToShow, ads))
-            } else if (!ads.length && addAd) {
+            } else if (!ads.length && addAd && user.adsEnabled) {
               // get the new ads
               adsToBePushedToTheTop(user, adsToShow)
                 .then((newAdsToShow) => {
@@ -587,111 +587,30 @@ function putAdRestrictions (posts, req, res, page) {
           }
         }
         let execute = (max = false, addAd = false) => {
-          ConsumedAds.count({
-            where: {
-              UserId: user.id,
-              action: ADS.actions.impression
-            }
-          })
-            .then((seenAdsCount) => {
-              if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
-                let getDateRange = () => {
-                  if (policy.daysInterval === 1) {
-                    // get date range between current day's begginning to its end
-                    return [
-                      moment.utc().startOf('day').toDate(),
-                      moment.utc().endOf('day').toDate()
-                    ]
-                  } else {
-                    //get date range between n days in past from the current day and to the end of the current 
-                    // date
-                    return [
-                      moment.utc().subtract((policy.daysInterval -1), 'days').startOf('day').toDate(),
-                      moment.utc().endOf('day').toDate()
-                    ]
-                  }
-                }
-
-                ConsumedAds.count({
-                  where: {
-                    UserId: user.id,
-                    action: ADS.actions.impression,
-                    updatedAt: {
-                      [op.between]: getDateRange()
-                      // [op.gte]: Sequelize.literal('NOW() - INTERVAL "' + policy.daysInterval + 'd"')
-                    }
-                  }
-                })
-                  .then((seenAdsCountInDaysInterval) => {
-                    if (seenAdsCountInDaysInterval < policy.maxAdsToShowOnInterval) {
-                      let newAdsUserCanSee = !max ? (policy.maxAdsToShowOnInterval - seenAdsCountInDaysInterval) : max
-                      resolution(newAdsUserCanSee, addAd)  
-                    } else {
-                      resolution(0, addAd)
-                    }
-                  })
-                
-              } else {
-                let newAdsUserCanSee = policy.maxAdsToShowOnRegistration - seenAdsCount
-                newAdsUserCanSee = max > newAdsUserCanSee ? newAdsUserCanSee: max
-                resolution(newAdsUserCanSee, addAd)
-              }
+          getUserAdStats(user, max)
+            .then((newAdsUserCanSee) => {
+              resolution(newAdsUserCanSee, addAd)
             })
         }
         if (policy.watchedVideosCountToShowAds) {
-          
-          /*
-          * first get the last seen ad by the current user
-          */
-
-          ConsumedAds.find({
-            where: {
-              UserId: user.id,
-              action: 'impression'
-            },
-            order: [['createdAt', 'DESC']],
-            limit: 1
-          })
-            .then((cA) => {
-              if (cA) {
-                const db  = require('../models/index')
-
-                /*
-                * convert the Sequzlie date back to Mysql DateTime Format and in UTC
-                */
-                let lastSeenAdDateUTC = moment.utc(cA.createdAt).format("YYYY-MM-DD HH:mm:ss");
-                /*
-                * Get the start of current day
-                */
-                let dayStartDate = moment.utc().startOf('day').format("YYYY-MM-DD HH:mm:ss");
-                /*
-                * Now get the total watched videos that have been watched since when the last was ad was seen
-                * Also total number of videos watched in the current day, it is to make sure that user doesn't
-                * see the ads before watching n videos every day
-                * using a hacky way to write raw query
-                */
-                db.sequelize.query("SELECT ((select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ lastSeenAdDateUTC +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + lastSeenAdDateUTC + "')  ) as total, ((select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ dayStartDate +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + dayStartDate + "')  ) as totalSinceDayStart")
-                  .then((r) => {
-                    if (r.length && (parseInt(r[0][0].total) >= policy.watchedVideosCountToShowAds) && (parseInt(r[0][0].totalSinceDayStart) >= policy.watchedVideosCountToShowAds)) {
-                      // unlock only one ad and pull new ad if there is no ad in 
-                      // the given set of ads
-                      execute(1, true)
-                    } else {
-                      // don't unlock new ads
-                      resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
-                    }
-                  })
-    
+          getAdsSeenToday(user)
+            .then((d) => {
+              if (d.firstAdSeen) {
+                if (d.videosWatchedToday >= policy.watchedVideosCountToShowAds && d.videosWatchedSinceLastAd >= policy.watchedVideosCountToShowAds) {
+                  // unlock only one ad and pull new ad if there is no ad in 
+                  // the given set of ads
+                  execute(1, true)
+                } else {
+                  // don't unlock new ads
+                  resolve(keepTheAdsUsersCanSee(postsJson, 0, ads))
+                }  
               } else {
                 execute(1, true)
               }
-              
             })
-              
         } else {
           execute()
         }
-        
       } else {
         resolve(posts)
       }
@@ -1476,14 +1395,163 @@ module.exports.getAds = async (req, res) => {
     })
 }
 
+function getUserAdStats (user, max = false) {
+  return new Promise (function(resolve, reject) {
+    let policy = ADS.adsRestrictionPolicy
+
+    // check how many ads this user has seen so far
+    ConsumedAds.count({
+      where: {
+        UserId: user.id,
+        action: ADS.actions.impression
+      }
+    })
+      .then((seenAdsCount) => {
+        if (seenAdsCount && seenAdsCount >= policy.maxAdsToShowOnRegistration) {
+          let getDateRange = () => {
+            if (policy.daysInterval === 1) {
+              // get date range between current day's begginning to its end
+              return [
+                moment.utc().startOf('day').toDate(),
+                moment.utc().endOf('day').toDate()
+              ]
+            } else {
+              //get date range between n days in past from the current day and to the end of the current 
+              // date
+              return [
+                moment.utc().subtract((policy.daysInterval -1), 'days').startOf('day').toDate(),
+                moment.utc().endOf('day').toDate()
+              ]
+            }
+          }
+
+          ConsumedAds.count({
+            where: {
+              UserId: user.id,
+              action: ADS.actions.impression,
+              updatedAt: {
+                [op.between]: getDateRange()
+                // [op.gte]: Sequelize.literal('NOW() - INTERVAL "' + policy.daysInterval + 'd"')
+              }
+            }
+          })
+            .then((seenAdsCountInDaysInterval) => {
+              if (seenAdsCountInDaysInterval < policy.maxAdsToShowOnInterval) {
+                let newAdsUserCanSee = !max ? (policy.maxAdsToShowOnInterval - seenAdsCountInDaysInterval) : max
+                resolve(newAdsUserCanSee)  
+              } else {
+                resolve(0)
+              }
+            })
+          
+        } else {
+          let newAdsUserCanSee = policy.maxAdsToShowOnRegistration - seenAdsCount
+          newAdsUserCanSee = max? (max > newAdsUserCanSee ? newAdsUserCanSee: max) : newAdsUserCanSee
+          resolve(newAdsUserCanSee)
+        }
+      })
+      .catch((aErr) => {
+        reject(aErr)
+      })
+  })
+}
+
+function getAdsSeenToday (user) {
+  return new Promise(function(resolve, reject) {
+    let stats = {
+      videosWatchedToday: 0,
+      videosWatchedSinceLastAd: 0,
+      firstAdSeen: false
+    }
+
+    /*
+    * first get the last seen ad by the current user
+    */
+    ConsumedAds.find({
+      where: {
+        UserId: user.id,
+        action: ADS.actions.impression
+      },
+      order: [['createdAt', 'DESC']],
+      limit: 1
+    })
+      .then((cA) => {
+        if (cA) {
+          const db  = require('../models/index')
+
+          stats.firstAdSeen = true
+
+          /*
+          * convert the Sequzlie date back to Mysql DateTime Format and in UTC
+          */
+          let lastSeenAdDateUTC = moment.utc(cA.createdAt).format("YYYY-MM-DD HH:mm:ss");
+          /*
+          * Get the start of current day
+          */
+          let dayStartDate = moment.utc().startOf('day').format("YYYY-MM-DD HH:mm:ss");
+          /*
+          * Now get the total watched videos that have been watched since when the last ad was seen
+          * Also total number of videos watched in the current day, it is to make sure that user doesn't
+          * see the ads before watching n videos every day
+          * using a hacky way to write raw query
+          */
+          db.sequelize.query("SELECT ((select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ lastSeenAdDateUTC +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + lastSeenAdDateUTC + "')  ) as total, ((select COUNT(DISTINCT CommentId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '"+ dayStartDate +"') + (select COUNT(DISTINCT PostId) FROM ViewedEntities WHERE UserId=" + user.id + " AND createdAt > '" + dayStartDate + "')  ) as totalSinceDayStart")
+            .then((r) => {
+              if (r.length) {
+                stats.videosWatchedToday = parseInt(r[0][0].totalSinceDayStart)
+                stats.videosWatchedSinceLastAd = parseInt(r[0][0].total)
+              }
+              resolve(stats)
+            })
+        } else {
+          resolve(stats)
+        }
+      })
+      .catch((aErr) => {
+        reject(aErr)
+      })
+  })
+}
+
 module.exports.getAdStats = (req, res) => {
     try {
       let policy = ADS.adsRestrictionPolicy
       let user = req.user
-      if (user.adsEnabled && process.env.AD_RESTRICTION === 'true' && policy.watchedVideosCountToShowAds) {
-        
+      if (user.adsEnabled && process.env.AD_RESTRICTION === 'true') {
+        let stats = {
+          newAdsRemaining: 0,
+          videosToWatch: 0,
+          clearInterval: false
+        }
+        getUserAdStats(user)
+          .then((newAdsToShow) => {
+            if (newAdsToShow) {
+              stats.newAdsRemaining = newAdsToShow
+              if (policy.watchedVideosCountToShowAds) {
+                getAdsSeenToday(user)
+                  .then((seenVideosCount) => {
+                    if (seenVideosCount.videosWatchedToday >= policy.watchedVideosCountToShowAds) {
+                      if (seenVideosCount.videosWatchedSinceLastAd >= policy.watchedVideosCountToShowAds) {
+                        stats.videosToWatch = 0
+                      } else {
+                        stats.videosToWatch = policy.watchedVideosCountToShowAds - seenVideosCount.videosWatchedSinceLastAd
+                      }
+                    } else {
+                      stats.videosToWatch = policy.watchedVideosCountToShowAds - seenVideosCount.videosWatchedToday
+                    }
+                    return ReS(res, {stats: stats}, 200);
+                  })
+              } else {
+                return ReS(res, {stats: stats}, 200);  
+              }
+            } else {
+              stats.clearInterval = true
+              return ReS(res, {stats: stats}, 200);
+            }
+          })
       } else {
-        return ReS(res, {clearInterval: true}, 200);  
+        stats.clearInterval = true
+        return ReS(res, {stats: stats}, 200);  
       }
     } catch (e) {
       console.log(e)
