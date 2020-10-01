@@ -533,9 +533,10 @@ const overallWithdrawalStats = async (req, res) => {
     /*
     * generate fake stats data
     */
-    let currentTimestamp = Math.floor(Date.now() / 1000)
-    let totalUsers = currentTimestamp - 1594560787
-    let totalMoneyMadeUSD = totalUsers * 3
+    let currentTimestamp = Math.floor(Date.now() / 10000000)
+    // this will be the above variable - the time stamp on 1st Oct 2020 divided by 10000000
+    let totalUsers = currentTimestamp - 159153
+    let totalMoneyMadeUSD = totalUsers * 1.5
     let err, forex
 
     let formatNumber = (number) => {
