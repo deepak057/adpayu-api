@@ -569,8 +569,8 @@ function putAdRestrictions (posts, req, res, page) {
             if (ads.length) {
               resolve(keepTheAdsUsersCanSee(postsJson, adsToShow, ads))
             } else if (!ads.length && addAd && user.adsEnabled) {
-              // get the new ads
-              adsToBePushedToTheTop(user, adsToShow)
+              // get the new unseen ad
+              adsToBePushedToTheTop(user, adsToShow, true)
                 .then((newAdsToShow) => {
                   if (newAdsToShow) {
                     newAdsToShow = newAdsToShow.concat(posts)
@@ -870,19 +870,26 @@ async function sendFeed (req, res, posts, page =1 ) {
 * fuction to return unseen ad posts
 * for the given user which will be
 */
-function adsToBePushedToTheTop(user, limit = false) {
-  
+function adsToBePushedToTheTop(user, limit = false, onlySeenAds = false, adType = false) {
     return new Promise(function(resolve, reject) { 
-
         try {
           let criteria = getPostCriteriaObject (user, [], true);
+          let andCond = [
+            {
+              'id': Sequelize.literal(' Posts.id NOT IN (select PostId from PushedAds where UserId = '+ user.id+')')
+            }
+          ]
+          if (onlySeenAds) {
+            // condition to pull only "unseen" ads which are not yet seen by the given user
+            andCond.push({
+              'xyz': Sequelize.literal(' Posts.id NOT IN (select PostId from ConsumedAds where UserId = ' + user.id + ' AND (action = "' + ADS.actions.impression + '" OR action = "' + ADS.actions.click + '" OR action = "' + ADS.actions.view + '"))')
+            })
+          }
           criteria.where = {
-            [op.and]: [
-              {
-                'id': Sequelize.literal(' Posts.id NOT IN (select PostId from PushedAds where UserId = '+ user.id+')')
-              },
-              getAdLocationSearchCriteria (user)
-            ]
+            [op.and]: andCond.concat([getAdLocationSearchCriteria (user)]),
+          }
+          if (adType) {
+            criteria.where.type = adType
           }
           criteria.order = Sequelize.literal('Posts.createdAt DESC limit ' + (limit || ADS.maxAdsToBePushedToTop));
           Posts.findAll(criteria)
@@ -1386,7 +1393,7 @@ module.exports.getPublicPosts = getPublicPosts;
 
 module.exports.getAds = async (req, res) => {
   let user = req.user
-  adsToBePushedToTheTop(user, 1)
+  adsToBePushedToTheTop(user, 1, false, 'video')
     .then((ads) => {
       return ReS(res, {ads: ads}, 200);
     })
