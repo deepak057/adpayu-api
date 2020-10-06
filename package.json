@@ -13,6 +13,7 @@
     "bcrypt": "^1.0.3",
     "bcrypt-promise": "^2.0.0",
     "body-parser": "~1.18.2",
+    "canvas": "^2.6.1",
     "child-process": "^1.0.2",
     "child_process": "^1.0.2",
     "compression": "^1.7.4",

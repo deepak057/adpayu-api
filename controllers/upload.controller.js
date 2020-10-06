@@ -94,25 +94,15 @@ const uploadUserProfilePic = async function(req, res){
    
   let filePath = appRoot+'/uploads/'+ name;
 
+  const UsersController   = require('./user.controller');
+
     sampleFile.mv(filePath, function(err) {
       if (err) {
         return ReE(res, err);
       } else {
-        optimizeImage(filePath)
-          .then((stats) => {
-          	S3Controller.uploadToS3(filePath)
-	          .then((data) => {
-	            let user = req.user;
-	            // delete old profile pic
-	            if (user.pic) {
-	              S3Controller.deleteS3Object(user.pic)
-	            }
-	            user.pic = name
-	            user.save()
-	              .then(function () {
-	                return ReS(res, {user: user}, 200);
-	              })
-	          })
+        UsersController.saveUserProfilePic(filePath, req.user, name)
+          .then((d) => {
+            return ReS(res, {user: d}, 200);
           })
       }
     });

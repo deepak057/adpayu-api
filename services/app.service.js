@@ -508,7 +508,7 @@ function optimizeImage (imagePath) {
 
       fs.copyFile(imagePath, copyFilePath, (err) => {
         if (err) {
-          throw err
+          reject(err)
         } else {
 
           fs.unlink(imagePath, function (err) {
@@ -526,13 +526,13 @@ function optimizeImage (imagePath) {
                         console.log("Image " + imageName + ' optimized');
                         resolve(statistic);
                       } else {
-                        throw err;
+                        reject(err);
                       }
                     });
                   }
                   if (error) {
                     console.log(error)
-                    throw new Error('Something went wrong.')
+                    reject(Error('Something went wrong.'))
                   }   
               });
             }

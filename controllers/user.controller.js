@@ -1,11 +1,12 @@
 const { User, Friendship, ConsumedAds, ViewedEntities, Reactions, SocialShares, Forex}          = require('../models');
 const authService       = require('../services/auth.service');
 const { to, ReE, ReS, uniqeFileName, roundTwoDecimalPlaces, getWebView, cloneOject}  = require('../services/util.service');
-const { getCashBackConfig }  = require('../services/app.service');
+const { getCashBackConfig, optimizeImage }  = require('../services/app.service');
 const TagsController   = require('./tags.controller');
 const crypto = require('crypto');
 require('dotenv').config();//instatiate environment variables
 const MailsController   = require('./mails.controller');
+const S3Controller   = require('./s3.controller')
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 
@@ -30,6 +31,10 @@ const create = async function(req, res){
 
         [err, user] = await to(authService.createUser(body));
 
+        if (err) {
+          return ReE(res, err, 500);
+        }
+
         //associate this user with default tag
         TagsController.associateWithDefaultTag(user);
 
@@ -47,8 +52,15 @@ const create = async function(req, res){
             })
         }
 
-        if(err) return ReE(res, err, 422);
-        return ReS(res, {message:'Successfully created new user.', user:user.toWeb(), token:user.getJWT()}, 201);
+        // set default profile pic for this user
+        saveDefaultProfilePic(user)
+          .then((d) => {
+            return ReS(res, {message:'Successfully created new user.', user:user.toWeb(), token:user.getJWT()}, 200);    
+          })
+          .catch((uErr) => {
+            console.log(uErr)
+            return ReE(res, {message: 'Something went wrong'}, 500);
+          })        
     }
 }
 module.exports.create = create;
@@ -175,7 +187,6 @@ const update = async function(req, res){
     * if user deletes their profile pics 
     */
     if (user.pic && !data.pic) {
-      const S3Controller   = require('./s3.controller')
       S3Controller.deleteS3Object(user.pic)
     }
     
@@ -599,3 +610,86 @@ const getUserDetails = async function (req, res) {
 }
 
 module.exports.getUserDetails = getUserDetails;
+
+function saveUserProfilePic (filePath, user, name) {
+  return new Promise((resolve, reject) => {
+    optimizeImage(filePath)
+      .then((stats) => {
+        S3Controller.uploadToS3(filePath)
+        .then((data) => {
+          // delete old profile pic
+          if (user.pic) {
+            S3Controller.deleteS3Object(user.pic)
+          }
+          user.pic = name
+          user.save()
+            .then(function () {
+              resolve(user)
+            })
+            .catch((uErr) => {
+              reject(uErr)
+            })
+        })
+      })
+  })  
+}
+
+module.exports.saveUserProfilePic = saveUserProfilePic;
+
+function saveDefaultProfilePic (user) {
+  return new Promise((resolve, reject) => {
+    let getPicText = (user) => {
+      let getChar = (str) => {
+        return str.charAt(0).toUpperCase()
+      }
+      let text = ''
+      if (user.first) {
+        text = getChar(user.first)
+      }
+      if (user.last) {
+        text += getChar(user.last)
+      }
+      return text
+    }
+    let getImageInfo = () => {
+      const appRoot = require('app-root-path');
+      const uniqid = require('uniqid')
+      let name = uniqid() + user.id + '.png'
+      let filePath = appRoot+'/uploads/'+ name;
+      return {
+        name: name,
+        filePath: filePath
+      }
+    }
+    let getBackColor = () => {
+      let colors = ['#BF5FFF', '#0000CD', '#0147FA', '#104E8B', '#236B8E', '#507786', '#37FDFC', '#66CCCC', '#2F4F4F', '#108070', '#00C78C', '#96C8A2', '#7FFFD4', '#00611C', '#C54E4E', '#9D1309', '#FF642B', '#E76021', '#FCC6AA', '#F7A06D', '#FF6103', '#EBC194', '#9F703A', '#FFB52B', '#FCDC3B', '#CAC740', '#9A9A5C', '#98B82A', '#B1DD27', '#A2C93A', '#385E0F', '#636F57', '#4A7023', '#748269', '#004F00']
+      return colors[Math.floor(Math.random() * colors.length)]
+
+    }
+    const { createCanvas } = require('canvas')
+    const fs = require('fs')
+    const width = 250
+    const height = 250
+    const canvas = createCanvas(width, height)
+    const context = canvas.getContext('2d')
+    context.fillStyle = getBackColor()
+    context.fillRect(0, 0, width, height)
+    const text = getPicText(user)
+    context.font = 'bold 70pt Menlo'
+    context.fillStyle = '#fff'
+    context.textBaseline = 'middle';
+    context.textAlign = "center";
+    context.fillText(text, 125, 125)
+    const buffer = canvas.toBuffer('image/png')
+    let imageInfo = getImageInfo()
+    fs.writeFileSync(imageInfo.filePath, buffer)
+    saveUserProfilePic(imageInfo.filePath, user, imageInfo.name)
+      .then((d) => {
+        resolve(d)
+      })
+      .catch((pErr) => {
+        reject(pErr)
+      })
+  })
+   
+}
