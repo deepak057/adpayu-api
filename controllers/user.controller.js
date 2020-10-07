@@ -662,7 +662,7 @@ function saveDefaultProfilePic (user) {
       }
     }
     let getBackColor = () => {
-      let colors = ['#BF5FFF', '#0000CD', '#0147FA', '#104E8B', '#236B8E', '#507786', '#37FDFC', '#66CCCC', '#2F4F4F', '#108070', '#00C78C', '#96C8A2', '#7FFFD4', '#00611C', '#C54E4E', '#9D1309', '#FF642B', '#E76021', '#FCC6AA', '#F7A06D', '#FF6103', '#EBC194', '#9F703A', '#FFB52B', '#FCDC3B', '#CAC740', '#9A9A5C', '#98B82A', '#B1DD27', '#A2C93A', '#385E0F', '#636F57', '#4A7023', '#748269', '#004F00']
+      let colors = ['#FF0033', '#8B5F65', '#FFAEB9', '#55141C', '#AF1E2D', '#FF030D', '#E32E30', '#9E0508', '#E35152', '#DE85B1', '#8B0A50', '#FF00CC', '#871F78', '#FF83FA', '#FF00FF', '#EE00EE', '#816687', '#BF5FFF', '#0000CD', '#0147FA', '#104E8B', '#236B8E', '#507786', '#37FDFC', '#66CCCC', '#2F4F4F', '#108070', '#00C78C', '#96C8A2', '#7FFFD4', '#00611C', '#C54E4E', '#9D1309', '#FF642B', '#E76021', '#FCC6AA', '#F7A06D', '#FF6103', '#EBC194', '#9F703A', '#FFB52B', '#FCDC3B', '#CAC740', '#9A9A5C', '#98B82A', '#B1DD27', '#A2C93A', '#385E0F', '#636F57', '#4A7023', '#748269', '#004F00']
       return colors[Math.floor(Math.random() * colors.length)]
 
     }
