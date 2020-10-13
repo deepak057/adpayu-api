@@ -776,3 +776,67 @@ module.exports.fakeIpRequests = async function (req, res) {
 
   return ReS(res, {message: 'Operation in progress..'});
 }*/
+
+/* 
+** this method removes the dummy likes given from the 
+** system generated users. It cleans up the Likes table 
+** by removing the indvidual rows and stores only the 
+** LikesCount in DummyLikes table
+*/
+
+module.exports.cleanDummyLikesTable = async function() {
+	try {
+		
+		let userIdCond = Sequelize.literal("UserId IN (select Users.id from Users where Users.systemCreatedUser=1)")
+
+		// get the first row in Likes table
+		Likes.find({
+			limit: 1,
+			order: [['createdAt', 'DESC']],
+			where: {
+				UserId: userIdCond
+			}
+		})
+			.then((likeRecord) => {
+				if (likeRecord) {
+					let cond = {
+						where: {
+							UserId: userIdCond
+						}
+					}
+					let entityType = likeRecord.CommentId ? 'CommentId' : 'PostId'
+					if (entityType === 'CommentId') {
+						cond.where.CommentId = likeRecord.CommentId
+					}
+					if (entityType === 'PostId') {
+						cond.where.PostId = likeRecord.PostId
+					}
+					Likes.count(cond)
+						.then((likesCount) => {
+							if (likesCount) {
+								let obj = {
+						        	likesCount: likesCount,
+						        	// inserting hardcoded User Id of Super Admin
+						        	UserId: 1
+						      	}
+								obj[entityType] = likeRecord.CommentId || likeRecord.PostId
+						      	DummyLikes.create(obj)
+						      		.then((d) => {
+						      			Likes.destroy(cond)
+						      				.then((d1) => {
+						      					console.log('Moved and Deleted ' + likesCount + ' likes')
+						      				})
+						      		})
+							} else {
+								console.log('No fake likes to move or delete')
+							}
+						})
+				} else {
+					console.log('No fake likes to move or delete')
+				}
+				
+			})
+	} catch (e) {
+		console.log(e)
+	}
+}

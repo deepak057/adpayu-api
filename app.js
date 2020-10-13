@@ -78,6 +78,14 @@ function cleanSeenPosts () {
   postsController.cleanSeenPosts()
 }
 
+/*
+* function for cleaning up fake likes table
+*/
+function cleanFakeLikes () {
+  const generalController   = require('./controllers/general.controller');
+  generalController.cleanDummyLikesTable()
+}
+
 //Log Env
 console.log("Environment:", CONFIG.app)
 //DATABASE
@@ -158,6 +166,11 @@ cron.schedule("0 */10 * * * *", function() {
 //cron job running once in every minutes for cleaning the SeenPosts records
 cron.schedule("0 */1 * * * *", function() {
   cleanSeenPosts();
+});
+
+//cron job running once in every 2 minutes for cleaning the Fake likes
+cron.schedule("0 */2 * * * *", function() {
+  cleanFakeLikes()
 });
 
 /*
