@@ -787,27 +787,22 @@ module.exports.fakeIpRequests = async function (req, res) {
 module.exports.cleanDummyLikesTable = async function() {
 	try {
 		
-		/* condition to filter through all the system generated users 
+		// condition to filter through all the system generated users 
 		let userIdCond = Sequelize.literal("UserId IN (select Users.id from Users where Users.systemCreatedUser=1)")
-		*/
 	
-		/*
-		* Abandoning the abovq query as it was taking way too long to filter through
-		* system generated users as sub query
-		* so tweaking the condition to include id range
-		* this id range includes only the system generated users on the LIVE server
-		*/
-		let userIdCond = {
-			[op.between]: [83, 28623]
-		}
-
-		// get the first row in Likes table
+		// get the first row in Likes table given by a system created user
 		Likes.find({
 			limit: 1,
-			order: [['createdAt', 'DESC']],
-			where: {
-				UserId: userIdCond
-			}
+			include: [
+				{
+					model: User,
+					where: {
+						systemCreatedUser: true
+					},
+					// just get only one random field, lets say user id
+					attributes: ['id']
+				}
+			]
 		})
 			.then((likeRecord) => {
 				if (likeRecord) {
