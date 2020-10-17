@@ -168,10 +168,13 @@ cron.schedule("0 */1 * * * *", function() {
   cleanSeenPosts();
 });
 
-//cron job running once in every 2 minutes for cleaning the Fake likes
-//cron.schedule("0 */2 * * * *", function() {
-  cleanFakeLikes()
-//});
+//cron job running once in every 2 minutes for cleaning duplicate Fake likes
+cron.schedule("0 */2 * * * *", function() {
+  const generalController   = require('./controllers/general.controller');
+  generalController.removeDuplicateLikes()
+});
+
+cleanFakeLikes();
 
 /*
 * disable auto-db backup script as we have used

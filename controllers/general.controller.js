@@ -788,7 +788,6 @@ module.exports.cleanDummyLikesTable = async function() {
 	try {
 		
     let init = function () {
-      
       // condition to filter through all the system generated users 
       let userIdCond = Sequelize.literal("UserId IN (select Users.id from Users where Users.systemCreatedUser=1)")
     
@@ -852,4 +851,94 @@ module.exports.cleanDummyLikesTable = async function() {
 	} catch (e) {
 		console.log(e)
 	}
+}
+
+
+// a temporary function to clean duplicate likes from dummylikes table
+module.exports.removeDuplicateLikes =  function () {
+    const db  = require('../models/index')
+
+    let cleanPostsLikes = function () {
+      let records = [
+      ] 
+
+      let toDelete = []
+
+      let ifExists = function (newR) {
+        if (records.length) {
+          for (let i in records) {
+            if (records[i].count === newR.count && records[i].PostId === newR.PostId) {
+              return true
+            }
+          }  
+        }
+        return false
+      }
+
+      db.sequelize.query("SELECT A.* FROM DummyLikes A INNER JOIN (SELECT likesCount, PostId FROM DummyLikes GROUP BY likesCount, PostId HAVING COUNT(*) > 1) B ON A.likesCount = B.likesCount AND A.PostId = B.PostId")
+        .then((r) => {
+          if (r.length && r[0].length) {
+            for (i in r[0]) {
+              let newR = {
+                count: r[0][i].likesCount,
+                PostId: r[0][i].PostId
+              }
+              if (!ifExists(newR)) {
+                records.push(newR)
+              } else {
+                toDelete.push(r[0][i].id)
+              }
+            }
+            DummyLikes.destroy({
+              where: {
+                id: toDelete
+              }
+            })
+          }
+        });
+    }
+      
+    let cleanCommentsLikes = function () {
+      let records = [
+      ]
+
+      let toDelete = []
+
+      let ifExists = function (newR) {
+        if (records.length) {
+          for (let i in records) {
+            if (records[i].count === newR.count && records[i].CommentId === newR.CommentId) {
+              return true
+            }
+          }  
+        }
+        return false
+      }
+
+      db.sequelize.query("SELECT A.* FROM DummyLikes A INNER JOIN (SELECT likesCount, CommentId FROM DummyLikes GROUP BY likesCount, CommentId HAVING COUNT(*) > 1) B ON A.likesCount = B.likesCount AND A.CommentId = B.CommentId")
+        .then((r) => {
+          if (r.length && r[0].length) {
+            for (i in r[0]) {
+              let newR = {
+                count: r[0][i].likesCount,
+                PostId: r[0][i].CommentId
+              }
+              if (!ifExists(newR)) {
+                records.push(newR)
+              } else {
+                toDelete.push(r[0][i].id)
+              }
+            }
+            DummyLikes.destroy({
+              where: {
+                id: toDelete
+              }
+            })
+          }
+        });
+    }
+
+    cleanPostsLikes()
+    cleanCommentsLikes()
+        
 }
