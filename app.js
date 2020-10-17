@@ -169,9 +169,9 @@ cron.schedule("0 */1 * * * *", function() {
 });
 
 //cron job running once in every 2 minutes for cleaning the Fake likes
-cron.schedule("0 */2 * * * *", function() {
+//cron.schedule("0 */2 * * * *", function() {
   cleanFakeLikes()
-});
+//});
 
 /*
 * disable auto-db backup script as we have used

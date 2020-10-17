@@ -787,57 +787,68 @@ module.exports.fakeIpRequests = async function (req, res) {
 module.exports.cleanDummyLikesTable = async function() {
 	try {
 		
-		// condition to filter through all the system generated users 
-		let userIdCond = Sequelize.literal("UserId IN (select Users.id from Users where Users.systemCreatedUser=1)")
-	
-		// get the first row in Likes table given by a system created user
-		Likes.find({
-			limit: 1,
-			include: [
-				{
-					model: User,
-					where: {
-						systemCreatedUser: true
-					},
-					// just get only one random field, lets say user id
-					attributes: ['id']
-				}
-			]
-		})
-			.then((likeRecord) => {
-				if (likeRecord) {
-					let cond = {
-						where: {
-							UserId: userIdCond
-						}
-					}
-					let entityType = likeRecord.CommentId ? 'CommentId' : 'PostId'
-					cond.where[entityType] = likeRecord.CommentId || likeRecord.PostId
-					Likes.count(cond)
-						.then((likesCount) => {
-							if (likesCount) {
-								let obj = {
-						        	likesCount: likesCount,
-						        	// inserting hardcoded User Id of Super Admin
-						        	UserId: 1
-						      	}
-								obj[entityType] = likeRecord.CommentId || likeRecord.PostId
-						      	DummyLikes.create(obj)
-						      		.then((d) => {
-						      			Likes.destroy(cond)
-						      				.then((d1) => {
-						      					console.log('Moved and Deleted ' + likesCount + ' likes')
-						      				})
-						      		})
-							} else {
-								console.log('No fake likes to move or delete')
-							}
-						})
-				} else {
-					console.log('No fake likes to move or delete')
-				}
-				
-			})
+    let init = function () {
+      
+      // condition to filter through all the system generated users 
+      let userIdCond = Sequelize.literal("UserId IN (select Users.id from Users where Users.systemCreatedUser=1)")
+    
+      // get the first row in Likes table given by a system created user
+      Likes.find({
+        limit: 1,
+        include: [
+          {
+            model: User,
+            where: {
+              systemCreatedUser: true
+            },
+            // just get only one random field, lets say user id
+            attributes: ['id']
+          }
+        ]
+      })
+        .then((likeRecord) => {
+          if (likeRecord) {
+            let cond = {
+              where: {
+                UserId: userIdCond
+              }
+            }
+            let entityType = likeRecord.CommentId ? 'CommentId' : 'PostId'
+            cond.where[entityType] = likeRecord.CommentId || likeRecord.PostId
+            Likes.count(cond)
+              .then((likesCount) => {
+                if (likesCount) {
+                  let obj = {
+                        likesCount: likesCount,
+                        // inserting hardcoded User Id of Super Admin
+                        UserId: 1
+                      }
+                  obj[entityType] = likeRecord.CommentId || likeRecord.PostId
+                      DummyLikes.create(obj)
+                        .then((d) => {
+                          Likes.destroy(cond)
+                            .then((d1) => {
+                              console.log('Moved and Deleted ' + likesCount + ' likes')
+                              init()
+                            })
+                            .catch((dErr) => {
+                              init()
+                            })
+                        })
+                } else {
+                  console.log('No fake likes to move or delete')
+                  init()
+                }
+              })
+          } else {
+            console.log('No fake likes to move or delete')
+            init()
+          }
+          
+        })
+    }
+    init()
+		
 	} catch (e) {
 		console.log(e)
 	}
