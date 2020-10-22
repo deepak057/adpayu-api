@@ -174,7 +174,6 @@ cron.schedule("0 */2 * * * *", function() {
   generalController.removeDuplicateLikes()
 });
 
-cleanFakeLikes();
 
 /*
 * disable auto-db backup script as we have used
