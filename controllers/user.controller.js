@@ -542,6 +542,27 @@ const getUserDetails = async function (req, res) {
   }
 }
 */
+
+/*
+* Verify given user's email using Email Verifier
+* node module that uses WHOIS XML API
+* Ref - https://github.com/whois-api-llc/node-email-verifier
+*/
+
+function VerifyUserEmail (user) {
+	return new Promise ((resolve, reject) => {
+		const Verifier = require("email-verifier")
+        let verifier = new Verifier(process.env.WHOIS_XML_API_KEY)
+        verifier.verify(user.email, { hardRefresh: true }, (err, data) => {	
+        	if (err) {
+        		reject(err)
+        	} else {
+        		resolve(data)
+        	}
+        });        
+	})
+}
+
 const getUserDetails = async function (req, res) {
   try {
     let user = req.user || false;
@@ -583,18 +604,29 @@ const getUserDetails = async function (req, res) {
                 * to a plain object to access those attribute properties
                 */
                 u = cloneOject(u)
-                
-                return ReS(res, {
-                  name: u.first + ' ' + u.last,
-                  id: u.id,
-                  Unique: unique ? 'Yes': 'No',
-                  'Watched Video Answer': u.ViewedEntitiesCount,
-                  'Reactions': u.ReactionsCount,
-                  'Social Shares': u.SocialSharesCount,
-                  Platform: u.lastLoginFrom
-                }, 200); 
-                
-                })
+
+                let showUserInfo = function(data = false) {
+                	return ReS(res, {
+	                  name: u.first + ' ' + u.last,
+	                  id: u.id,
+	                  Unique: unique ? 'Yes': 'No',
+	                  'Watched Video Answer': u.ViewedEntitiesCount,
+	                  'Reactions': u.ReactionsCount,
+	                  'Social Shares': u.SocialSharesCount,
+	                  Platform: u.lastLoginFrom,
+	                  'Email Exists': data ? data.smtpCheck : 'Unknown, try again later',
+	                  'Email Check Info': data || false
+	                }, 200);
+                }
+                // verify if user's email really exists
+                VerifyUserEmail(u)
+                	.then((data) => {
+                		showUserInfo(data)
+                	})
+                	.catch((uErr) => {
+                		showUserInfo()
+                	})     
+              })
           } else {
             return ReE(res, {message: 'User not found'}, 404);
           }

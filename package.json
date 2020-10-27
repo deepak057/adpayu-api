@@ -23,6 +23,7 @@
     "csv-parser": "^2.3.0",
     "debug": "~2.6.9",
     "dotenv": "^4.0.0",
+    "email-verifier": "^0.4.1",
     "express": "~4.15.5",
     "express-fileupload": "^1.0.0",
     "find-process": "^1.4.2",
