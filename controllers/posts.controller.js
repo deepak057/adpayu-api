@@ -98,29 +98,8 @@ const create = async function(req, res){
       ** Loop through given Tags and cretae new tags if they don't already exist in database
       ** also associate tags with current post 
       */
-
-      if(post_info.tags.length > 0) {
-
-        for(var i in post_info.tags){
-          
-          Tags.findOrCreate(
-          {
-            where: {name: post_info.tags[i].text},
-            defaults: {
-              name: post_info.tags[i].text,
-              UserId: user.id
-            }
-          },
-          ). spread ((tag, created) => {
-            post.addTags(tag)
-            tag.addUsers(user)
-            user.addTags(tag)
-          })
-
-        }
-
-      }
-
+      addTagsOnPost(post_info.tags, post, user)
+      
       //update the post
       [err, post] = await to(post.save());
       if(err) return ReE(res, err, 422);
@@ -148,6 +127,37 @@ const create = async function(req, res){
 
     
 }
+
+/*
+* function to loop through given set of Tags and 
+* cretae new tags if they don't already exist in 
+* database, also associate tags with current post
+* though it doesn't have any Promise returned so can't
+* track the status of when all the given tags
+* are added. And it's not needed at the moment whatsoever
+*/
+
+function addTagsOnPost (tags, post, user) {
+  if (tags.length > 0) {
+      for(var i in tags){
+        Tags.findOrCreate(
+        {
+          where: {name: tags[i].text},
+          defaults: {
+            name: tags[i].text,
+            UserId: user.id
+          }
+        },
+        ). spread ((tag, created) => {
+          post.addTags(tag)
+          tag.addUsers(user)
+          user.addTags(tag)
+        })
+
+      }
+  }
+}
+
 
 /*
 * function to save ad confuiguration in the database
@@ -1564,4 +1574,49 @@ module.exports.getAdStats = (req, res) => {
       console.log(e)
       return ReE(res, {'error': 'Something went wrong'}, 500)
     }
+}
+
+
+module.exports.addTags = async function (req, res) {
+  try {
+    let user = req.user
+    if (user.isAdmin) {
+      let postId = req.params.postId
+      let tags = req.query.tags
+      if (postId && tags) {
+        let formatTheTags = () => {
+          let arrRtr = []
+          let tagsArr = tags.split(',')
+          if (tagsArr) {
+            for (let i in tagsArr) {
+              arrRtr.push({
+                text: tagsArr[i]
+              })
+            }
+          }
+          return arrRtr
+        }
+        Posts.find({
+          where: {
+            id: postId
+          }
+        })
+          .then((post) => {
+            if (post) {
+              addTagsOnPost(formatTheTags(), post, user)
+              return ReS(res, {message: 'Tags added'}, 200)  
+            } else {
+              return ReE(res, {message: 'Post not found'}, 404);
+            }
+          })
+      } else {
+        return ReE(res, {message: 'Missing parameters'}, 404);  
+      }
+    } else {
+      return ReE(res, {message: 'You are not authorized'}, 401); 
+    }
+  } catch (e) {
+      console.log(e)
+      return ReE(res, {message: 'Something went wrong'}, 500); 
+  }
 }

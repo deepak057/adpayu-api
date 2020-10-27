@@ -60,6 +60,7 @@ router.get('/getPublicPosts', PostsController.getPublicPosts);        	   // R
 router.delete('/posts/:postId',           passport.authenticate('jwt', {session:false}), PostsController.remove);        // D
 router.post('/posts/getAds',           passport.authenticate('jwt', {session:false}), PostsController.getAds);        // R
 router.post('/posts/getAdStats',           passport.authenticate('jwt', {session:false}), PostsController.getAdStats);        	   // R
+router.post('/posts/addTags/:postId',           passport.authenticate('jwt', {session:false}), PostsController.addTags);        	   // C
 
 /** Tags routes**/
 router.get('/tags',           passport.authenticate('jwt', {session:false}), TagsController.get);        // R
