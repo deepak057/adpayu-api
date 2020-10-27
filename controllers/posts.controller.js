@@ -92,17 +92,16 @@ const create = async function(req, res){
           }
       }
 
-      //save Tags
 
-      /*
+      //update the post
+      [err, post] = await to(post.save());
+      if(err) return ReE(res, err, 422);
+
+      /** save Tags
       ** Loop through given Tags and cretae new tags if they don't already exist in database
       ** also associate tags with current post 
       */
       addTagsOnPost(post_info.tags, post, user)
-      
-      //update the post
-      [err, post] = await to(post.save());
-      if(err) return ReE(res, err, 422);
 
       /*
       ** Delay code execution by 100 miliseconds so that some database queries can finish executing
