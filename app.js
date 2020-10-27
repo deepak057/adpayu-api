@@ -169,10 +169,10 @@ cron.schedule("0 */1 * * * *", function() {
 });
 
 //cron job running once in every 2 minutes for cleaning duplicate Fake likes
-cron.schedule("0 */2 * * * *", function() {
-  const generalController   = require('./controllers/general.controller');
-  generalController.removeDuplicateLikes()
-});
+//cron.schedule("0 */2 * * * *", function() {
+  //const generalController   = require('./controllers/general.controller');
+  //generalController.removeDuplicateLikes()
+//});
 
 
 /*
