@@ -56,12 +56,11 @@ const adConsumed = async function(req, res){
         		let amountAdded = getAdAmount(post, action)
         		ConsumedAds.create({
         			action: action,
-        			amountUSD: amountAdded
+        			amountUSD: amountAdded,
+        			PostId: post.id,
+        			UserId: user.id
         		})
         		  .then ((adConsumedObj) => {
-        		  	adConsumedObj.setPost(post);
-        		  	adConsumedObj.setUser(user);
-
         		  	//update the Ad Stats and send response to client
         		  	updateAdStats (post, action)
         		  	  .then ((adStat) => {
