@@ -9,12 +9,23 @@ const path = require('path');
 const S3Controller   = require('./s3.controller');
 
 const addDummyLikes = async function (req, res) {
-  let id = req.params.id, err, user = req.user, comment, post, n = req.query.n || false, entityType = req.query.type || 'comment', model;
+  let id = req.params.id, err, user = req.user, 
+  comment, post, n = req.query.n || false, 
+  entityType = req.query.type || 'comment', model,
+  action = req.query.action || 'add';
+
   if (user.isAdmin && n) {
+    let manageLikes = (entity, id) => {
+      if (action === 'add') {
+        pushLikes(entity, id)
+      } else {
+        deleteLikes(entity, id)
+      }
+    }
     let pushLikes = (entity, id) => {
       let obj = {
         likesCount: n,
-          UserId: req.user.id
+        UserId: req.user.id
       }
       obj[entity] = id
       DummyLikes.create(obj)
@@ -22,17 +33,53 @@ const addDummyLikes = async function (req, res) {
           return ReS(res, {message: n + ' Likes added successfully'}, 200);
         })
     }
+    let deleteLikes = (entity, id) => {
+      // there can be multiple records for the same entity but lets pick the first one in this version
+      // of this algorithem
+      DummyLikes.find({
+        where: {
+          [entity]: id
+        }
+      })
+        .then((dRecord) => {
+          if (dRecord) {
+            let likesCount = parseInt(dRecord.likesCount)
+            let showMsg = (n1) => {
+              return ReS(res, {message: n1 + ' Likes deleted successfully'}, 200);
+            }
+            if (n >= likesCount) {
+              DummyLikes.destroy({
+                where: {
+                  id: dRecord.id
+                }
+              })
+                .then(() => {
+                  showMsg(likesCount)
+                })
+
+            } else {
+              dRecord.likesCount = likesCount - n
+              dRecord.save()
+                .then((d) => {
+                  showMsg(n)        
+                }) 
+            }
+          } else {
+            return ReE(res, {message:'No exisitng records found for entity ' + entity}, 404);    
+          }
+        })
+    }
     if (entityType === 'comment') {
       [err, comment] = await to(Comments.findOne({where: {id: id}}))
       if (comment) {
-        pushLikes('CommentId', id)
+        manageLikes('CommentId', id)
       } else {
-        return ReE(res, {message:'Comment not found'}, 400);
+        return ReE(res, {message:'Comment not found'}, 404);
       }
     } else {
       [err, post] = await to(Posts.findOne({where: {id: id}}))
       if (post) {
-        pushLikes('PostId', id)
+        manageLikes('PostId', id)
       } else {
         return ReE(res, {message:'Unathorized user'}, 401);
       }
