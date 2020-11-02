@@ -168,20 +168,11 @@ cron.schedule("0 */1 * * * *", function() {
   cleanSeenPosts();
 });
 
-//cron job running once in every 2 minutes for cleaning duplicate Fake likes
-//cron.schedule("0 */2 * * * *", function() {
-  //const generalController   = require('./controllers/general.controller');
-  //generalController.removeDuplicateLikes()
-//});
-
-
 /*
-* disable auto-db backup script as we have used
-* RDS for Database which automatically takes care
-* of DB backup
+* Cron job running at every midnight to restart the Node Server
+* Due to an yet unreplicated issue, disk space and RAM on the server
+* Leaving this Crong job on until that issue is replicated and fixed
 */
-// cron job for taking database backup every hour
-//"0 0 */1 * * *"
-//cron.schedule("0 0 */1 * * *", function() {
-  //dbBackup();
-//});
+cron.schedule("0 0 0 * * *", function() {
+    process.exit(1);
+});
