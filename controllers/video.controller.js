@@ -206,6 +206,9 @@ function transcodeVideo (localFilePath) {
               execute()
             }
           })
+          .catch((cErr) => {
+            reject(cErr)
+          })
       }
       execute ()
     })
@@ -277,22 +280,72 @@ function optimizeVideoFile (dbObj, type = 'video') {
     dbObj.failedProcessingAttempts += 1;
     dbObj.save()
       .then ((obj) => {
+        if (fs.existsSync(localFilePath)) {
+          fs.unlink(localFilePath)
+        }
         console.log("Failed attempt at video optimisation recorded in database.")
       })
+  }
+  // function to convert given file to Mp4 first if needed
+  let ConvertToMp4 = function(localFilePath) {
+    return new Promise(function(resolve, reject) {
+      /*
+      * if input file is non-mp4 file, convert it
+      * to Mp4 first... as optimizing some non-mp4 videos
+      * directly doesn't work with current FFMPEG
+      * video optimisation command
+      */
+      if (localFilePath.split('.').pop() !== 'mp4') {
+        let replcaeExtensionWithMp4 = function (str, ext  = 'mp4') {
+          var pos = str.lastIndexOf(".");
+          return str.substr(0, pos < 0 ? str.length : pos) + "." + ext;
+        }
+        let localFilePathMp4 = replcaeExtensionWithMp4(localFilePath)
+        let fileNameMp4 = localFilePathMp4.split('/').pop()
+        executeCommand("ffmpeg -i " + localFilePath + " -strict experimental " + localFilePathMp4)
+          .then((d) => {
+            S3Controller.uploadToS3(localFilePathMp4, 'public/', false)
+              .then((d1) => {
+                if (type === 'video') {
+                  dbObj.path = fileNameMp4
+                } else {
+                  dbObj.videoPath = fileNameMp4
+                }
+                dbObj.save()
+                  .then((d2) => {
+                    fs.unlink(localFilePath)
+                    resolve(localFilePathMp4)
+                  })
+              })
+          })
+          .catch((cErr) => {
+            reject(cErr)
+          })
+      } else {
+        resolve(localFilePath)
+      }
+    })
   }
  
     try{
       S3Controller.downloadS3Object(sourceKey, localFilePath)
       .then((data) => {
-        transcodeVideo(localFilePath)
-          .then((data1) => {
-            manageTranscodedFiles(data1.outputFiles)
-              .then((data2) => {
-                markVideoAsOptimised()
-                fs.unlink(localFilePath);
+        ConvertToMp4(localFilePath)
+          .then((localFilePath) => {
+            transcodeVideo(localFilePath)
+              .then((data1) => {
+                manageTranscodedFiles(data1.outputFiles)
+                  .then((data2) => {
+                    markVideoAsOptimised()
+                    fs.unlink(localFilePath);
+                  })
+              })
+              .catch ((e)=> {
+                updateFailedAttempt()
               })
           })
           .catch ((e)=> {
+            console.log(e)
             updateFailedAttempt()
           })
       })

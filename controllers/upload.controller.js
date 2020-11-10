@@ -58,7 +58,7 @@ const uploadVideo = async function(req, res){
   
   let filePath = appRoot+'/uploads/'+ name;
 
-      // Use the mv() method to place the file somewhere on your server
+    // Use the mv() method to place the file somewhere on your server
     sampleFile.mv(filePath, function(err) {
       if (err) {
         console.log(err);
