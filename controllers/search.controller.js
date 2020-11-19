@@ -36,12 +36,25 @@ const get = async function(req, res){
 
       let keyword = req.query.k;
 
+      let sort = function () {
+        if (req.query.sort) {
+          if (req.query.sort === 'NF') {
+            return 'DESC'
+          } else if (req.query.sort === 'LF') {
+            return 'ASC'
+          } else {
+            return 'RAND()'
+          }
+        } else {
+          return 'ASC'
+        }
+      }
+
       let err, friends;
 
       let page = req.query.page || 1;
 
       let limitNOffset = getLimitOffset(page);
-
 
       if (searchType === 'users') {
         // get current user's friends
@@ -55,7 +68,7 @@ const get = async function(req, res){
         User.scope('public', 'visible').findAll({
           limit: limitNOffset.limit,
           offset: limitNOffset.offset,
-          order: [['createdAt', 'DESC']],
+          order: [['createdAt', sort()]],
           where: {
             id: { [Op.notIn]: getUIDs(friends, req.user)},
 
@@ -80,7 +93,7 @@ const get = async function(req, res){
           })
       } else if (searchType === 'tags') {
         const TagsController   = require('./tags.controller');
-        TagsController.browseTags(req, res)
+        TagsController.browseTagsWithSort(req, res, sort())
       } else {
         
         // get current user's friends
@@ -104,8 +117,8 @@ const get = async function(req, res){
       * A hack to use Limit and Offset as we are querying through other tables
       * in which case, limit and offset parameters cause mySQL errors
       */
-       criteria.order = Sequelize.literal((req.user.recentActivitiesEnabled ? 'updatedAt' : 'createdAt') + ' DESC LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
-
+       //criteria.order = Sequelize.literal((req.user.recentActivitiesEnabled ? 'updatedAt' : 'createdAt') + ' ' +sort + ' LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
+      criteria.order = Sequelize.literal('updatedAt ' + sort() + ' LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
        criteria.where = {      
             [Op.and]: [
               {

@@ -42,47 +42,55 @@ const getUserTags = function(req, res){
 }
 module.exports.getUserTags = getUserTags;
 
-const browseTags = function(req, res){
-    
-    let limitNOffset = getLimitOffset((req.query.page || 1), 16);
+const searchTags = function(req, res, sort = false) {
+  let limitNOffset = getLimitOffset((req.query.page || 1), 16);
 
-    let criteria = {
-      limit: limitNOffset.limit,
-      offset: limitNOffset.offset,
-      include: [
-        {
-          model: User.scope('public'),
-          through: {
-            where: [
-              {
-                UserId: req.user.id
-              }
-            ]
-          }
-        }
-      ]
-    }
-
-    /*
-    *  add search by name condition if k (keyword parameter is supplied)
-    */
-    if(req.query.k) {
-      criteria.where = {
-        name: {
-          [Op.like]: '%'+ req.query.k + '%'
+  let criteria = {
+    limit: limitNOffset.limit,
+    offset: limitNOffset.offset,
+    order: [['createdAt', (sort || 'ASC')]],
+    include: [
+      {
+        model: User.scope('public'),
+        through: {
+          where: [
+            {
+              UserId: req.user.id
+            }
+          ]
         }
       }
+    ]
+  }
+
+  /*
+  *  add search by name condition if k (keyword parameter is supplied)
+  */
+  if(req.query.k) {
+    criteria.where = {
+      name: {
+        [Op.like]: '%'+ req.query.k + '%'
+      }
     }
+  }
 
-    Tags.findAll(criteria)
-      .then((tags)=>{
-        return ReS(res, {tags: tagsToWeb(tags)});
-      })
-      .catch((error) => {
-        return ReE(res, error);
-      })
-
+  Tags.findAll(criteria)
+    .then((tags)=>{
+      return ReS(res, {tags: tagsToWeb(tags)});
+    })
+    .catch((error) => {
+      return ReE(res, error);
+    })
 }
+
+const browseTags = function(req, res){
+  searchTags(req, res)
+}
+
+module.exports.browseTagsWithSort = function(req, res, sort){
+  searchTags(req, res, sort)
+}
+
 module.exports.browseTags = browseTags;
 
 const follow = function(req, res){
