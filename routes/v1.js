@@ -104,7 +104,7 @@ router.get('/notifications',   passport.authenticate('jwt', {session:false}),  N
 router.put('/notifications/markSeen',   passport.authenticate('jwt', {session:false}),  NotificationsController.markSeen);        // U
 
 /** Search routes**/
-router.get('/search/:type',   passport.authenticate('jwt', {session:false}),  SearchController.get);        // R
+router.post('/search/:type',   passport.authenticate('jwt', {session:false}),  SearchController.get);        // R
 
 /** Payment routes**/
 router.get('/payment/getToken',   passport.authenticate('jwt', {session:false}),  PaymentController.getToken);        // R

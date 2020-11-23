@@ -42,13 +42,11 @@ const getUserTags = function(req, res){
 }
 module.exports.getUserTags = getUserTags;
 
-const searchTags = function(req, res, sort = false) {
-  let limitNOffset = getLimitOffset((req.query.page || 1), 16);
-
+const searchTags = function(req, res, sort = false, exclidedIds = []) {
+  let limitNOffset = getLimitOffset((req.body.page || req.query.page), 16);
   let criteria = {
     limit: limitNOffset.limit,
-    offset: limitNOffset.offset,
-    order: [['createdAt', (sort || 'ASC')]],
+    order: sort !== 'RO' ? [['createdAt', (sort || 'ASC')]] : [[Sequelize.fn('RAND')]],
     include: [
       {
         model: User.scope('public'),
@@ -63,15 +61,22 @@ const searchTags = function(req, res, sort = false) {
     ]
   }
 
+  if (sort !== 'RO') {
+    criteria.offset = limitNOffset.offset
+  }
+
   /*
   *  add search by name condition if k (keyword parameter is supplied)
   */
-  if(req.query.k) {
-    criteria.where = {
-      name: {
-        [Op.like]: '%'+ req.query.k + '%'
-      }
+  criteria.where = {}
+  if(req.body.k) {
+    criteria.where.name = {
+      [Op.like]: '%'+ req.body.k + '%'
     }
+  }
+
+  criteria.where.id =  {
+      [Op.notIn]: exclidedIds
   }
 
   Tags.findAll(criteria)
@@ -87,8 +92,8 @@ const browseTags = function(req, res){
   searchTags(req, res)
 }
 
-module.exports.browseTagsWithSort = function(req, res, sort){
-  searchTags(req, res, sort)
+module.exports.browseTagsWithSort = function(req, res, sort, exclidedIds = false){
+  searchTags(req, res, sort, exclidedIds)
 }
 
 module.exports.browseTags = browseTags;

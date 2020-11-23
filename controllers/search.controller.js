@@ -16,7 +16,7 @@ function getContentCondition (searchType, keyword, req = false) {
       if (searchType === 'video') {
         contentCondition.push(onlyVideos)
       } else if (searchType === 'questions') {
-        let uncommented = req ? (req.query.uncommented ? req.query.uncommented === 'true' : false) : false;
+        let uncommented = req ? (req.body.uncommented ? req.body.uncommented === 'true' : false) : false;
         if (uncommented) {
           // if this parameter is true, retreive only those questions that don't have any answers
           onlyQuestions.abc = Sequelize.literal('((select count(*) from Comments where Comments.PostId = Posts.id AND deleted = 0) = 0)')
@@ -34,16 +34,24 @@ const get = async function(req, res){
     
       let searchType = req.params.type || 'content';
 
-      let keyword = req.query.k;
+      let keyword = req.body.k;
+
+      let getExcludedIds = function () {
+        let ids = []
+        if (req.body.lRIds) {
+          return req.body.lRIds
+        }
+        return ids
+      }
 
       let sort = function () {
-        if (req.query.sort) {
-          if (req.query.sort === 'NF') {
+        if (req.body.sort) {
+          if (req.body.sort === 'NF') {
             return 'DESC'
-          } else if (req.query.sort === 'LF') {
+          } else if (req.body.sort === 'LF') {
             return 'ASC'
           } else {
-            return 'RAND()'
+            return req.body.sort
           }
         } else {
           return 'ASC'
@@ -52,7 +60,7 @@ const get = async function(req, res){
 
       let err, friends;
 
-      let page = req.query.page || 1;
+      let page = req.body.page || 1;
 
       let limitNOffset = getLimitOffset(page);
 
@@ -65,12 +73,11 @@ const get = async function(req, res){
           return ReE(res, err, 422);
         }
 
-        User.scope('public', 'visible').findAll({
+        let criteria = {
           limit: limitNOffset.limit,
-          offset: limitNOffset.offset,
-          order: [['createdAt', sort()]],
+          order: sort() === 'RO' ? [[Sequelize.fn('RAND')]] : [['createdAt', sort()]],
           where: {
-            id: { [Op.notIn]: getUIDs(friends, req.user)},
+            id: { [Op.notIn]: getUIDs(friends, req.user).concat(getExcludedIds())},
 
             [Op.or]: [
               {
@@ -84,7 +91,13 @@ const get = async function(req, res){
               })
             ]
           }
-        })
+        }
+
+        if (sort() !== 'RO') {
+          criteria.offset = limitNOffset.offset
+        }
+
+        User.scope('public', 'visible').findAll(criteria)
           .then ((users) => {
             return ReS(res, {users: users});
           })
@@ -93,7 +106,7 @@ const get = async function(req, res){
           })
       } else if (searchType === 'tags') {
         const TagsController   = require('./tags.controller');
-        TagsController.browseTagsWithSort(req, res, sort())
+        TagsController.browseTagsWithSort(req, res, sort(), getExcludedIds())
       } else {
         
         // get current user's friends
@@ -118,11 +131,12 @@ const get = async function(req, res){
       * in which case, limit and offset parameters cause mySQL errors
       */
        //criteria.order = Sequelize.literal((req.user.recentActivitiesEnabled ? 'updatedAt' : 'createdAt') + ' ' +sort + ' LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
-      criteria.order = Sequelize.literal('updatedAt ' + sort() + ' LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
-       criteria.where = {      
+      criteria.order = Sequelize.literal((sort() === 'RO' ? 'RAND()' : ('updatedAt ' + sort() )) + ' LIMIT ' + (sort() !== 'RO' ? limitNOffset.offset + ',' : '') + limitNOffset.limit);
+      criteria.where = {      
             [Op.and]: [
               {
                 AdOptionId: {[Op.eq]: null},
+                id: {[Op.notIn]: getExcludedIds()} 
               },
               {
                 [Op.or]: [

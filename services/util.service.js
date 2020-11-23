@@ -65,7 +65,7 @@ module.exports.uniqeFileName = function (fileName, user = false) {
 */
 module.exports.getLimitOffset = function (page, resultsPerPage = 10) {
     let limit = resultsPerPage;
-    let offset = page == 1? 0: (page -1 ) * limit
+    let offset = !page || page == 1 ? 0: (page -1 ) * limit
     return {
     limit: limit,
     offset: offset
