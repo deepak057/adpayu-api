@@ -36,6 +36,9 @@ const get = async function(req, res){
 
       let keyword = req.body.k;
 
+      /** get array of ids of results
+      ** that have already been sent to client side
+      */
       let getExcludedIds = function () {
         let ids = []
         if (req.body.lRIds) {
@@ -44,6 +47,9 @@ const get = async function(req, res){
         return ids
       }
 
+      /*
+      * get the type of sorting
+      */
       let sort = function () {
         if (req.body.sort) {
           if (req.body.sort === 'NF') {
@@ -64,6 +70,8 @@ const get = async function(req, res){
 
       let limitNOffset = getLimitOffset(page);
 
+      let sortType = sort()
+
       if (searchType === 'users') {
         // get current user's friends
         // or the users where friendship request
@@ -75,7 +83,7 @@ const get = async function(req, res){
 
         let criteria = {
           limit: limitNOffset.limit,
-          order: sort() === 'RO' ? [[Sequelize.fn('RAND')]] : [['createdAt', sort()]],
+          order: sortType === 'RO' ? [[Sequelize.fn('RAND')]] : [['createdAt', sortType]],
           where: {
             id: { [Op.notIn]: getUIDs(friends, req.user).concat(getExcludedIds())},
 
@@ -93,7 +101,7 @@ const get = async function(req, res){
           }
         }
 
-        if (sort() !== 'RO') {
+        if (sortType !== 'RO') {
           criteria.offset = limitNOffset.offset
         }
 
@@ -106,7 +114,7 @@ const get = async function(req, res){
           })
       } else if (searchType === 'tags') {
         const TagsController   = require('./tags.controller');
-        TagsController.browseTagsWithSort(req, res, sort(), getExcludedIds())
+        TagsController.browseTagsWithSort(req, res, sortType, getExcludedIds())
       } else {
         
         // get current user's friends
@@ -131,7 +139,7 @@ const get = async function(req, res){
       * in which case, limit and offset parameters cause mySQL errors
       */
        //criteria.order = Sequelize.literal((req.user.recentActivitiesEnabled ? 'updatedAt' : 'createdAt') + ' ' +sort + ' LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
-      criteria.order = Sequelize.literal((sort() === 'RO' ? 'RAND()' : ('updatedAt ' + sort() )) + ' LIMIT ' + (sort() !== 'RO' ? limitNOffset.offset + ',' : '') + limitNOffset.limit);
+      criteria.order = Sequelize.literal((sortType === 'RO' ? 'RAND()' : ('updatedAt ' + sortType )) + ' LIMIT ' + (sortType !== 'RO' ? limitNOffset.offset + ',' : '') + limitNOffset.limit);
       criteria.where = {      
             [Op.and]: [
               {
