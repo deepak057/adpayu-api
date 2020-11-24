@@ -1,5 +1,5 @@
-const { Posts, User } = require('../models');
-const { to, ReE, ReS, isEmptyObject, getLimitOffset } = require('../services/util.service');
+const { Posts, User, Videos, Questions } = require('../models');
+const { to, ReE, ReS, isEmptyObject, getLimitOffset, getIdsArray } = require('../services/util.service');
 const { getUIDs, getDBInclude, toWeb, getPostCriteriaObject} = require('../services/app.service');
 const Sequelize = require('sequelize');
 
@@ -80,13 +80,14 @@ const get = async function(req, res){
         if(err) {
           return ReE(res, err, 422);
         }
+        // don't include Excluded Id in search query in case of random search
+        let idCondArr = sortType === 'RO' ? getUIDs(friends, req.user).concat(getExcludedIds()) : getUIDs(friends, req.user)
 
         let criteria = {
           limit: limitNOffset.limit,
           order: sortType === 'RO' ? [[Sequelize.fn('RAND')]] : [['createdAt', sortType]],
           where: {
-            id: { [Op.notIn]: getUIDs(friends, req.user).concat(getExcludedIds())},
-
+            id: { [Op.notIn]: idCondArr},
             [Op.or]: [
               {
                 first: {[Op.like]: '%' +keyword+'%'}
@@ -132,20 +133,35 @@ const get = async function(req, res){
        * friends or self
        */
 
-       let criteria = getPostCriteriaObject(req.user);
-
+       let criteria = {};
+       criteria.include = [
+        {
+          model: Videos
+        },
+        {
+          model: Questions
+        }
+       ]
       /*
       * A hack to use Limit and Offset as we are querying through other tables
       * in which case, limit and offset parameters cause mySQL errors
       */
        //criteria.order = Sequelize.literal((req.user.recentActivitiesEnabled ? 'updatedAt' : 'createdAt') + ' ' +sort + ' LIMIT '+ limitNOffset.offset + ','+limitNOffset.limit);
       criteria.order = Sequelize.literal((sortType === 'RO' ? 'RAND()' : ('updatedAt ' + sortType )) + ' LIMIT ' + (sortType !== 'RO' ? limitNOffset.offset + ',' : '') + limitNOffset.limit);
+      
+      let andCond = {
+        AdOptionId: {[Op.eq]: null}
+      }
+
+      if (sortType === 'RO') {
+        andCond.id = {
+          [Op.notIn]: getExcludedIds()
+        }
+      }
+
       criteria.where = {      
             [Op.and]: [
-              {
-                AdOptionId: {[Op.eq]: null},
-                id: {[Op.notIn]: getExcludedIds()} 
-              },
+              andCond,
               {
                 [Op.or]: [
                   { 
@@ -164,9 +180,34 @@ const get = async function(req, res){
 
         Posts.findAll(criteria)
           .then((posts) => {
-            return ReS(res, {posts: toWeb(posts, req.user)});
+            /*
+            ** get the ids of posts and simply only fetch
+            * those posts by IDs as the above query was 
+            * taking way too long in case of Random order search
+            * on the server, probably because of too many joins in
+            * the query. So in the above query, we are running the 
+            * queries with minimal number of required joins and then
+            * running a new query with all the joins, but only for the
+            * posts which were obtained from the above query
+            */
+            if (posts && posts.length) {
+              let criteriaWithChildModels = getPostCriteriaObject(req.user);
+              criteriaWithChildModels.where= {
+                id: getIdsArray(posts) 
+              }
+              if (sortType !== 'RO') {
+                criteriaWithChildModels.order = [['updatedAt', sortType]]
+              }
+              Posts.findAll(criteriaWithChildModels)
+                .then((newPosts) => {
+                  return ReS(res, {posts: toWeb(newPosts, req.user)});    
+                })
+            } else {
+              return ReS(res, {posts: toWeb(posts, req.user)});  
+            }
           })
           .catch((err) => {
+            console.log(err)
             return ReE(res, {'error': err}, 422);
           })
       }

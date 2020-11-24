@@ -61,22 +61,23 @@ const searchTags = function(req, res, sort = false, exclidedIds = []) {
     ]
   }
 
+  criteria.where = {}
+
   if (sort !== 'RO') {
     criteria.offset = limitNOffset.offset
+  } else {
+    criteria.where.id =  {
+      [Op.notIn]: exclidedIds
+    }
   }
 
   /*
   *  add search by name condition if k (keyword parameter is supplied)
   */
-  criteria.where = {}
   if(req.body.k) {
     criteria.where.name = {
       [Op.like]: '%'+ req.body.k + '%'
     }
-  }
-
-  criteria.where.id =  {
-      [Op.notIn]: exclidedIds
   }
 
   Tags.findAll(criteria)
