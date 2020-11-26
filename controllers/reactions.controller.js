@@ -138,16 +138,25 @@ const addFakeReactions = function (req, res) {
   try {
     if (req.user.isAdmin) {
       let commentId = req.params.commentId,
-      n = parseInt(req.query.n);
+      n = parseInt(req.query.n),
+      type = req.query.type || 'reactions';
 
       let getData = (reactions, users) => {
         let arr_ = []
         for (let i in reactions) {
-          arr_.push({
-            text: reactions[i].text,
-            CommentId: commentId,
-            UserId: users[i].id
-          })
+          if (type === 'reactions') {
+            arr_.push({
+              text: reactions[i].text,
+              CommentId: commentId,
+              UserId: users[i].id
+            })  
+          } else {
+            arr_.push({
+              comment: reactions[i].text,
+              PostId: commentId,
+              UserId: users[i].id
+            })
+          }
         }
         return arr_
       }
@@ -164,11 +173,16 @@ const addFakeReactions = function (req, res) {
               limit: n
             })
               .then((users) => {
-                Reactions.bulkCreate(getData(reactions, users))
+                let model = type === 'reactions' ? Reactions : Comments
+                model.bulkCreate(getData(reactions, users))
                   .then((d) => {
-                    return ReS(res, {message: 'Reactions added successfully'})
+                    return ReS(res, {message: type + ' added successfully'})
                   })
               })
+          })
+          .catch((rEE) => {
+            console.log(rEE)
+            return ReE(res, 'Something went wrong', 500);
           })
       } else {
         return ReE(res, 'Missing parameters', 500);
