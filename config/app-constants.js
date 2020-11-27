@@ -56,7 +56,7 @@ module.exports.TAGS = TAGS;
 
 let MONEY_WITHDRAWL_CONFIG = {
   siteFeePercentage: 10,
-  minRequiredAmountINR: 10,
+  minRequiredAmountINR: 500,
   paymentGatewayCharges: {
     paytm: {
       fixed: 4,
@@ -91,7 +91,7 @@ GENERAL = {
     FirstAd: {
       id: 'CB_FIRST_AD',
       enable: true,
-      priceINR: 10
+      priceINR: 100
     }
   },
 

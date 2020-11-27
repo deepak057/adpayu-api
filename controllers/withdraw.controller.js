@@ -476,7 +476,9 @@ async function getTransactionDetails (user, mode = 'bank') {
       let minRequiredAmountUSD = roundTwoDecimalPlaces(moneyWithdrawlConfig.minRequiredAmountINR/forex);
       return {
         success: false,
-        message: 'Sorry, you must make at least $' +minRequiredAmountUSD + ' (' +moneyWithdrawlConfig.minRequiredAmountINR + ' INR) in order to withdraw money.'
+        message: 'Sorry, you must make at least $' +minRequiredAmountUSD + ' (' +moneyWithdrawlConfig.minRequiredAmountINR + ' INR) before you can withdraw money.',
+        notEnoughBalance: true,
+        minRequiredAmountUSD: minRequiredAmountUSD
       }
     }
 
