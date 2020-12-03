@@ -154,7 +154,8 @@ const addFakeReactions = function (req, res) {
             arr_.push({
               comment: reactions[i].text,
               PostId: commentId,
-              UserId: users[i].id
+              UserId: users[i].id,
+              disableOnMainFeed: false
             })
           }
         }
