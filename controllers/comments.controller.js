@@ -78,7 +78,15 @@ const create =  function(req, res){
 
      Posts.findOne({where: {id: postId}})
       .then((post) => {
-         
+        
+        /*
+        * if it's a normal text comment
+        * enable it on main feed by default
+        */
+        if (!req.body.videoPath) {
+          req.body.disableOnMainFeed = 0
+        }
+
         Comments.create(filterComment(req.body))
           .then((comment) => {
              comment.setPost(post);

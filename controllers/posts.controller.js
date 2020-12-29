@@ -448,7 +448,6 @@ async function getUserFeed (req, res, nextPage = false) {
       })
     }
 
-
    getMainFeedPosts()
      .then((posts) => {
         smartFeed(posts)
