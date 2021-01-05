@@ -4,11 +4,22 @@ const { NOTIFICATIONS } = require('../config/app-constants');
 const Sequelize = require('sequelize');
 const op = Sequelize.Op;
 
+function getObjInfo (req) {
+  if (req.body.obj) {
+    return {
+      obj: req.body.obj,
+      idType: req.body.obj.type === 'comment' ? 'CommentId' : 'PostId'
+    }  
+  } else {
+    return false
+  }
+}
+
 const get = function(req, res){
-  try {  
-    let commentId = req.params.commentId,
-    limitNOffset = getLimitOffset((req.query.page || 1 ), 15);
-    if (commentId) {
+  try {
+    let obj = getObjInfo(req)
+    let limitNOffset = getLimitOffset((req.body.page || 1 ), 15);
+    if (obj) {
       Reactions.findAll({
         include: [
           {
@@ -16,7 +27,7 @@ const get = function(req, res){
           }
         ],
         where: {
-          CommentId: commentId
+          [obj.idType]: obj.obj.id
         },
         limit: limitNOffset.limit,
         offset: limitNOffset.offset,
@@ -40,12 +51,12 @@ module.exports.get = get;
 
 const create = function (req, res) {
   try {
-    let commentId = req.params.commentId,
+    let obj = getObjInfo(req)
     reaction = req.body.reaction || false
-    if (commentId && reaction) {
+    if (obj && reaction) {
       Reactions.create({
         text: reaction,
-        CommentId: commentId,
+        [obj.idType]: obj.obj.id,
         UserId: req.user.id
       })
         .then((r) => {

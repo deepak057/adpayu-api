@@ -159,8 +159,8 @@ router.get('/referral/getRefCode', passport.authenticate('jwt', {session:false})
 router.get('/referral/getUserReferralDetails', passport.authenticate('jwt', {session:false}), ReferralController.getUserReferralDetails);        // R
 
 /** Reactions routes **/
-router.get('/reactions/:commentId', passport.authenticate('jwt', {session:false}), ReactionsController.get);        // R
-router.post('/reactions/add/:commentId', passport.authenticate('jwt', {session:false}), ReactionsController.create);        // P
+router.post('/reactions/', passport.authenticate('jwt', {session:false}), ReactionsController.get);        // R
+router.post('/reactions/add/', passport.authenticate('jwt', {session:false}), ReactionsController.create);        // P
 router.delete('/reactions/:reactionId', passport.authenticate('jwt', {session:false}), ReactionsController.remove);        // D
 router.post('/reactions/addDummyReaction/', passport.authenticate('jwt', {session:false}), ReactionsController.addDummyReaction);        // P
 router.post('/reactions/addFakeReactions/:commentId', passport.authenticate('jwt', {session:false}), ReactionsController.addFakeReactions);        // P
