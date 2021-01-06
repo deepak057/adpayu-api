@@ -155,20 +155,11 @@ const addFakeReactions = function (req, res) {
       let getData = (reactions, users) => {
         let arr_ = []
         for (let i in reactions) {
-          if (type === 'reactions') {
-            arr_.push({
-              text: reactions[i].text,
-              CommentId: commentId,
-              UserId: users[i].id
-            })  
-          } else {
-            arr_.push({
-              comment: reactions[i].text,
-              PostId: commentId,
-              UserId: users[i].id,
-              disableOnMainFeed: false
-            })
-          }
+          arr_.push({
+            text: reactions[i].text,
+            [(type === 'reactions' ? 'CommentId': 'PostId')]: commentId,
+            UserId: users[i].id
+          })  
         }
         return arr_
       }
@@ -185,7 +176,7 @@ const addFakeReactions = function (req, res) {
               limit: n
             })
               .then((users) => {
-                let model = type === 'reactions' ? Reactions : Comments
+                let model = Reactions
                 model.bulkCreate(getData(reactions, users))
                   .then((d) => {
                     return ReS(res, {message: type + ' added successfully'})
