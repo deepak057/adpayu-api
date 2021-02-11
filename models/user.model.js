@@ -38,13 +38,14 @@ module.exports = (sequelize, DataTypes) => {
         refCode: {type: DataTypes.STRING, defaultValue: '' },
         lastLoginFrom: {type: DataTypes.STRING, allowNull: true},
         adTutorialTaken: {type: DataTypes.BOOLEAN, defaultValue: false},
+        animationTemplate: {type: DataTypes.INTEGER, defaultValue: 2},
     },{
         defaultScope: {
           attributes: { exclude: [] },
         },
         scopes: {
           public: {
-           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled', 'unCommentedEnabled', 'gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin', 'refCode', 'ReferredById', 'lastLoginFrom', 'adTutorialTaken'] },
+           attributes: { exclude: ['passwordResetKey', 'password', 'feedEnabled', 'adsEnabled', 'recentActivitiesEnabled', 'unCommentedEnabled', 'gender', 'email', 'createdAt', 'updatedAt', 'phone', 'location', 'bankDetails', 'locationCords', 'visible', 'systemCreatedUser', 'pageTitleCollapsed', 'accountStatus', 'identityDocs', 'byPassVideoReview', 'perVideoPriceINR', 'guestUserId', 'isAdmin', 'refCode', 'ReferredById', 'lastLoginFrom', 'adTutorialTaken', 'animationTemplate'] },
           },
           visible: {
             where: {
