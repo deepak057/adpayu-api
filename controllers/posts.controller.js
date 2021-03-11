@@ -8,6 +8,10 @@ const CommentsController   = require('./comments.controller');
 const JUMP_TO_NEXT_PAGE = "jumpToNextPage"
 const moment = require('moment')
 
+function jumpToNextPage (post) {
+  return typeof post === 'string' && post === JUMP_TO_NEXT_PAGE
+}
+
 const create = async function(req, res){
       
     try {
@@ -504,9 +508,8 @@ function getPostScopes (user) {
 * user feed
 */
 
-function putAdRestrictions (posts, req, res, page) {
+function putAdRestrictions (posts, user) {
   return new Promise(function (resolve, reject) {
-    let user = req.user
     let policy = ADS.adsRestrictionPolicy
     let getPosts = ()=> {
       return toWeb(posts)
@@ -732,7 +735,7 @@ async function FixPosts (posts, req, res, page) {
             }
           }
         }
-        putAdRestrictions(removeDuplicatePosts(posts), req, res, page)
+        putAdRestrictions(removeDuplicatePosts(posts), user)
           .then((postsUpdated) => {
             resolve(postsUpdated)
           })
@@ -819,7 +822,7 @@ async function sendFeed (req, res, posts, page =1 ) {
     
     let sendResponse = (posts) => { 
       ++page
-      if (typeof posts === 'string' && posts === JUMP_TO_NEXT_PAGE) {
+      if (jumpToNextPage(posts)) {
         console.log('Jumping to next page ' + page + ' for getting more feed')
         getUserFeed(req, res, page)
       } else {
@@ -1403,7 +1406,10 @@ module.exports.getAds = async (req, res) => {
   let user = req.user
   adsToBePushedToTheTop(user, 1, false, 'video')
     .then((ads) => {
-      return ReS(res, {ads: ads}, 200);
+      putAdRestrictions(ads, user)
+        .then((adPosts) => {
+          return ReS(res, {ads: (jumpToNextPage(adPosts) ? [] : adPosts)}, 200);
+        })
     })
     .catch((aErr) => {
       return ReE(res, {'error': 'Something went wrong'}, 500);
